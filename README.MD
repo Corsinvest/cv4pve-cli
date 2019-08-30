@@ -7,8 +7,6 @@ ProxmoxVE Client API .Net
 
 [ProxmoxVE Api](https://pve.proxmox.com/pve-docs/api-viewer/)
 
-[Nuget Cli Api](https://www.nuget.org/packages/Corsinvest.ProxmoxVE.Cli.Api)
-
 # **Donations**
 
 If you like my work and want to support it, then please consider to deposit a donation through **Paypal** by clicking on the next button:

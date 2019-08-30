@@ -40,7 +40,7 @@ For ($i = 0; $i -lt $rids.Length; $i++) {
     $rid = $rids[$i]
 
     dotnet publish -r $rid -c Release
-    dotnet tarball -f netcoreapp2.2 -r $rid -c Release
+#    dotnet tarball -f netcoreapp2.2 -r $rid -c Release
     dotnet rpm -f netcoreapp2.2 -r $rid -c Release
     dotnet zip -f netcoreapp2.2 -r $rid -c Release
 }
