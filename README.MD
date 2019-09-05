@@ -27,7 +27,7 @@ Usage: cv4pve-cli [options] [command]
 Options:
   -?|-h|--help  Show help information
   --host        The host name host[:port]
-  --username    User name <username>@<realm>
+  --password    The password. Specify 'file:path_file' to store password in file.
   --password    The password
 
 Commands:
