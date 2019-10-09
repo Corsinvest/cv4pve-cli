@@ -1,11 +1,30 @@
-﻿using System;
-using System.Collections.Generic;
+﻿/*
+ * This file is part of the cv4pve-cli https://github.com/Corsinvest/cv4pve-cli,
+ * Copyright (C) 2016 Corsinvest Srl
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text;
 using Corsinvest.ProxmoxVE.Api;
-using Corsinvest.ProxmoxVE.Api.Extension.Utils.Shell;
+using Corsinvest.ProxmoxVE.Api.Extension.Shell;
+using Corsinvest.ProxmoxVE.Api.Extension.Utility;
+using Corsinvest.ProxmoxVE.Api.Extension.Helpers;
+using Corsinvest.ProxmoxVE.Api.Extension.Helpers.Shell;
 using Corsinvest.ProxmoxVE.Api.Metadata;
 using McMaster.Extensions.CommandLineUtils;
 
@@ -22,7 +41,7 @@ namespace Corsinvest.ProxmoxVE.Cli
         /// <param name="client"></param>
         /// <param name="fileScript"></param>
         /// <param name="onlyResult"></param>
-        public static void Start(Client client, string fileScript, bool onlyResult)
+        public static void Start(PveClient client, string fileScript, bool onlyResult)
         {
             if (!onlyResult)
             {
@@ -42,6 +61,8 @@ Type 'help', 'quit' or 'CTRL+C' to close the application.");
             if (!onlyResult) { Console.Out.WriteLine($" {watch.ElapsedMilliseconds}ms"); }
             #endregion
 
+            if (!onlyResult) { Console.Out.WriteLine(Environment.NewLine + ShellHelper.REMEMBER_THESE_THINGS); }
+
             //Auto Completion
             ReadLine.AutoCompletionHandler = new AutoCompletionHandler()
             {
@@ -51,18 +72,18 @@ Type 'help', 'quit' or 'CTRL+C' to close the application.");
 
             LoadHistory();
 
-            var alias = new AliasManager()
+            var aliasManager = new AliasManager()
             {
-                FileName = Path.Combine(GetApplicationDirectory(), "alias.txt")
+                FileName = Path.Combine(ShellHelper.GetApplicationDataDirectory(Program.APP_NAME), "alias.txt")
             };
-            alias.Load();
+            aliasManager.Load();
 
             if (File.Exists(fileScript))
             {
                 //script file
                 foreach (var line in File.ReadAllLines(fileScript))
                 {
-                    if (ParseLine(line, client, classApiRoot, alias, onlyResult)) { break; }
+                    ParseLine(line, client, classApiRoot, aliasManager, onlyResult);
                 }
             }
             else
@@ -71,30 +92,19 @@ Type 'help', 'quit' or 'CTRL+C' to close the application.");
                 while (true)
                 {
                     var input = ReadLine.Read(">>> ");
-                    var exit = ParseLine(input, client, classApiRoot, alias, onlyResult);
+                    var exit = ParseLine(input, client, classApiRoot, aliasManager, onlyResult);
 
                     SaveHistory();
-                    alias.Save();
+                    aliasManager.Save();
 
                     if (exit) { break; }
                 }
             }
         }
 
-        private static string GetApplicationDirectory()
-        {
-            var path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".cv4pve-sh");
-            if (!Directory.Exists(path))
-            {
-                var dir = Directory.CreateDirectory(path);
-                dir.Attributes = FileAttributes.Directory | FileAttributes.Hidden;
-            }
-
-            return path;
-        }
-
         #region History
-        private static string GetHistoryFile() => Path.Combine(GetApplicationDirectory(), "history.txt");
+        private static string GetHistoryFile() => Path.Combine(ShellHelper.GetApplicationDataDirectory(Program.APP_NAME),
+                                                               "history.txt");
 
         private static void LoadHistory()
         {
@@ -116,12 +126,16 @@ Type 'help', 'quit' or 'CTRL+C' to close the application.");
         #endregion
 
         private static bool ParseLine(string input,
-                                      Client client,
+                                      PveClient client,
                                       ClassApi classApiRoot,
-                                      AliasManager alias,
+                                      AliasManager aliasManager,
                                       bool onlyResult)
         {
             if (string.IsNullOrWhiteSpace(input)) { return false; }
+            input = input.Trim();
+
+            //comment
+            if (input.StartsWith("#")) { return false; }
 
             using (var app = new CommandLineApplication())
             {
@@ -136,15 +150,18 @@ Type 'help', 'quit' or 'CTRL+C' to close the application.");
 
                 ShellCommands.SumCommands(app, client, classApiRoot);
 
+                //fix help text
                 foreach (var command in app.Commands)
                 {
                     command.FullName = app.Description;
                     command.ExtendedHelpText = "";
+                    command.UsePagerForHelpText = false;
                 }
 
-                CreateCommandFromAlias(app, client, classApiRoot, alias, onlyResult);
+                //create command from alias
+                CreateCommandFromAlias(app, client, classApiRoot, aliasManager, onlyResult);
 
-                #region Commands
+                #region Commands base
                 app.Command("quit", cmd =>
                 {
                     cmd.AddName("exit");
@@ -165,14 +182,14 @@ Type 'help', 'quit' or 'CTRL+C' to close the application.");
                     cmd.OnExecute(() => app.ShowHelp());
                 });
 
-                CmdAlias(app, alias);
+                CmdAlias(app, aliasManager);
                 CmdHistory(app, onlyResult);
                 #endregion
 
                 app.OnExecute(() => app.ShowHint());
 
                 //execute command
-                try { app.Execute(TokenizeCommandLineToList(input).ToArray()); }
+                try { app.Execute(StringHelper.TokenizeCommandLineToList(input).ToArray()); }
                 catch (CommandParsingException ex) { Console.Out.WriteLine(ex.Message); }
                 catch (Exception) { }
 
@@ -181,12 +198,12 @@ Type 'help', 'quit' or 'CTRL+C' to close the application.");
         }
 
         private static void CreateCommandFromAlias(CommandLineApplication parent,
-                                                   Client client,
+                                                   PveClient client,
                                                    ClassApi classApiRoot,
-                                                   AliasManager alias,
+                                                   AliasManager aliasManager,
                                                    bool onlyResult)
         {
-            foreach (var item in alias.Data)
+            foreach (var item in aliasManager.Alias)
             {
                 parent.Command(item.Names[0], cmd =>
                 {
@@ -196,7 +213,7 @@ Type 'help', 'quit' or 'CTRL+C' to close the application.");
                     cmd.ExtendedHelpText = Environment.NewLine + "Alias command: " + item.Command;
 
                     //create argument
-                    foreach (var arg in item.GetArguments()) { cmd.Argument(arg, arg, false).IsRequired(); }
+                    foreach (var arg in StringHelper.GetArgumentTags(item.Command)) { cmd.Argument(arg, arg, false).IsRequired(); }
 
                     cmd.OnExecute(() =>
                     {
@@ -207,7 +224,7 @@ Type 'help', 'quit' or 'CTRL+C' to close the application.");
                         foreach (var arg in cmd.Arguments)
                         {
                             title += $" {arg.Name}: {arg.Value}";
-                            command = command.Replace("{" + arg.Name + "}", arg.Value);
+                            command = command.Replace(StringHelper.CreateArgumentTag(arg.Name), arg.Value);
                         }
 
                         if (!onlyResult)
@@ -216,7 +233,7 @@ Type 'help', 'quit' or 'CTRL+C' to close the application.");
                             Console.Out.WriteLine("Command: " + command);
                         }
 
-                        ParseLine(command, client, classApiRoot, alias, onlyResult);
+                        ParseLine(command, client, classApiRoot, aliasManager, onlyResult);
                     });
                 });
             }
@@ -265,7 +282,7 @@ Type 'help', 'quit' or 'CTRL+C' to close the application.");
             });
         }
 
-        private static void CmdAlias(CommandLineApplication parent, AliasManager alias)
+        private static void CmdAlias(CommandLineApplication parent, AliasManager aliasManager)
         {
             parent.Command("alias", cmd =>
             {
@@ -278,6 +295,12 @@ Type 'help', 'quit' or 'CTRL+C' to close the application.");
 
                 cmd.OnExecute(() =>
                 {
+                    /// <summary>
+                    /// Get name alias
+                    /// </summary>
+                    /// <param name="title"></param>
+                    /// <param name="create"></param>
+                    /// <returns></returns>
                     string GetName(string title, bool create)
                     {
                         Console.Out.WriteLine(title);
@@ -291,7 +314,7 @@ Type 'help', 'quit' or 'CTRL+C' to close the application.");
                                 break;
                             }
 
-                            var exists = alias.Exists(name);
+                            var exists = aliasManager.Exists(name);
 
                             if ((create && AliasDef.IsValid(name) && !exists) ||
                                 (!create && exists))
@@ -322,8 +345,8 @@ Type 'help', 'quit' or 'CTRL+C' to close the application.");
                             return;
                         }
 
-                        alias.Create(name, description, command, false);
-                        
+                        aliasManager.Create(name, description, command, false);
+
                         Console.Out.WriteLine($"Alias '{name}' created!");
                     }
                     else if (optRemove.HasValue())
@@ -331,22 +354,12 @@ Type 'help', 'quit' or 'CTRL+C' to close the application.");
                         //remove
                         var name = GetName("Remove alias", false);
                         if (string.IsNullOrWhiteSpace(name)) { return; }
-                        alias.Remove(name);
+                        aliasManager.Remove(name);
                         Console.Out.WriteLine($"Alias '{name}' removed!");
                     }
                     else
                     {
-                        var columns = optVerbose.HasValue() ?
-                                      new string[] { "name", "description", "command", "args", "sys" } :
-                                      new string[] { "name", "description", "sys" };
-
-                        var rows = alias.Data.OrderByDescending(a => a.System)
-                                             .ThenBy(a => a.Name)
-                                             .Select(a => optVerbose.HasValue() ?
-                                                            new object[] { a.Name, a.Description, a.Command, string.Join(",", a.GetArguments()), a.System ? "X" : "" } :
-                                                            new object[] { a.Name, a.Description, a.System ? "X" : "" });
-
-                        Console.Out.Write(TableHelper.CreateTable(columns, rows, false));
+                        Console.Out.Write(aliasManager.ToTable(optVerbose.HasValue()));
                     }
                 });
             });
@@ -354,7 +367,7 @@ Type 'help', 'quit' or 'CTRL+C' to close the application.");
 
         class AutoCompletionHandler : IAutoCompleteHandler
         {
-            public Client Client { get; set; }
+            public PveClient Client { get; set; }
             public ClassApi ClassApiRoot { get; set; }
             public char[] Separators { get; set; } = new char[] { '/' };
 
@@ -368,13 +381,13 @@ Type 'help', 'quit' or 'CTRL+C' to close the application.");
                     text.StartsWith("usage /"))
                 {
                     var resource = text.Substring(text.IndexOf("/")).Trim();
-                    var ret = Commands.ListValues(Client, ClassApiRoot, resource);
+                    var ret = ApiExplorer.ListValues(Client, ClassApiRoot, resource);
 
                     if (!string.IsNullOrWhiteSpace(ret.Error))
                     {
                         //try previous slash
                         var pos = resource.LastIndexOf('/');
-                        ret = Commands.ListValues(Client, ClassApiRoot, resource.Substring(0, pos));
+                        ret = ApiExplorer.ListValues(Client, ClassApiRoot, resource.Substring(0, pos));
 
                         return ret.Values.Where(a => a.Value.StartsWith(resource.Substring(pos + 1)))
                                          .Select(a => a.Value)
@@ -390,66 +403,6 @@ Type 'help', 'quit' or 'CTRL+C' to close the application.");
                     return null;
                 }
             }
-        }
-
-        private static List<string> TokenizeCommandLineToList(string commandLine)
-        {
-
-            var tokens = new List<string>();
-            var token = new StringBuilder(255);
-            var sections = commandLine.Split(' ');
-
-            for (int curPart = 0; curPart < sections.Length; curPart++)
-            {
-                // We are in a quoted section!!
-                if (sections[curPart].StartsWith("\""))
-                {
-                    //remove leading "
-                    token.Append(sections[curPart].Substring(1));
-                    var quoteCount = 0;
-
-                    //Step backwards from the end of the current section to find the count of quotes from the end.
-                    //This will exclude looking at the first character, which was the " that got us here in the first place.
-                    for (; quoteCount < sections[curPart].Length - 1; quoteCount++)
-                    {
-                        if (sections[curPart][sections[curPart].Length - 1 - quoteCount] != '"') { break; }
-                    }
-
-                    // if we didn't have a leftover " (i.e. the 2N+1), then we should continue adding in the next section to the current token.
-                    while (quoteCount % 2 == 0 && (curPart != sections.Length - 1))
-                    {
-                        quoteCount = 0;
-                        curPart++;
-
-                        //Step backwards from the end of the current token to find the count of quotes from the end.
-                        for (; quoteCount < sections[curPart].Length; quoteCount++)
-                        {
-                            if (sections[curPart][sections[curPart].Length - 1 - quoteCount] != '"') { break; }
-                        }
-
-                        token.Append(' ').Append(sections[curPart]);
-                    }
-
-                    //remove trailing " if we had a leftover
-                    //if we didn't have a leftover then we go to the end of the command line without an enclosing " 
-                    //so it gets treated as a quoted argument anyway
-                    if (quoteCount % 2 != 0) { token.Remove(token.Length - 1, 1); }
-                    token.Replace("\"\"", "\"");
-                }
-                else
-                {
-                    //Not a quoted section so this is just a boring parameter
-                    token.Append(sections[curPart]);
-                }
-
-                //strip whitespace (because).
-                if (!string.IsNullOrEmpty(token.ToString().Trim())) { tokens.Add(token.ToString().Trim()); }
-
-                token.Clear();
-            }
-
-            //return the array in the same format args[] usually turn up to main in.
-            return tokens;
         }
     }
 }

@@ -1,3 +1,19 @@
+# This file is part of the cv4pve-cli https://github.com/Corsinvest/cv4pve-cli,
+# Copyright (C) 2016 Corsinvest Srl
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 [System.Console]::Clear();
 
 Write-Output "
@@ -7,56 +23,18 @@ Write-Output "
  / /___/ /_/ / /  (__  ) / / / / |/ /  __(__  ) /_
  \____/\____/_/  /____/_/_/ /_/|___/\___/____/\__/
 
- Corsinvest for Proxmox VE Cli       (Made in Italy)
+                                    (Made in Italy)
 
  =========================================================
  == Build System
- =========================================================
- "
+ ========================================================="
 
-# function Build($rids, $arch, $exec) {
-#     $warpExec = "$HOME\.dotnet\tools\.store\dotnet-warp\1.0.9\dotnet-warp\1.0.9\tools\netcoreapp2.1\any\warp\windows-x64.warp-packer.exe";
-
-#     For ($i = 0; $i -lt $rids.Length; $i++) {
-#         $rid = $rids[$i]
-#         $binDir = "bin\Upload\$rid"
-    
-#         "======= Build $rid ======= "
-#         "Publishing"
-#         dotnet publish -c Release -r $rid -o $binDir | Out-Null
-
-#         & $warpExec --arch $arch --input_dir $binDir --exec $exec --output "bin\Upload\$rid-$exec"
-#         Remove-Item -Path bin\upload\$rid -Recurse -Force
-#     }   
-# }
-
-# #Build @("osx-x64") "macos-x64" "cv4pve-autosnap"
-# Build @("linux-x64", "linux-arm", "linux-arm64") "linux-x64" "cv4pve-autosnap"
-# #Build @("win-x64", "win-x86", "win-arm", "win-arm64") "windows-x64" "cv4pve-autosnap.exe"
-
-#linux
-$rids = @("linux-x64", "linux-arm", "linux-arm64")
-For ($i = 0; $i -lt $rids.Length; $i++) {
-    $rid = $rids[$i]
-
-    dotnet publish -r $rid -c Release
-#    dotnet tarball -f netcoreapp2.2 -r $rid -c Release
-    dotnet rpm -f netcoreapp2.2 -r $rid -c Release
-    dotnet zip -f netcoreapp2.2 -r $rid -c Release
-}
-
-#debian 
-$rids = @("debian-x64", "debian-arm", "debian-arm64")
-For ($i = 0; $i -lt $rids.Length; $i++) {
-    $rid = $rids[$i]
-    dotnet publish -r $rid -c Release
-    dotnet deb -f netcoreapp2.2 -r $rid -c Release
-}
-
-#other
-$rids = @("osx-x64", "win-x86", "win-x64", "win-arm", "win-arm64")
-For ($i = 0; $i -lt $rids.Length; $i++) {
-    $rid = $rids[$i]
-    dotnet publish -r $rid -c Release
-    dotnet zip -f netcoreapp2.2 -r $rid -c Release
+$rids = @("linux-x64", "linux-arm", "linux-arm64", "osx-x64", "win-x86", "win-x64", "win-arm", "win-arm64")
+foreach ($rid in $rids) {
+    dotnet publish -r $rid -c Release /p:PublishSingleFile=true /p:PublishTrimmed=true
+    $path = "bin\Release\netcoreapp3.0\$rid\publish\"
+    $fileName = Get-ChildItem $path -Exclude *.pdb -name
+    $fileDest = "bin\Release\netcoreapp3.0\$fileName-$rid.zip"   
+    Remove-Item $fileDest -ErrorAction SilentlyContinue
+    Compress-Archive $path\$fileName $fileDest
 }

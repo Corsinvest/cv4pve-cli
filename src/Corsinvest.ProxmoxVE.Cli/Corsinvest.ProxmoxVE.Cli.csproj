@@ -2,7 +2,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <Version>1.1.0</Version>
-    <TargetFramework>netcoreapp2.2</TargetFramework>
+    <TargetFramework>netcoreapp3.0</TargetFramework>
     <AssemblyName>cv4pve-cli</AssemblyName>
     <Company>Corsinvest Srl</Company>
     <Authors>Daniele Corsini</Authors>
@@ -10,22 +10,16 @@
     <Product>Corsinvest for Proxmox VE Cli</Product>
     <AssemblyTitle>Corsinvest for Proxmox VE Cli</AssemblyTitle>
     <Description>Corsinvest for Proxmox VE Cli</Description>
-    <ApplicationIcon />
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="cv4pve-cli.sh" CopyToPublishDirectory="PreserveNewest">
-      <LinuxPath>/usr/sbin/cv4pve-cli</LinuxPath>
-      <LinuxFileMode>775</LinuxFileMode>
-    </Content>
-  </ItemGroup>
+    <!-- Fix RedHat, Centos,Fedora -->
+    <RuntimeHostConfigurationOption Include="System.Globalization.Invariant" Value="true" />
 
-  <ItemGroup>
     <!--
     <ProjectReference Include="..\..\..\cv4pve-api-dotnet\src\Corsinvest.ProxmoxVE.Api.Extension\Corsinvest.ProxmoxVE.Api.Extension.csproj" />
     -->
-    <PackageReference Include="Corsinvest.ProxmoxVE.Api.Extension" Version="1.2.0" />
+    <PackageReference Include="Corsinvest.ProxmoxVE.Api.Extension" Version="2.0.0" />
     <PackageReference Include="ReadLine" Version="2.0.1" />
-    <PackageReference Include="Packaging.Targets" Version="0.1.80" />
   </ItemGroup>
 </Project>

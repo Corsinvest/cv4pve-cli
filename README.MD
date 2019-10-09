@@ -20,7 +20,7 @@ If you like my work and want to support it, then please consider to deposit a do
  / /___/ /_/ / /  (__  ) / / / / |/ /  __(__  ) /_
  \____/\____/_/  /____/_/_/ /_/|___/\___/____/\__/
 
- Corsinvest for Proxmox VE CLi       (Made in Italy)
+ Corsinvest for Proxmox VE Cli       (Made in Italy)
 
 Usage: cv4pve-cli [options] [command]
 
@@ -48,7 +48,7 @@ Report bugs to support@corsinvest.it
 
 Command line for Proxmox VE.
 
-this software aims to simplify the management of Proxmox VE single node or cluster command line. The reasons are:
+this software aims to simplify the management of Proxmox VE single node or cluster using command line. The reasons are:
 
 * do not use graphical interface (GUI)
 * access to simplified operations
@@ -59,14 +59,13 @@ this software aims to simplify the management of Proxmox VE single node or clust
 * Completely written in C#
 * Use native api REST Proxmox VE (library C#)
 * Independent os (Windows, Linux, Macosx)
-* Installation
-  * Portable all files request are included
-  * Native installation (deb, rpm, zip)
+* Installation unzip file extract binary
 * Not require installation in Proxmox VE
 * Execute out side Proxmox VE
 * API
   * get/set/create/delete command
   * usage command with complete documentation
+  * ls like directory filesystem
   * multiple format return text,json,json pretty,png
 * Alias command
 * Documentation generated at runtime from server
@@ -74,12 +73,12 @@ this software aims to simplify the management of Proxmox VE single node or clust
 
 ## Configuration and use
 
-E.g. install on debian package
+E.g. install on linux 64
 
-Download last package e.g. Debian cv4pve-cli?.?.?-?_all.deb, on your os and install:
+Download last package e.g. Debian cv4pve-cli-linux-x64.zip, on your os and install:
 
 ```sh
-root@debian:~# dpkg -i cv4pve-cli_?.?.?-?_all.deb
+root@debian:~# unzip cv4pve-cli-linux-x64.zip
 ```
 
 This tool need basically no configuration.
