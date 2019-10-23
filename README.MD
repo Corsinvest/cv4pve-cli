@@ -1,17 +1,10 @@
 # cv4pve-cli
 
-[![License](https://img.shields.io/github/license/Corsinvest/cv4pve-cli.svg)](https://www.gnu.org/licenses/gpl-3.0.en.html)
-[![AppVeyor branch](https://img.shields.io/appveyor/ci/franklupo/cv4pve-cli/master.svg)](https://ci.appveyor.com/project/franklupo/cv4pve-cli) [![Donate to this project using Palpal](https://img.shields.io/badge/paypal-donate-yellow.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=PPM9JHLQLRV2S&item_name=Open+Source+Project&currency_code=EUR&source=url)
+[![License](https://img.shields.io/github/license/Corsinvest/cv4pve-cli.svg)](LICENSE.md) [![AppVeyor branch](https://img.shields.io/appveyor/ci/franklupo/cv4pve-cli/master.svg)](https://ci.appveyor.com/project/franklupo/cv4pve-cli)
 
 ProxmoxVE Client API .Net
 
 [ProxmoxVE Api](https://pve.proxmox.com/pve-docs/api-viewer/)
-
-# **Donations**
-
-If you like my work and want to support it, then please consider to deposit a donation through **Paypal** by clicking on the next button:
-
-[![paypal](https://www.paypalobjects.com/en_US/IT/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=PPM9JHLQLRV2S&item_name=Open+Source+Project&currency_code=EUR&source=url)
 
 ```text
     ______                _                      __
@@ -28,7 +21,7 @@ Options:
   -?|-h|--help  Show help information
   --host        The host name host[:port]
   --password    The password. Specify 'file:path_file' to store password in file.
-  --password    The password
+  --version     Show version information
 
 Commands:
   create        Create (POST) from resource
@@ -40,9 +33,16 @@ Commands:
   usage         Usage resource
 
 Run 'cv4pve-cli [command] --help' for more information about a command.
-
-Report bugs to support@corsinvest.it
 ```
+
+## Copyright and License
+
+Copyright: Corsinvest Srl
+For licensing details please visit [LICENSE.md](LICENSE.md)
+
+## Commercial Support
+
+This software is part of a suite of tools called cv4pve-tools. If you want commercial support, visit the [site](https://www.corsinvest.it/cv4pve-tools)
 
 ## Introduction
 
@@ -364,7 +364,7 @@ root@debian:~# cv4pve-cli --host=192.168.0.100 --username=root@pam --password=fa
 ```text
 Corsinvest Interactive Shell for Proxmox VE (martedì 27 agosto 2019)
 Type '<TAB>' for completion word
-Type 'help', 'quit' or 'CTRL+C' to close the application.
+Type 'help', 'quit' to close the application.
 Initialization metadata... 111ms
 >>>
 ```
@@ -505,4 +505,4 @@ Command: get /cluster/resources
 
 The alias can have multiple names using the comma.
 
-Using parameter -s for execute command in script file.
+Using parameter -s for execute command from script file.

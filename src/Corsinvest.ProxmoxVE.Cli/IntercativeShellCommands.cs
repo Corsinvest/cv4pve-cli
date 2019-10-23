@@ -1,21 +1,15 @@
 ﻿/*
  * This file is part of the cv4pve-cli https://github.com/Corsinvest/cv4pve-cli,
- * Copyright (C) 2016 Corsinvest Srl
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * This source file is available under two different licenses:
+ * - GNU General Public License version 3 (GPLv3)
+ * - Corsinvest Enterprise License (CEL)
+ * Full copyright and license information is available in
+ * LICENSE.md which is distributed with this source code.
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * Copyright (C) 2016 Corsinvest Srl	GPLv3 and CEL
  */
-
+ 
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -47,7 +41,7 @@ namespace Corsinvest.ProxmoxVE.Cli
             {
                 Console.Out.WriteLine($@"Corsinvest Interactive Shell for Proxmox VE ({DateTime.Now.ToLongDateString()})
 Type '<TAB>' for completion word
-Type 'help', 'quit' or 'CTRL+C' to close the application.");
+Type 'help', 'quit' to close the application.");
             }
 
             #region ClassApi Metadata
@@ -64,7 +58,7 @@ Type 'help', 'quit' or 'CTRL+C' to close the application.");
             if (!onlyResult) { Console.Out.WriteLine(Environment.NewLine + ShellHelper.REMEMBER_THESE_THINGS); }
 
             //Auto Completion
-            ReadLine.AutoCompletionHandler = new AutoCompletionHandler()
+            ReadLine.AutoCompletionHandler = new AutoCompletionHandler
             {
                 Client = client,
                 ClassApiRoot = classApiRoot
@@ -369,7 +363,7 @@ Type 'help', 'quit' or 'CTRL+C' to close the application.");
         {
             public PveClient Client { get; set; }
             public ClassApi ClassApiRoot { get; set; }
-            public char[] Separators { get; set; } = new char[] { '/' };
+            public char[] Separators { get; set; } = new[] { '/' };
 
             public string[] GetSuggestions(string text, int index)
             {
