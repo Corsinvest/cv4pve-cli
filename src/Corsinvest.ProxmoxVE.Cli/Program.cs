@@ -10,8 +10,7 @@
  * Copyright (C) 2016 Corsinvest Srl	GPLv3 and CEL
  */
 
-using System;
-using Corsinvest.ProxmoxVE.Api.Extension.Helpers.Shell;
+using Corsinvest.ProxmoxVE.Api.Shell.Helpers;
 
 namespace Corsinvest.ProxmoxVE.Cli
 {
@@ -23,7 +22,7 @@ namespace Corsinvest.ProxmoxVE.Cli
         {
             var app = ShellHelper.CreateConsoleApp(APP_NAME, "Command line for Proxmox VE");
             ShellCommands.Commands(app);
-            return app.ExecuteConsoleApp(Console.Out, args);
+            return app.ExecuteConsoleApp(args);
         }
     }
 }

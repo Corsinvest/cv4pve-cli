@@ -9,13 +9,12 @@
  *
  * Copyright (C) 2016 Corsinvest Srl	GPLv3 and CEL
  */
- 
-using System;
+
 using Corsinvest.ProxmoxVE.Api;
-using Corsinvest.ProxmoxVE.Api.Extension.Utility;
-using Corsinvest.ProxmoxVE.Api.Extension.Helpers.Shell;
 using Corsinvest.ProxmoxVE.Api.Metadata;
 using McMaster.Extensions.CommandLineUtils;
+using Corsinvest.ProxmoxVE.Api.Shell.Helpers;
+using Corsinvest.ProxmoxVE.Api.Shell.Utility;
 
 namespace Corsinvest.ProxmoxVE.Cli
 {
@@ -30,7 +29,7 @@ namespace Corsinvest.ProxmoxVE.Cli
         /// <param name="parent"></param>
         public static void Commands(CommandLineApplication parent)
         {
-            SumCommands(parent, null, null);
+            ApiCommands(parent, null, null);
             IntercativeShell(parent);
         }
 
@@ -50,17 +49,15 @@ namespace Corsinvest.ProxmoxVE.Cli
 
                 var optOnlyResult = cmd.Option("--only-result|-r", "Only result", CommandOptionType.NoValue);
 
-                cmd.OnExecute(() => IntercativeShellCommands.Start(parent.ClientTryLogin(),
+                cmd.OnExecute(() => IntercativeShellCommands.Start(parent.Out,
+                                                                   parent.ClientTryLogin(),
                                                                    optFile.Value(),
                                                                    optOnlyResult.HasValue()));
             });
         }
 
-        private static ClassApi GetClassApiRoot(CommandLineApplication parent)
-        {
-            var (host, port) = parent.GetHostAndPort();
-            return GeneretorClassApi.Generate(host, port);
-        }
+        private static ClassApi GetClassApiRoot(PveClient client)
+            => GeneretorClassApi.Generate(client.Hostname, client.Port);
 
         /// <summary>
         /// Sub commands
@@ -68,7 +65,7 @@ namespace Corsinvest.ProxmoxVE.Cli
         /// <param name="parent"></param>
         /// <param name="client"></param>
         /// <param name="classApiRoot"></param>
-        internal static void SumCommands(CommandLineApplication parent,
+        internal static void ApiCommands(CommandLineApplication parent,
                                          PveClient client,
                                          ClassApi classApiRoot)
         {
@@ -99,15 +96,17 @@ namespace Corsinvest.ProxmoxVE.Cli
                 var argResource = CreateResourceArgument(cmd);
                 var argParameters = cmd.Argument("parameters",
                                                  "Parameter for resource format key:value (Multiple)." +
-                                                 " If value have space or special charapter using 'key:value'",
+                                                 " If value have space or special charapter using quote 'key:value'",
                                                  true);
-                var optOutput = cmd.OptionEnum<ApiExplorer.OutputType>("--output|-o", "Type output (default: text)");
+                var optOutput = cmd.OptionEnum<ApiExplorer.OutputType>("--output|-o", "Type output (default: unicode)");
                 var optWait = cmd.WaitOption();
 
                 cmd.OnExecute(() =>
                 {
-                    var ret = ApiExplorer.Execute(client ?? parent.ClientTryLogin(),
-                                                  classApiRoot ?? GetClassApiRoot(parent),
+                    client = client ?? parent.ClientTryLogin();
+                    classApiRoot = classApiRoot ?? GetClassApiRoot(client);
+                    var ret = ApiExplorer.Execute(client,
+                                                  classApiRoot,
                                                   argResource.Value,
                                                   methodType,
                                                   ApiExplorer.CreateParameterResource(argParameters.Values),
@@ -115,7 +114,7 @@ namespace Corsinvest.ProxmoxVE.Cli
                                                   optOutput.GetEnumValue<ApiExplorer.OutputType>(),
                                                   optVerbose.HasValue());
 
-                    Console.Out.Write(ret.ResultText);
+                    parent.Out.Write(ret.ResultText);
                     return ret.ResultCode;
                 });
             });
@@ -132,14 +131,16 @@ namespace Corsinvest.ProxmoxVE.Cli
                 var optVerbose = cmd.VerboseOption();
                 var optCommand = cmd.OptionEnum<MethodType>("--command|-c", "API command");
                 var optResturns = cmd.Option("--returns|-r", "Including schema for returned data.", CommandOptionType.NoValue);
+                var optOutput = cmd.OptionEnum<ApiExplorer.OutputType>("--output|-o", "Type output (default: unicode)");
 
                 cmd.OnExecute(() =>
                 {
-                    Console.Out.Write(ApiExplorer.Usage(classApiRoot ?? GetClassApiRoot(parent),
-                                                        argResource.Value,
-                                                        optResturns.HasValue(),
-                                                        optCommand.Value(),
-                                                        optVerbose.HasValue()));
+                    parent.Out.Write(ApiExplorer.Usage(classApiRoot ?? GetClassApiRoot(parent.ClientTryLogin()),
+                                                       argResource.Value,
+                                                       optOutput.GetEnumValue<ApiExplorer.OutputType>(),
+                                                       optResturns.HasValue(),
+                                                       optCommand.Value(),
+                                                       optVerbose.HasValue()));
                 });
             });
         }
@@ -152,9 +153,15 @@ namespace Corsinvest.ProxmoxVE.Cli
                 cmd.AddFullNameLogo();
 
                 var argResource = CreateResourceArgument(cmd);
-                cmd.OnExecute(() => Console.Out.Write(ApiExplorer.List(client ?? cmd.ClientTryLogin(),
-                                                                       classApiRoot ?? GetClassApiRoot(parent),
-                                                                       argResource.Value)));
+
+                cmd.OnExecute(() =>
+                {
+                    client = client ?? cmd.ClientTryLogin();
+                    parent.Out.Write(ApiExplorer.List(client,
+                                                      classApiRoot ?? GetClassApiRoot(client),
+                                                      argResource.Value));
+
+                });
             });
         }
     }

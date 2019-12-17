@@ -9,17 +9,16 @@
  *
  * Copyright (C) 2016 Corsinvest Srl	GPLv3 and CEL
  */
- 
+
 using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Corsinvest.ProxmoxVE.Api;
-using Corsinvest.ProxmoxVE.Api.Extension.Shell;
-using Corsinvest.ProxmoxVE.Api.Extension.Utility;
 using Corsinvest.ProxmoxVE.Api.Extension.Helpers;
-using Corsinvest.ProxmoxVE.Api.Extension.Helpers.Shell;
 using Corsinvest.ProxmoxVE.Api.Metadata;
+using Corsinvest.ProxmoxVE.Api.Shell.Helpers;
+using Corsinvest.ProxmoxVE.Api.Shell.Utility;
 using McMaster.Extensions.CommandLineUtils;
 
 namespace Corsinvest.ProxmoxVE.Cli
@@ -32,30 +31,34 @@ namespace Corsinvest.ProxmoxVE.Cli
         /// <summary>
         /// Start interactive shell
         /// </summary>
+        /// <param name="output"></param>
         /// <param name="client"></param>
         /// <param name="fileScript"></param>
         /// <param name="onlyResult"></param>
-        public static void Start(PveClient client, string fileScript, bool onlyResult)
+        public static void Start(TextWriter output,
+                                 PveClient client,
+                                 string fileScript,
+                                 bool onlyResult)
         {
             if (!onlyResult)
             {
-                Console.Out.WriteLine($@"Corsinvest Interactive Shell for Proxmox VE ({DateTime.Now.ToLongDateString()})
+                output.WriteLine($@"Corsinvest Interactive Shell for Proxmox VE ({DateTime.Now.ToLongDateString()})
 Type '<TAB>' for completion word
 Type 'help', 'quit' to close the application.");
             }
 
             #region ClassApi Metadata
             var watch = Stopwatch.StartNew();
-            if (!onlyResult) { Console.Out.Write("Initialization metadata..."); }
+            if (!onlyResult) { output.Write("Initialization metadata..."); }
 
             //get api metadata
             var classApiRoot = GeneretorClassApi.Generate(client.Hostname, client.Port);
 
             watch.Stop();
-            if (!onlyResult) { Console.Out.WriteLine($" {watch.ElapsedMilliseconds}ms"); }
+            if (!onlyResult) { output.WriteLine($" {watch.ElapsedMilliseconds}ms"); }
             #endregion
 
-            if (!onlyResult) { Console.Out.WriteLine(Environment.NewLine + ShellHelper.REMEMBER_THESE_THINGS); }
+            if (!onlyResult) { output.WriteLine(Environment.NewLine + ShellHelper.REMEMBER_THESE_THINGS); }
 
             //Auto Completion
             ReadLine.AutoCompletionHandler = new AutoCompletionHandler
@@ -77,7 +80,12 @@ Type 'help', 'quit' to close the application.");
                 //script file
                 foreach (var line in File.ReadAllLines(fileScript))
                 {
-                    ParseLine(line, client, classApiRoot, aliasManager, onlyResult);
+                    ParseLine(output,
+                              line,
+                              client,
+                              classApiRoot,
+                              aliasManager,
+                              onlyResult);
                 }
             }
             else
@@ -86,7 +94,12 @@ Type 'help', 'quit' to close the application.");
                 while (true)
                 {
                     var input = ReadLine.Read(">>> ");
-                    var exit = ParseLine(input, client, classApiRoot, aliasManager, onlyResult);
+                    var exit = ParseLine(output,
+                                         input,
+                                         client,
+                                         classApiRoot,
+                                         aliasManager,
+                                         onlyResult);
 
                     SaveHistory();
                     aliasManager.Save();
@@ -119,7 +132,8 @@ Type 'help', 'quit' to close the application.");
         }
         #endregion
 
-        private static bool ParseLine(string input,
+        private static bool ParseLine(TextWriter output,
+                                      string input,
                                       PveClient client,
                                       ClassApi classApiRoot,
                                       AliasManager aliasManager,
@@ -142,7 +156,7 @@ Type 'help', 'quit' to close the application.");
                 app.UsePagerForHelpText = false;
                 app.HelpOption(true);
 
-                ShellCommands.SumCommands(app, client, classApiRoot);
+                ShellCommands.ApiCommands(app, client, classApiRoot);
 
                 //fix help text
                 foreach (var command in app.Commands)
@@ -153,7 +167,12 @@ Type 'help', 'quit' to close the application.");
                 }
 
                 //create command from alias
-                CreateCommandFromAlias(app, client, classApiRoot, aliasManager, onlyResult);
+                CreateCommandFromAlias(output,
+                                       app,
+                                       client,
+                                       classApiRoot,
+                                       aliasManager,
+                                       onlyResult);
 
                 #region Commands base
                 app.Command("quit", cmd =>
@@ -176,22 +195,23 @@ Type 'help', 'quit' to close the application.");
                     cmd.OnExecute(() => app.ShowHelp());
                 });
 
-                CmdAlias(app, aliasManager);
-                CmdHistory(app, onlyResult);
+                CmdAlias(output, app, aliasManager);
+                CmdHistory(output, app, onlyResult);
                 #endregion
 
                 app.OnExecute(() => app.ShowHint());
 
                 //execute command
                 try { app.Execute(StringHelper.TokenizeCommandLineToList(input).ToArray()); }
-                catch (CommandParsingException ex) { Console.Out.WriteLine(ex.Message); }
+                catch (CommandParsingException ex) { output.WriteLine(ex.Message); }
                 catch (Exception) { }
 
                 return exit;
             }
         }
 
-        private static void CreateCommandFromAlias(CommandLineApplication parent,
+        private static void CreateCommandFromAlias(TextWriter output,
+                                                   CommandLineApplication parent,
                                                    PveClient client,
                                                    ClassApi classApiRoot,
                                                    AliasManager aliasManager,
@@ -223,17 +243,24 @@ Type 'help', 'quit' to close the application.");
 
                         if (!onlyResult)
                         {
-                            Console.Out.WriteLine(title);
-                            Console.Out.WriteLine("Command: " + command);
+                            output.WriteLine(title);
+                            output.WriteLine("Command: " + command);
                         }
 
-                        ParseLine(command, client, classApiRoot, aliasManager, onlyResult);
+                        ParseLine(output,
+                                  command,
+                                  client,
+                                  classApiRoot,
+                                  aliasManager,
+                                  onlyResult);
                     });
                 });
             }
         }
 
-        private static void CmdHistory(CommandLineApplication app, bool onlyResult)
+        private static void CmdHistory(TextWriter output,
+                                       CommandLineApplication app,
+                                       bool onlyResult)
         {
             app.Command("history", cmd =>
             {
@@ -260,14 +287,14 @@ Type 'help', 'quit' to close the application.");
                     {
                         if (!ReadLine.HistoryEnabled)
                         {
-                            if (!onlyResult) { Console.Out.WriteLine("History disabled!"); }
+                            if (!onlyResult) { output.WriteLine("History disabled!"); }
                         }
                         else
                         {
                             var lineNum = 0;
                             foreach (var item in ReadLine.GetHistory())
                             {
-                                Console.Out.WriteLine($"{lineNum} {item}");
+                                output.WriteLine($"{lineNum} {item}");
                                 lineNum++;
                             }
                         }
@@ -276,7 +303,9 @@ Type 'help', 'quit' to close the application.");
             });
         }
 
-        private static void CmdAlias(CommandLineApplication parent, AliasManager aliasManager)
+        private static void CmdAlias(TextWriter output,
+                                     CommandLineApplication parent,
+                                     AliasManager aliasManager)
         {
             parent.Command("alias", cmd =>
             {
@@ -297,14 +326,14 @@ Type 'help', 'quit' to close the application.");
                     /// <returns></returns>
                     string GetName(string title, bool create)
                     {
-                        Console.Out.WriteLine(title);
+                        output.WriteLine(title);
                         var name = " ";
                         while (true)
                         {
                             name = ReadLine.Read("Name: ", name.Trim());
                             if (string.IsNullOrWhiteSpace(name))
                             {
-                                Console.Out.WriteLine($"Abort {title}");
+                                output.WriteLine($"Abort {title}");
                                 break;
                             }
 
@@ -317,7 +346,7 @@ Type 'help', 'quit' to close the application.");
                             }
                             else
                             {
-                                Console.Out.WriteLine($"Alias '{name}' already exists!");
+                                output.WriteLine($"Alias '{name}' already exists!");
                             }
                         }
 
@@ -335,13 +364,13 @@ Type 'help', 'quit' to close the application.");
                         var command = ReadLine.Read("Command: ");
                         if (string.IsNullOrWhiteSpace(command))
                         {
-                            Console.Out.WriteLine("Abort create alias");
+                            output.WriteLine("Abort create alias");
                             return;
                         }
 
                         aliasManager.Create(name, description, command, false);
 
-                        Console.Out.WriteLine($"Alias '{name}' created!");
+                        output.WriteLine($"Alias '{name}' created!");
                     }
                     else if (optRemove.HasValue())
                     {
@@ -349,11 +378,11 @@ Type 'help', 'quit' to close the application.");
                         var name = GetName("Remove alias", false);
                         if (string.IsNullOrWhiteSpace(name)) { return; }
                         aliasManager.Remove(name);
-                        Console.Out.WriteLine($"Alias '{name}' removed!");
+                        output.WriteLine($"Alias '{name}' removed!");
                     }
                     else
                     {
-                        Console.Out.Write(aliasManager.ToTable(optVerbose.HasValue()));
+                        output.Write(aliasManager.ToTable(optVerbose.HasValue(), TableOutputType.Unicode));
                     }
                 });
             });

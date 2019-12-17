@@ -18,21 +18,27 @@ ProxmoxVE Client API .Net
 Usage: cv4pve-cli [options] [command]
 
 Options:
-  -?|-h|--help  Show help information
-  --host        The host name host[:port]
-  --password    The password. Specify 'file:path_file' to store password in file.
-  --version     Show version information
+  -?|-h|--help      Show help information
+  --version         Show version information
+  --host            The host name host[:port],host1[:port],host2[:port]
+  --username        User name <username>@<realm>
+  --password        The password. Specify 'file:path_file' to store password in file.
 
 Commands:
-  create        Create (POST) from resource
-  delete        Delete (DELETE) from resource
-  get           Get (GET) from resource
-  ls            List child objects on <api_path>.
-  set           Set (PUT) from resource
-  sh            Interactive shell
-  usage         Usage resource
+  app-check-update  Check update application
+  app-upgrade       Upgrade application
+  create            Create (POST) from resource
+  delete            Delete (DELETE) from resource
+  get               Get (GET) from resource
+  ls                List child objects on <api_path>.
+  set               Set (PUT) from resource
+  sh                Interactive shell
+  usage             Usage resource
 
 Run 'cv4pve-cli [command] --help' for more information about a command.
+
+cv4pve-cli is a part of suite cv4pve-tools.
+For more information visit https://www.cv4pve-tools.com
 ```
 
 ## Copyright and License
@@ -42,7 +48,7 @@ For licensing details please visit [LICENSE.md](LICENSE.md)
 
 ## Commercial Support
 
-This software is part of a suite of tools called cv4pve-tools. If you want commercial support, visit the [site](https://www.corsinvest.it/cv4pve-tools)
+This software is part of a suite of tools called cv4pve-tools. If you want commercial support, visit the [site](https://www.cv4pve-tools.com)
 
 ## Introduction
 
@@ -70,6 +76,8 @@ this software aims to simplify the management of Proxmox VE single node or clust
 * Alias command
 * Documentation generated at runtime from server
 * Interactive shell
+* Support multiple host for HA in --host parameter es. host[:port],host1[:port],host2[:port]
+* Check-Update and Upgrade application
 
 ## Configuration and use
 
