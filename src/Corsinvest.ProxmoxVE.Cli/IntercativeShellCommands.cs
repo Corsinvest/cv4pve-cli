@@ -16,9 +16,9 @@ using System.IO;
 using System.Linq;
 using Corsinvest.ProxmoxVE.Api;
 using Corsinvest.ProxmoxVE.Api.Extension.Helpers;
+using Corsinvest.ProxmoxVE.Api.Extension.Utility;
 using Corsinvest.ProxmoxVE.Api.Metadata;
 using Corsinvest.ProxmoxVE.Api.Shell.Helpers;
-using Corsinvest.ProxmoxVE.Api.Shell.Utility;
 using McMaster.Extensions.CommandLineUtils;
 
 namespace Corsinvest.ProxmoxVE.Cli
@@ -71,7 +71,7 @@ Type 'help', 'quit' to close the application.");
 
             var aliasManager = new AliasManager()
             {
-                FileName = Path.Combine(ShellHelper.GetApplicationDataDirectory(Program.APP_NAME), "alias.txt")
+                FileName = Path.Combine(ApplicationHelper.GetApplicationDataDirectory(Program.APP_NAME), "alias.txt")
             };
             aliasManager.Load();
 
@@ -110,8 +110,8 @@ Type 'help', 'quit' to close the application.");
         }
 
         #region History
-        private static string GetHistoryFile() => Path.Combine(ShellHelper.GetApplicationDataDirectory(Program.APP_NAME),
-                                                               "history.txt");
+        private static string GetHistoryFile() 
+            => Path.Combine(ApplicationHelper.GetApplicationDataDirectory(Program.APP_NAME),"history.txt");
 
         private static void LoadHistory()
         {

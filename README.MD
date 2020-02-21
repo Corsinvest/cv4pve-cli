@@ -114,7 +114,7 @@ Arguments:
 
 Options:
   -v|--verbose  Show verbose output
-  -o|--output   Type output (default: text) Text,Json,JsonPretty,Png
+  -o|--output   Type output (default: unicode) Unicode, UnicodeAlt, Markdown, Text, Json, JsonPretty, Html, Png
   --wait        Wait for task finish  
   -?|-h|--help  Show help information
 ```
@@ -142,7 +142,7 @@ root@debian:~# cv4pve-cli --host=192.168.0.100 --username=root@pam --password=fa
 Retry version json
 
 ```sh
-root@debian:~# cv4pve-cli --host=192.168.0.100 --username=root@pam --password=fagiano get--output json
+root@debian:~# cv4pve-cli --host=192.168.0.100 --username=root@pam --password=fagiano get--output Json
 ```
 
 ```text
@@ -152,7 +152,7 @@ root@debian:~# cv4pve-cli --host=192.168.0.100 --username=root@pam --password=fa
 Retry version json pretty
 
 ```sh
-root@debian:~# cv4pve-cli --host=192.168.0.100 --username=root@pam --password=fagiano get --output jsonpretty
+root@debian:~# cv4pve-cli --host=192.168.0.100 --username=root@pam --password=fagiano get --output JsonPretty
 ```
 
 ```text

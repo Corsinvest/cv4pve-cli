@@ -14,7 +14,7 @@ using Corsinvest.ProxmoxVE.Api;
 using Corsinvest.ProxmoxVE.Api.Metadata;
 using McMaster.Extensions.CommandLineUtils;
 using Corsinvest.ProxmoxVE.Api.Shell.Helpers;
-using Corsinvest.ProxmoxVE.Api.Shell.Utility;
+using Corsinvest.ProxmoxVE.Api.Extension.Utility;
 
 namespace Corsinvest.ProxmoxVE.Cli
 {
