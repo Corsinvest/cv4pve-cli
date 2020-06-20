@@ -80,12 +80,7 @@ Type 'help', 'quit' to close the application.");
                 //script file
                 foreach (var line in File.ReadAllLines(fileScript))
                 {
-                    ParseLine(output,
-                              line,
-                              client,
-                              classApiRoot,
-                              aliasManager,
-                              onlyResult);
+                    ParseLine(output, line, client, classApiRoot, aliasManager, onlyResult);
                 }
             }
             else
@@ -110,8 +105,8 @@ Type 'help', 'quit' to close the application.");
         }
 
         #region History
-        private static string GetHistoryFile() 
-            => Path.Combine(ApplicationHelper.GetApplicationDataDirectory(Program.APP_NAME),"history.txt");
+        private static string GetHistoryFile()
+            => Path.Combine(ApplicationHelper.GetApplicationDataDirectory(Program.APP_NAME), "history.txt");
 
         private static void LoadHistory()
         {
@@ -126,7 +121,11 @@ Type 'help', 'quit' to close the application.");
         {
             if (ReadLine.HistoryEnabled)
             {
+                //remove empty line
                 var data = ReadLine.GetHistory().Where(a => !string.IsNullOrWhiteSpace(a));
+                ReadLine.ClearHistory();
+                ReadLine.AddHistory(data.ToArray());
+
                 File.WriteAllLines(GetHistoryFile(), data.Skip(Math.Max(0, data.Count() - 100)));
             }
         }
