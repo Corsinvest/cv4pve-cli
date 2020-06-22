@@ -11,6 +11,7 @@
  */
 
 using System;
+using System.CommandLine.Parsing;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -144,69 +145,67 @@ Type 'help', 'quit' to close the application.");
             //comment
             if (input.StartsWith("#")) { return false; }
 
-            using (var app = new CommandLineApplication())
+            using var app = new CommandLineApplication();
+            var exit = false;
+
+            app.Name = "";
+            app.Description = "Corsinvest Interactive Shell API for Proxmox VE";
+            app.DebugOption();
+            app.DryRunOption();
+            app.UsePagerForHelpText = false;
+            app.HelpOption(true);
+
+            ShellCommands.ApiCommands(app, client, classApiRoot);
+
+            //fix help text
+            foreach (var command in app.Commands)
             {
-                var exit = false;
-
-                app.Name = "";
-                app.Description = "Corsinvest Interactive Shell API for Proxmox VE";
-                app.DebugOption();
-                app.DryRunOption();
-                app.UsePagerForHelpText = false;
-                app.HelpOption(true);
-
-                ShellCommands.ApiCommands(app, client, classApiRoot);
-
-                //fix help text
-                foreach (var command in app.Commands)
-                {
-                    command.FullName = app.Description;
-                    command.ExtendedHelpText = "";
-                    command.UsePagerForHelpText = false;
-                }
-
-                //create command from alias
-                CreateCommandFromAlias(output,
-                                       app,
-                                       client,
-                                       classApiRoot,
-                                       aliasManager,
-                                       onlyResult);
-
-                #region Commands base
-                app.Command("quit", cmd =>
-                {
-                    cmd.AddName("exit");
-                    cmd.Description = "Close application";
-                    cmd.OnExecute(() => exit = true);
-                });
-
-                app.Command("clear", cmd =>
-                {
-                    cmd.AddName("cls");
-                    cmd.Description = "Clear screen";
-                    cmd.OnExecute(() => Console.Clear());
-                });
-
-                app.Command("help", cmd =>
-                {
-                    cmd.Description = "Show help information";
-                    cmd.OnExecute(() => app.ShowHelp());
-                });
-
-                CmdAlias(output, app, aliasManager);
-                CmdHistory(output, app, onlyResult);
-                #endregion
-
-                app.OnExecute(() => app.ShowHint());
-
-                //execute command
-                try { app.Execute(StringHelper.TokenizeCommandLineToList(input).ToArray()); }
-                catch (CommandParsingException ex) { output.WriteLine(ex.Message); }
-                catch (Exception) { }
-
-                return exit;
+                command.FullName = app.Description;
+                command.ExtendedHelpText = "";
+                command.UsePagerForHelpText = false;
             }
+
+            //create command from alias
+            CreateCommandFromAlias(output,
+                                   app,
+                                   client,
+                                   classApiRoot,
+                                   aliasManager,
+                                   onlyResult);
+
+            #region Commands base
+            app.Command("quit", cmd =>
+            {
+                cmd.AddName("exit");
+                cmd.Description = "Close application";
+                cmd.OnExecute(() => exit = true);
+            });
+
+            app.Command("clear", cmd =>
+            {
+                cmd.AddName("cls");
+                cmd.Description = "Clear screen";
+                cmd.OnExecute(() => Console.Clear());
+            });
+
+            app.Command("help", cmd =>
+            {
+                cmd.Description = "Show help information";
+                cmd.OnExecute(() => app.ShowHelp());
+            });
+
+            CmdAlias(output, app, aliasManager);
+            CmdHistory(output, app, onlyResult);
+            #endregion
+
+            app.OnExecute(() => app.ShowHint());
+
+            //execute command
+            try { app.Execute(ParserExtensions.Parse(new Parser(), input).Tokens.Select(a => a.Value).ToArray()); }
+            catch (CommandParsingException ex) { output.WriteLine(ex.Message); }
+            catch (Exception ex) { output.WriteLine(ex.Message); }
+
+            return exit;
         }
 
         private static void CreateCommandFromAlias(TextWriter output,
