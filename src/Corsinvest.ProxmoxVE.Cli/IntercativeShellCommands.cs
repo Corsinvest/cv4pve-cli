@@ -203,7 +203,7 @@ Type 'help', 'quit' to close the application.");
             //execute command
             try { app.Execute(ParserExtensions.Parse(new Parser(), input).Tokens.Select(a => a.Value).ToArray()); }
             catch (CommandParsingException ex) { output.WriteLine(ex.Message); }
-            catch (Exception ex) { output.WriteLine(ex.Message); }
+       //     catch (Exception ex) { output.WriteLine(ex.Message); }
 
             return exit;
         }
