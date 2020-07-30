@@ -21,6 +21,7 @@ Options:
   -?|-h|--help      Show help information
   --version         Show version information
   --host            The host name host[:port],host1[:port],host2[:port]
+  --api-token       Api token format 'USER@REALM!TOKENID=UUID'. Require Proxmox VE 6.2 or later
   --username        User name <username>@<realm>
   --password        The password. Specify 'file:path_file' to store password in file.
 
@@ -78,6 +79,13 @@ this software aims to simplify the management of Proxmox VE single node or clust
 * Interactive shell
 * Support multiple host for HA in --host parameter es. host[:port],host1[:port],host2[:port]
 * Check-Update and Upgrade application
+* Use Api token --api-token parameter
+
+## Api token
+
+From version 6.2 of Proxmox VE is possible to use [Api token](https://pve.proxmox.com/pve-docs/pveum-plain.html).
+This feature permit execute Api without using user and password.
+If using **Privilege Separation** when create api token remember specify in permission.
 
 ## Configuration and use
 
@@ -115,7 +123,7 @@ Arguments:
 Options:
   -v|--verbose  Show verbose output
   -o|--output   Type output (default: unicode) Unicode, UnicodeAlt, Markdown, Text, Json, JsonPretty, Html, Png
-  --wait        Wait for task finish  
+  --wait        Wait for task finish
   -?|-h|--help  Show help information
 ```
 
