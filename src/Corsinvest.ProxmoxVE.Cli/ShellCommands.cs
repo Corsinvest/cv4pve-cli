@@ -103,19 +103,19 @@ namespace Corsinvest.ProxmoxVE.Cli
 
                 cmd.OnExecute(() =>
                 {
-                    client = client ?? parent.ClientTryLogin();
-                    classApiRoot = classApiRoot ?? GetClassApiRoot(client);
-                    var ret = ApiExplorer.Execute(client,
-                                                  classApiRoot,
-                                                  argResource.Value,
-                                                  methodType,
-                                                  ApiExplorer.CreateParameterResource(argParameters.Values),
-                                                  optWait.HasValue(),
-                                                  optOutput.GetEnumValue<ApiExplorer.OutputType>(),
-                                                  optVerbose.HasValue());
+                    client ??= parent.ClientTryLogin();
+                    classApiRoot ??= GetClassApiRoot(client);
+                    var (ResultCode, ResultText) = ApiExplorer.Execute(client,
+                                                                       classApiRoot,
+                                                                       argResource.Value,
+                                                                       methodType,
+                                                                       ApiExplorer.CreateParameterResource(argParameters.Values),
+                                                                       optWait.HasValue(),
+                                                                       optOutput.GetEnumValue<ApiExplorer.OutputType>(),
+                                                                       optVerbose.HasValue());
 
-                    parent.Out.Write(ret.ResultText);
-                    return ret.ResultCode;
+                    parent.Out.Write(ResultText);
+                    return ResultCode;
                 });
             });
         }
@@ -156,7 +156,7 @@ namespace Corsinvest.ProxmoxVE.Cli
 
                 cmd.OnExecute(() =>
                 {
-                    client = client ?? cmd.ClientTryLogin();
+                    client ??= cmd.ClientTryLogin();
                     parent.Out.Write(ApiExplorer.List(client,
                                                       classApiRoot ?? GetClassApiRoot(client),
                                                       argResource.Value));
