@@ -401,7 +401,7 @@ Type 'help', 'quit' to close the application.");
                     text.StartsWith("set /") ||
                     text.StartsWith("usage /"))
                 {
-                    var resource = text.Substring(text.IndexOf("/")).Trim();
+                    var resource = text[text.IndexOf("/")..].Trim();
                     var ret = ApiExplorer.ListValues(Client, ClassApiRoot, resource);
 
                     if (!string.IsNullOrWhiteSpace(ret.Error))
@@ -410,7 +410,7 @@ Type 'help', 'quit' to close the application.");
                         var pos = resource.LastIndexOf('/');
                         ret = ApiExplorer.ListValues(Client, ClassApiRoot, resource.Substring(0, pos));
 
-                        return ret.Values.Where(a => a.Value.StartsWith(resource.Substring(pos + 1)))
+                        return ret.Values.Where(a => a.Value.StartsWith(resource[(pos + 1)..]))
                                          .Select(a => a.Value)
                                          .ToArray();
                     }
