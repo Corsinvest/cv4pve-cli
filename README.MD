@@ -529,7 +529,7 @@ Using parameter -s for execute command from script file.
 Is possible execute with file parameter
 
 ```sh
-root@debian:~# cv4pve-diag @FileParameter.parm
+root@debian:~# cv4pve-cli @FileParameter.parm
 ```
 
 File **FileParameter.parm**
@@ -538,4 +538,5 @@ File **FileParameter.parm**
 --host=192.168.0.100
 --username=root@pam
 --password=fagiano
+get /nodes
 ```
