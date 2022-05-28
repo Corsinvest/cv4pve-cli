@@ -1,20 +1,17 @@
 ﻿/*
- * This file is part of the cv4pve-cli https://github.com/Corsinvest/cv4pve-cli,
- *
- * This source file is available under two different licenses:
- * - GNU General Public License version 3 (GPLv3)
- * - Corsinvest Enterprise License (CEL)
- * Full copyright and license information is available in
- * LICENSE.md which is distributed with this source code.
- *
- * Copyright (C) 2016 Corsinvest Srl	GPLv3 and CEL
+ * SPDX-FileCopyrightText: Copyright Corsinvest Srl
+ * SPDX-License-Identifier: GPL-3.0-only
  */
 
+using System;
+using System.CommandLine;
+using System.Threading.Tasks;
 using Corsinvest.ProxmoxVE.Api;
+using Corsinvest.ProxmoxVE.Api.Extension.Utils;
 using Corsinvest.ProxmoxVE.Api.Metadata;
-using McMaster.Extensions.CommandLineUtils;
+using Corsinvest.ProxmoxVE.Api.Shared.Utils;
 using Corsinvest.ProxmoxVE.Api.Shell.Helpers;
-using Corsinvest.ProxmoxVE.Api.Extension.Utility;
+using Microsoft.Extensions.Logging;
 
 namespace Corsinvest.ProxmoxVE.Cli
 {
@@ -23,146 +20,133 @@ namespace Corsinvest.ProxmoxVE.Cli
     /// </summary>
     public class ShellCommands
     {
+        private static ILoggerFactory _loggerFactory;
+
         /// <summary>
         /// Initialize commands
         /// </summary>
-        /// <param name="parent"></param>
-        public static void Commands(CommandLineApplication parent)
+        /// <param name="command"></param>
+        public static void CreateCommands(RootCommand command)
         {
-            ApiCommands(parent, null, null);
-            IntercativeShell(parent);
+            _loggerFactory = ConsoleHelper.CreateLoggerFactory<Program>(command.GetLogLevelFromDebug());
+
+            ApiCommands(command, null, null);
+            IntercativeShell(command);
         }
 
         /// <summary>
         /// Interactive Shell
         /// </summary>
-        /// <param name="parent"></param>
-        public static void IntercativeShell(CommandLineApplication parent)
+        /// <param name="command"></param>
+        public static void IntercativeShell(RootCommand command)
         {
-            parent.Command("sh", cmd =>
+            var cmd = command.AddCommand("sh", "Interactive shell");
+            var optFile = cmd.AddOption("--script|-s", "Script file name").AddValidatorExistFile();
+            var optOnlyResult = cmd.AddOption("--only-result|-r", "Only result");
+            cmd.SetHandler(async () =>
             {
-                cmd.Description = "Interactive shell";
-                cmd.AddFullNameLogo();
-
-                var optFile = cmd.Option("--script|-s", "Script file name", CommandOptionType.SingleValue);
-                optFile.Accepts().ExistingFile();
-
-                var optOnlyResult = cmd.Option("--only-result|-r", "Only result", CommandOptionType.NoValue);
-
-                cmd.OnExecute(() => IntercativeShellCommands.Start(parent.Out,
-                                                                   parent.ClientTryLogin(),
-                                                                   optFile.Value(),
-                                                                   optOnlyResult.HasValue()));
+                await IntercativeShellCommands.Start(await command.ClientTryLogin(_loggerFactory),
+                                                     optFile.GetValue(),
+                                                     optOnlyResult.HasValue());
             });
         }
 
-        private static ClassApi GetClassApiRoot(PveClient client)
-            => GeneretorClassApi.Generate(client.Hostname, client.Port);
+        private static async Task<ClassApi> GetClassApiRoot(PveClient client)
+            => await GeneretorClassApi.Generate(client.Host, client.Port);
 
         /// <summary>
         /// Sub commands
         /// </summary>
-        /// <param name="parent"></param>
+        /// <param name="command"></param>
         /// <param name="client"></param>
         /// <param name="classApiRoot"></param>
-        internal static void ApiCommands(CommandLineApplication parent,
-                                         PveClient client,
-                                         ClassApi classApiRoot)
+        internal static void ApiCommands(RootCommand command, PveClient client, ClassApi classApiRoot)
         {
-            Execute(parent, MethodType.Get, "Get (GET) from resource", client, classApiRoot);
-            Execute(parent, MethodType.Set, "Set (PUT) from resource", client, classApiRoot);
-            Execute(parent, MethodType.Create, "Create (POST) from resource", client, classApiRoot);
-            Execute(parent, MethodType.Delete, "Delete (DELETE) from resource", client, classApiRoot);
+            Execute(command, MethodType.Get, "Get (GET) from resource", client, classApiRoot);
+            Execute(command, MethodType.Set, "Set (PUT) from resource", client, classApiRoot);
+            Execute(command, MethodType.Create, "Create (POST) from resource", client, classApiRoot);
+            Execute(command, MethodType.Delete, "Delete (DELETE) from resource", client, classApiRoot);
 
-            Usage(parent, classApiRoot);
-            List(parent, client, classApiRoot);
+            Usage(command, classApiRoot);
+            List(command, client, classApiRoot);
         }
 
-        private static CommandArgument CreateResourceArgument(CommandLineApplication parent)
-            => parent.Argument("resource", "Resource api request", false).IsRequired();
+        private static Argument CreateResourceArgument(Command command) => command.AddArgument("resource", "Resource api request");
 
-        private static void Execute(CommandLineApplication parent,
+        private static void Execute(RootCommand command,
                                     MethodType methodType,
                                     string description,
                                     PveClient client,
                                     ClassApi classApiRoot)
         {
-            parent.Command(methodType.ToString().ToLower(), cmd =>
+            var cmd = new Command(methodType.ToString().ToLower(), description);
+            var optVerbose = cmd.VerboseOption();
+            var argResource = CreateResourceArgument(cmd);
+            var argParameters = cmd.AddArgument<string[]>("parameters", "Parameter for resource format key:value (Multiple).");
+            argParameters.SetDefaultValue(null);
+
+            var optOutput = cmd.TableOutputOption();
+            var optWait = cmd.AddOption<bool>("--wait", "Wait for task finish");
+            command.AddCommand(cmd);
+
+            cmd.SetHandler(async (string resource,
+                                  string[] parameters,
+                                  TableGenerator.Output output,
+                                  bool verbose,
+                                  bool wait) =>
             {
-                cmd.Description = description;
-                cmd.AddFullNameLogo();
+                client ??= await command.ClientTryLogin(_loggerFactory);
+                classApiRoot ??= await GetClassApiRoot(client);
+                var (ResultCode, ResultText) = await ApiExplorerHelper.Execute(client,
+                                                                               classApiRoot,
+                                                                               resource,
+                                                                               methodType,
+                                                                               ApiExplorerHelper.CreateParameterResource(parameters),
+                                                                               wait,
+                                                                               output,
+                                                                               verbose);
 
-                var optVerbose = cmd.VerboseOption();
-                var argResource = CreateResourceArgument(cmd);
-                var argParameters = cmd.Argument("parameters",
-                                                 "Parameter for resource format key:value (Multiple)." +
-                                                 " If value have space or special charapter using quote 'key:value'",
-                                                 true);
-                var optOutput = cmd.OptionEnum<ApiExplorer.OutputType>("--output|-o", "Type output (default: unicode)");
-                var optWait = cmd.WaitOption();
-
-                cmd.OnExecute(() =>
-                {
-                    client ??= parent.ClientTryLogin();
-                    classApiRoot ??= GetClassApiRoot(client);
-                    var (ResultCode, ResultText) = ApiExplorer.Execute(client,
-                                                                       classApiRoot,
-                                                                       argResource.Value,
-                                                                       methodType,
-                                                                       ApiExplorer.CreateParameterResource(argParameters.Values),
-                                                                       optWait.HasValue(),
-                                                                       optOutput.GetEnumValue<ApiExplorer.OutputType>(),
-                                                                       optVerbose.HasValue());
-
-                    parent.Out.Write(ResultText);
-                    return ResultCode;
-                });
-            });
+                Console.Out.Write(ResultText);
+            }, argResource, argParameters, optOutput, optVerbose, optWait);
         }
 
-        private static void Usage(CommandLineApplication parent, ClassApi classApiRoot)
+        private static void Usage(RootCommand command, ClassApi classApiRoot)
         {
-            parent.Command("usage", cmd =>
+            var cmd = command.AddCommand("usage", "Usage resource");
+            var argResource = CreateResourceArgument(cmd);
+            var optVerbose = cmd.VerboseOption();
+            var optCommand = cmd.AddOption<MethodType?>("--command|-c", "API command");
+            var optResturns = cmd.AddOption<bool>("--returns|-r", "Including schema for returned data.");
+            var optOutput = cmd.TableOutputOption();
+
+            cmd.SetHandler(async (string resource,
+                                  TableGenerator.Output output,
+                                  bool returns,
+                                  MethodType? methodCommand,
+                                  bool verbose) =>
             {
-                cmd.Description = "Usage resource";
-                cmd.AddFullNameLogo();
+                var ret = ApiExplorerHelper.Usage(classApiRoot ?? await GetClassApiRoot(await command.ClientTryLogin(_loggerFactory)),
+                                                  resource,
+                                                  output,
+                                                  returns,
+                                                  methodCommand?.ToString(),
+                                                  verbose);
 
-                var argResource = CreateResourceArgument(cmd);
-                var optVerbose = cmd.VerboseOption();
-                var optCommand = cmd.OptionEnum<MethodType>("--command|-c", "API command");
-                var optResturns = cmd.Option("--returns|-r", "Including schema for returned data.", CommandOptionType.NoValue);
-                var optOutput = cmd.OptionEnum<ApiExplorer.OutputType>("--output|-o", "Type output (default: unicode)");
-
-                cmd.OnExecute(() =>
-                {
-                    parent.Out.Write(ApiExplorer.Usage(classApiRoot ?? GetClassApiRoot(parent.ClientTryLogin()),
-                                                       argResource.Value,
-                                                       optOutput.GetEnumValue<ApiExplorer.OutputType>(),
-                                                       optResturns.HasValue(),
-                                                       optCommand.Value(),
-                                                       optVerbose.HasValue()));
-                });
-            });
+                Console.Out.Write(ret);
+            }, argResource, optOutput, optResturns, optCommand, optVerbose);
         }
 
-        private static void List(CommandLineApplication parent, PveClient client, ClassApi classApiRoot)
+        private static void List(RootCommand command, PveClient client, ClassApi classApiRoot)
         {
-            parent.Command("ls", cmd =>
+            var cmd = command.AddCommand("ls", "List child objects on <api_path>.");
+            var argResource = CreateResourceArgument(cmd);
+            cmd.SetHandler(async (string resource) =>
             {
-                cmd.Description = "List child objects on <api_path>.";
-                cmd.AddFullNameLogo();
-
-                var argResource = CreateResourceArgument(cmd);
-
-                cmd.OnExecute(() =>
-                {
-                    client ??= cmd.ClientTryLogin();
-                    parent.Out.Write(ApiExplorer.List(client,
-                                                      classApiRoot ?? GetClassApiRoot(client),
-                                                      argResource.Value));
-
-                });
-            });
+                client ??= await command.ClientTryLogin(_loggerFactory);
+                Console.Out.Write(await ApiExplorerHelper.List(client,
+                                                               classApiRoot ?? await GetClassApiRoot(client),
+                                                               resource));
+            }, argResource);
         }
     }
 }

@@ -80,6 +80,7 @@ this software aims to simplify the management of Proxmox VE single node or clust
 * Support multiple host for HA in --host parameter es. host[:port],host1[:port],host2[:port]
 * Check-Update and Upgrade application
 * Use Api token --api-token parameter
+* Execution with file parameter e.g. @FileParameter.parm
 
 ## Api token
 
@@ -522,3 +523,19 @@ Command: get /cluster/resources
 The alias can have multiple names using the comma.
 
 Using parameter -s for execute command from script file.
+
+## Execution with file parameter
+
+Is possible execute with file parameter
+
+```sh
+root@debian:~# cv4pve-diag @FileParameter.parm
+```
+
+File **FileParameter.parm**
+
+```txt
+--host=192.168.0.100
+--username=root@pam
+--password=fagiano
+```
