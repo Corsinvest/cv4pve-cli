@@ -31,28 +31,28 @@ namespace Corsinvest.ProxmoxVE.Cli
             _loggerFactory = ConsoleHelper.CreateLoggerFactory<Program>(command.GetLogLevelFromDebug());
 
             ApiCommands(command, null, null);
-            IntercativeShell(command);
+            InteractiveShell(command);
         }
 
         /// <summary>
         /// Interactive Shell
         /// </summary>
         /// <param name="command"></param>
-        public static void IntercativeShell(RootCommand command)
+        public static void InteractiveShell(RootCommand command)
         {
             var cmd = command.AddCommand("sh", "Interactive shell");
             var optFile = cmd.AddOption("--script|-s", "Script file name").AddValidatorExistFile();
             var optOnlyResult = cmd.AddOption("--only-result|-r", "Only result");
             cmd.SetHandler(async () =>
             {
-                await IntercativeShellCommands.Start(await command.ClientTryLogin(_loggerFactory),
+                await InteractiveShellCommands.Start(await command.ClientTryLogin(_loggerFactory),
                                                      optFile.GetValue(),
                                                      optOnlyResult.HasValue());
             });
         }
 
         private static async Task<ClassApi> GetClassApiRoot(PveClient client)
-            => await GeneretorClassApi.Generate(client.Host, client.Port);
+            => await GeneratorClassApi.Generate(client.Host, client.Port);
 
         /// <summary>
         /// Sub commands
@@ -71,7 +71,7 @@ namespace Corsinvest.ProxmoxVE.Cli
             List(command, client, classApiRoot);
         }
 
-        private static Argument CreateResourceArgument(Command command) => command.AddArgument("resource", "Resource api request");
+        private static Argument<string> CreateResourceArgument(Command command) => command.AddArgument<string>("resource", "Resource api request");
 
         private static void Execute(RootCommand command,
                                     MethodType methodType,
@@ -116,7 +116,7 @@ namespace Corsinvest.ProxmoxVE.Cli
             var argResource = CreateResourceArgument(cmd);
             var optVerbose = cmd.VerboseOption();
             var optCommand = cmd.AddOption<MethodType?>("--command|-c", "API command");
-            var optResturns = cmd.AddOption<bool>("--returns|-r", "Including schema for returned data.");
+            var optReturns = cmd.AddOption<bool>("--returns|-r", "Including schema for returned data.");
             var optOutput = cmd.TableOutputOption();
 
             cmd.SetHandler(async (string resource,
@@ -133,7 +133,7 @@ namespace Corsinvest.ProxmoxVE.Cli
                                                   verbose);
 
                 Console.Out.Write(ret);
-            }, argResource, optOutput, optResturns, optCommand, optVerbose);
+            }, argResource, optOutput, optReturns, optCommand, optVerbose);
         }
 
         private static void List(RootCommand command, PveClient client, ClassApi classApiRoot)

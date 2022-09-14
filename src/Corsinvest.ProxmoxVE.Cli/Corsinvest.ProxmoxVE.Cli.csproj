@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <Version>1.8.0</Version>
+    <Version>1.8.1</Version>
     <TargetFramework>net6.0</TargetFramework>
     <AssemblyName>cv4pve-cli</AssemblyName>
     <Company>Corsinvest Srl</Company>
@@ -19,7 +19,9 @@
 
   <ItemGroup>
     <!-- <ProjectReference Include="..\..\..\cv4pve-api-dotnet\src\Corsinvest.ProxmoxVE.Api.Shell\Corsinvest.ProxmoxVE.Api.Shell.csproj" /> -->
-     <PackageReference Include="Corsinvest.ProxmoxVE.Api.Shell" Version="7.3.4" />
+     <PackageReference Include="Corsinvest.ProxmoxVE.Api.Shell" Version="7.3.7" />
+    <!-- <ProjectReference Include="..\..\..\cv4pve-api-dotnet\src\Corsinvest.ProxmoxVE.Api.Metadata\Corsinvest.ProxmoxVE.Api.Metadata.csproj" /> -->
+    <PackageReference Include="Corsinvest.ProxmoxVE.Api.Metadata" Version="3.1.0" />
     <PackageReference Include="ReadLine" Version="2.0.1" />
   </ItemGroup>
 
