@@ -3,20 +3,12 @@
  * SPDX-License-Identifier: GPL-3.0-only
  */
 
-using System.Threading.Tasks;
 using Corsinvest.ProxmoxVE.Api.Shell.Helpers;
+using Corsinvest.ProxmoxVE.Cli;
+using Microsoft.Extensions.Logging;
 
-namespace Corsinvest.ProxmoxVE.Cli
-{
-    class Program
-    {
-        public static readonly string AppName = "cv4pve-cli";
+var app = ConsoleHelper.CreateApp(ShellCommands.AppName, "Command line for Proxmox VE");
+var loggerFactory = ConsoleHelper.CreateLoggerFactory<Program>(app.GetLogLevelFromDebug());
 
-        static async Task<int> Main(string[] args)
-        {
-            var rc = ConsoleHelper.CreateApp(AppName, "Command line for Proxmox VE");
-            ShellCommands.CreateCommands(rc);
-            return await rc.ExecuteApp(args);
-        }
-    }
-}
+ShellCommands.CreateCommands(app, loggerFactory);
+return await app.ExecuteAppAsync(args, loggerFactory.CreateLogger(typeof(Program)));

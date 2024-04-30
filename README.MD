@@ -1,45 +1,41 @@
 # cv4pve-cli
 
-[![License](https://img.shields.io/github/license/Corsinvest/cv4pve-cli.svg)](LICENSE.md) [![AppVeyor branch](https://img.shields.io/appveyor/ci/franklupo/cv4pve-cli/master.svg)](https://ci.appveyor.com/project/franklupo/cv4pve-cli)
+[![License](https://img.shields.io/github/license/Corsinvest/cv4pve-cli.svg)](LICENSE.md)
 
 ProxmoxVE Client API .Net
 
 [ProxmoxVE Api](https://pve.proxmox.com/pve-docs/api-viewer/)
 
 ```text
-    ______                _                      __
-   / ____/___  __________(_)___ _   _____  _____/ /_
-  / /   / __ \/ ___/ ___/ / __ \ | / / _ \/ ___/ __/
- / /___/ /_/ / /  (__  ) / / / / |/ /  __(__  ) /_
- \____/\____/_/  /____/_/_/ /_/|___/\___/____/\__/
+     ______                _                      __
+    / ____/___  __________(_)___ _   _____  _____/ /_
+   / /   / __ \/ ___/ ___/ / __ \ | / / _ \/ ___/ __/
+  / /___/ /_/ / /  (__  ) / / / / |/ /  __(__  ) /_
+  \____/\____/_/  /____/_/_/ /_/|___/\___/____/\__/
 
- Corsinvest for Proxmox VE Cli       (Made in Italy)
 
-Usage: cv4pve-cli [options] [command]
+  Command line for Proxmox VE                    (Made in Italy)
+
+  cv4pve-cli is a part of suite cv4pve.
+  For more information visit https://www.corsinvest.it/cv4pve
 
 Options:
-  -?|-h|--help      Show help information
-  --version         Show version information
-  --host            The host name host[:port],host1[:port],host2[:port]
-  --api-token       Api token format 'USER@REALM!TOKENID=UUID'. Require Proxmox VE 6.2 or later
-  --username        User name <username>@<realm>
-  --password        The password. Specify 'file:path_file' to store password in file.
+  --api-token <api-token>   Api token format 'USER@REALM!TOKENID=UUID'. Require Proxmox VE 6.2 or later
+  --username <username>     User name <username>@<realm>
+  --password <password>     The password. Specify 'file:path_file' to store password in file.
+  --validate-certificate    Validate SSL Certificate Proxmox VE node.
+  --host <host> (REQUIRED)  The host name host[:port],host1[:port],host2[:port]
+  --version                 Show version information
+  -?, -h, --help            Show help and usage information
 
 Commands:
-  app-check-update  Check update application
-  app-upgrade       Upgrade application
-  create            Create (POST) from resource
-  delete            Delete (DELETE) from resource
-  get               Get (GET) from resource
-  ls                List child objects on <api_path>.
-  set               Set (PUT) from resource
-  sh                Interactive shell
-  usage             Usage resource
-
-Run 'cv4pve-cli [command] --help' for more information about a command.
-
-cv4pve-cli is a part of suite cv4pve-tools.
-For more information visit https://www.cv4pve-tools.com
+  get <resource> <parameters>     Get (GET) from resource []
+  set <resource> <parameters>     Set (PUT) from resource []
+  create <resource> <parameters>  Create (POST) from resource []
+  delete <resource> <parameters>  Delete (DELETE) from resource []
+  usage <resource>                Usage resource
+  ls <resource>                   List child objects on <api_path>.
+  sh                              Interactive shell
 ```
 
 ## Copyright and License
@@ -78,9 +74,9 @@ this software aims to simplify the management of Proxmox VE single node or clust
 * Documentation generated at runtime from server
 * Interactive shell
 * Support multiple host for HA in --host parameter es. host[:port],host1[:port],host2[:port]
-* Check-Update and Upgrade application
 * Use Api token --api-token parameter
 * Execution with file parameter e.g. @FileParameter.parm
+* Validate certificate SSL, default not validate
 
 ## Api token
 

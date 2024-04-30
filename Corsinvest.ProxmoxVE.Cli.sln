@@ -1,9 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.29123.88
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.002.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Corsinvest.ProxmoxVE.Cli", "src\Corsinvest.ProxmoxVE.Cli\Corsinvest.ProxmoxVE.Cli.csproj", "{EEE1D115-77C5-4B97-80B4-84DF112FD11F}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{DB017AA2-F124-4112-A872-50AFBA3104F5}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Corsinvest.ProxmoxVE.Cli", "src\Corsinvest.ProxmoxVE.Cli\Corsinvest.ProxmoxVE.Cli.csproj", "{73F2945A-F76D-4347-8B72-DE3F198C7091}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -11,15 +13,18 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{EEE1D115-77C5-4B97-80B4-84DF112FD11F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{EEE1D115-77C5-4B97-80B4-84DF112FD11F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{EEE1D115-77C5-4B97-80B4-84DF112FD11F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{EEE1D115-77C5-4B97-80B4-84DF112FD11F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{73F2945A-F76D-4347-8B72-DE3F198C7091}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{73F2945A-F76D-4347-8B72-DE3F198C7091}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{73F2945A-F76D-4347-8B72-DE3F198C7091}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{73F2945A-F76D-4347-8B72-DE3F198C7091}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{73F2945A-F76D-4347-8B72-DE3F198C7091} = {DB017AA2-F124-4112-A872-50AFBA3104F5}
+	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {FCBA79B1-94B0-4398-9CC0-EEE6F09C62D6}
+		SolutionGuid = {743372CE-207B-4196-9150-5CF005DB0D8A}
 	EndGlobalSection
 EndGlobal
