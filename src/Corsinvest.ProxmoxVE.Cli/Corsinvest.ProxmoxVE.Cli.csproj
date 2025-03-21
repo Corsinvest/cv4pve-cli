@@ -1,11 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <Version>1.8.2</Version>
-    <TargetFramework>net8.0</TargetFramework>
+    <Version>1.9.0</Version>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
     <AssemblyName>cv4pve-cli</AssemblyName>
     <Company>Corsinvest Srl</Company>
-    <Authors>Daniele Corsini</Authors>
+    <Authors>Corsinvest Srl</Authors>
     <Copyright>Corsinvest Srl</Copyright>
     <Product>Corsinvest for Proxmox VE Cli</Product>
     <AssemblyTitle>Corsinvest for Proxmox VE Cli</AssemblyTitle>
@@ -24,8 +26,8 @@
     <!-- <ProjectReference
     Include="..\..\..\cv4pve-api-dotnet\src\Corsinvest.ProxmoxVE.Api.Metadata\Corsinvest.ProxmoxVE.Api.Metadata.csproj"
     /> -->
-    <PackageReference Include="Corsinvest.ProxmoxVE.Api.Metadata" Version="8.2.0" />
-    <PackageReference Include="Corsinvest.ProxmoxVE.Api.Shell" Version="8.2.0" />
+    <PackageReference Include="Corsinvest.ProxmoxVE.Api.Metadata" Version="8.3.3" />
+    <PackageReference Include="Corsinvest.ProxmoxVE.Api.Shell" Version="8.3.3" />
     <PackageReference Include="ReadLine" Version="2.0.1" />
   </ItemGroup>
 </Project>
