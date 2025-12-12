@@ -1,0 +1,14 @@
+name: Publish
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  call-publish:
+    uses: Corsinvest/.github/.github/workflows/cv4pve-cli-publish.yml@main
+    with:
+      project-name: cv4pve-cli
+      project-path: src/Corsinvest.ProxmoxVE.Cli/Corsinvest.ProxmoxVE.Cli.csproj
+      winget-id: Corsinvest.cv4pve.cli
