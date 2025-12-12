@@ -2,20 +2,16 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": ".NET Core Launch (console)",
+            "name": "Debug cv4pve-cli",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
-            "program": "${workspaceFolder}/src/Corsinvest.ProxmoxVE.Cli/bin/Debug/net9.0/cv4pve-cli.dll",
-            "args": [],
+            "program": "${workspaceFolder}/src/Corsinvest.ProxmoxVE.Cli/bin/Debug/net10.0/cv4pve-cli.exe",
+            "args": ["@Parm.parm"],
             "cwd": "${workspaceFolder}/src/Corsinvest.ProxmoxVE.Cli",
-            "console": "internalConsole",
-            "stopAtEntry": false
-        },
-        {
-            "name": ".NET Core Attach",
-            "type": "coreclr",
-            "request": "attach"
+            "console": "externalTerminal",
+            "stopAtEntry": false,
+            "internalConsoleOptions": "openOnSessionStart"
         }
     ]
 }

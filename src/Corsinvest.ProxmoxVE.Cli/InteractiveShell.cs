@@ -4,21 +4,20 @@
  */
 
 using System.CommandLine;
-using System.CommandLine.Parsing;
 using System.Diagnostics;
 using System.Text;
 using Corsinvest.ProxmoxVE.Api;
+using Corsinvest.ProxmoxVE.Api.Console.Helpers;
 using Corsinvest.ProxmoxVE.Api.Extension.Utils;
 using Corsinvest.ProxmoxVE.Api.Metadata;
 using Corsinvest.ProxmoxVE.Api.Shared.Utils;
-using Corsinvest.ProxmoxVE.Api.Shell.Helpers;
 
 namespace Corsinvest.ProxmoxVE.Cli;
 
 /// <summary>
 /// Interactive Shell
 /// </summary>
-internal class InteractiveShellCommands
+internal class InteractiveShell
 {
     private const string Castle = @"
                                   .-.
@@ -54,7 +53,7 @@ IIIIIII[_]IIIII[_]IIIIIL___J__II__|_|__II__L___JIIIII[_]IIIII[_]IIIIIIII[_]
     {
         if (!onlyResult)
         {
-            Console.Out.WriteLine($@"Corsinvest Interactive Shell for Proxmox VE ({DateTime.Now.ToLongDateString()})
+            Console.Out.WriteLine($@"Corsinvest CLI for Proxmox VE ({DateTime.Now.ToLongDateString()})
 Type '<TAB>' for completion word
 Type 'help', 'quit' to close the application.");
         }
@@ -149,14 +148,12 @@ Type 'help', 'quit' to close the application.");
         //comment
         if (input.StartsWith('#')) { return false; }
 
-        var rc = new RootCommand();
+        var rc = new RootCommand("Corsinvest CLI for Proxmox VE");
         var exit = false;
 
-        rc.Name = ShellCommands.AppName;
-        rc.Description = "Corsinvest Interactive Shell API for Proxmox VE";
         rc.AddFullNameLogo();
-        rc.DebugOption();
-        rc.DryRunOption();
+        rc.AddDebugOption();
+        rc.AddDryRunOption();
 
         ShellCommands.ApiCommands(rc, client, classApiRoot);
 
@@ -164,18 +161,18 @@ Type 'help', 'quit' to close the application.");
         CreateCommandFromAlias(rc, client, classApiRoot, aliasManager, onlyResult);
 
         #region Commands base
-        rc.AddCommand("quit|exit", "Close application").SetHandler(() => exit = true);
-        rc.AddCommand("clear|cls", "Clear screen").SetHandler(() => Console.Clear());
+        rc.AddCommand("quit|exit", "Close application").SetAction((_) => exit = true);
+        rc.AddCommand("clear|cls", "Clear screen").SetAction((_) => Console.Clear());
         var castle = rc.AddCommand("castle", "");
-        castle.SetHandler(() => Console.Out.WriteLine(Castle));
-        castle.IsHidden = true;
+        castle.SetAction((_) => Console.Out.WriteLine(Castle));
+        castle.Hidden = true;
 
         CmdAlias(rc, aliasManager);
         CmdHistory(rc, onlyResult);
         #endregion
 
         //execute command
-        try { rc.Invoke(input); }
+        try { rc.Parse(input).Invoke(); }
         catch (Exception ex) { Console.WriteLine(ex.Message); }
 
         return exit;
@@ -190,13 +187,13 @@ Type 'help', 'quit' to close the application.");
         foreach (var item in aliasManager.Alias)
         {
             var cmd = command.AddCommand(string.Join("|", item.Names), item.Description);
-            cmd.IsHidden = true;
+            cmd.Hidden = true;
             //cmd.ExtendedHelpText = Environment.NewLine + "Alias command: " + item.Command;
 
             //create argument
             foreach (var arg in ApiExplorerHelper.GetArgumentTags(item.Command)) { cmd.AddArgument(arg, arg); }
 
-            cmd.SetHandler((ctx) =>
+            cmd.SetAction((action) =>
             {
                 var title = new StringBuilder(item.Description);
                 var command = item.Command;
@@ -204,7 +201,7 @@ Type 'help', 'quit' to close the application.");
                 //replace value into argument
                 foreach (var arg in cmd.Arguments)
                 {
-                    var argValue = ctx.ParseResult.GetValueForArgument(arg) + "";
+                    var argValue = action.GetValue((Argument<string>)arg);
                     title.Append($" {arg.Name}: {argValue}");
                     command = command.Replace(ApiExplorerHelper.CreateArgumentTag(arg.Name), argValue);
                 }
@@ -224,8 +221,9 @@ Type 'help', 'quit' to close the application.");
     {
         var cmd = command.AddCommand("history|h", "Show history command");
         var optEnabled = cmd.AddOption<bool>("--enabled|-e", "Enabled/Disable history");
-        cmd.SetHandler((enabled) =>
+        cmd.SetAction((action) =>
         {
+            var enabled = action.GetValue(optEnabled);
             if (enabled)
             {
                 ReadLine.HistoryEnabled = enabled;
@@ -251,7 +249,7 @@ Type 'help', 'quit' to close the application.");
                     lineNum++;
                 }
             }
-        }, optEnabled);
+        });
     }
 
     private static void CmdAlias(RootCommand command, ApiExplorerHelper.AliasManager aliasManager)
@@ -261,7 +259,7 @@ Type 'help', 'quit' to close the application.");
         var optRemove = cmd.AddOption<bool>("--remove|-r", "Delete");
         var optVerbose = cmd.VerboseOption();
 
-        cmd.SetHandler((create, remove, verbose) =>
+        cmd.SetAction((action) =>
         {
             string GetName(string title, bool create)
             {
@@ -292,7 +290,7 @@ Type 'help', 'quit' to close the application.");
                 return name;
             }
 
-            if (create)
+            if (action.GetValue(optCreate))
             {
                 //create
                 var name = GetName("Create alias (using comma to more name)", true);
@@ -310,7 +308,7 @@ Type 'help', 'quit' to close the application.");
 
                 Console.Out.WriteLine($"Alias '{name}' created!");
             }
-            else if (remove)
+            else if (action.GetValue(optRemove))
             {
                 //remove
                 var name = GetName("Remove alias", false);
@@ -320,16 +318,16 @@ Type 'help', 'quit' to close the application.");
             }
             else
             {
-                Console.Out.Write(aliasManager.ToTable(optVerbose.HasValue(), TableGenerator.Output.Text));
+                Console.Out.Write(aliasManager.ToTable(action.GetValue(optVerbose), TableGenerator.Output.Text));
             }
-        }, optCreate, optRemove, optVerbose);
+        });
     }
 
     class AutoCompletionHandler : IAutoCompleteHandler
     {
-        public PveClient Client { get; set; }
-        public ClassApi ClassApiRoot { get; set; }
-        public char[] Separators { get; set; } = new[] { '/' };
+        public PveClient Client { get; set; } = default!;
+        public ClassApi ClassApiRoot { get; set; } = default!;
+        public char[] Separators { get; set; } = ['/'];
 
         public string[] GetSuggestions(string text, int index)
         {

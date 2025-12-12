@@ -1,390 +1,229 @@
 # cv4pve-cli
 
-[![License](https://img.shields.io/github/license/Corsinvest/cv4pve-cli.svg)](LICENSE.md)
+```
+   ______                _                      __
+  / ____/___  __________(_)___ _   _____  _____/ /_
+ / /   / __ \/ ___/ ___/ / __ \ | / / _ \/ ___/ __/
+/ /___/ /_/ / /  (__  ) / / / / |/ /  __(__  ) /_
+\____/\____/_/  /____/_/_/ /_/|___/\___/____/\__/
 
-ProxmoxVE Client API .Net
+Command Line Interface for Proxmox VE (Made in Italy)
+```
 
-[ProxmoxVE Api](https://pve.proxmox.com/pve-docs/api-viewer/)
+[![License](https://img.shields.io/github/license/Corsinvest/cv4pve-cli.svg?style=flat-square)](LICENSE.md)
+[![Release](https://img.shields.io/github/release/Corsinvest/cv4pve-cli.svg?style=flat-square)](https://github.com/Corsinvest/cv4pve-cli/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/Corsinvest/cv4pve-cli/total.svg?style=flat-square&logo=download)](https://github.com/Corsinvest/cv4pve-cli/releases)
 
+
+---
+
+## Quick Start
+
+```bash
+# Check available releases at: https://github.com/Corsinvest/cv4pve-cli/releases
+# Download specific version (replace VERSION with actual version number)
+wget https://github.com/Corsinvest/cv4pve-cli/releases/download/VERSION/cv4pve-cli-linux-x64.zip
+unzip cv4pve-cli-linux-x64.zip
+
+# Make executable
+chmod +x cv4pve-cli
+
+# Run interactive shell
+./cv4pve-cli --host=YOUR_HOST --username=root@pam --password=YOUR_PASSWORD sh
+
+# Execute API command
+./cv4pve-cli --host=YOUR_HOST --username=root@pam --password=YOUR_PASSWORD get /nodes
+```
+
+---
+
+## Table of Contents
+
+<details>
+<summary><strong>Click to expand navigation</strong></summary>
+
+- [Features](#-features)
+- [Installation](#-installation)
+- [Configuration](#-configuration)
+- [Usage Examples](#-usage-examples)
+- [Command Reference](#-command-reference)
+
+</details>
+
+---
+
+## Features
+
+### Core Capabilities
+
+#### **Performance & Reliability**
+- **Native C#** implementation
+- **Cross-platform** (Windows, Linux, macOS)
+- **API-based** operation (no root access required)
+- **Cluster support** with automatic failover
+- **High availability** with multiple host support
+
+#### **Flexible API Access**
+- **Full REST API** coverage (GET/POST/PUT/DELETE)
+- **API documentation** generated at runtime
+- **Usage command** with complete documentation
+- **Multiple output** formats (text, json, table)
+- **ls command** like filesystem navigation
+
+#### **Advanced Features**
+- **Interactive shell** mode for exploration
+- **Script file** execution support
+- **API token** support (Proxmox VE 6.2+)
+- **SSL validation** options
+- **Parameter files** for complex setups
+- **Alias commands** for frequent operations
+
+#### **Enterprise Features**
+- **Multiple host** support for HA
+- **Timeout management** for operations
+- **Error resilience** and detailed logging
+- **Comprehensive** command documentation
+- **Automated scripting** capabilities
+
+---
+
+## Installation
+
+<div align="center">
+  <img src="https://img.shields.io/badge/INSTALLATION-GUIDE-green?style=for-the-badge&logo=download" alt="Installation Guide">
+</div>
+
+### Linux Installation
+
+```bash
+# Check available releases and get the specific version number
+# Visit: https://github.com/Corsinvest/cv4pve-cli/releases
+
+# Download specific version (replace VERSION with actual version like v1.9.0)
+wget https://github.com/Corsinvest/cv4pve-cli/releases/download/VERSION/cv4pve-cli-linux-x64.zip
+
+# Alternative: Get latest release URL programmatically
+LATEST_URL=$(curl -s https://api.github.com/repos/Corsinvest/cv4pve-cli/releases/latest | grep browser_download_url | grep linux-x64 | cut -d '"' -f 4)
+wget "$LATEST_URL"
+
+# Extract and make executable
+unzip cv4pve-cli-linux-x64.zip
+chmod +x cv4pve-cli
+
+# Optional: Move to system path
+sudo mv cv4pve-cli /usr/local/bin/
+```
+
+### Windows Installation
+
+```powershell
+# Check available releases at: https://github.com/Corsinvest/cv4pve-cli/releases
+# Download specific version (replace VERSION with actual version)
+Invoke-WebRequest -Uri "https://github.com/Corsinvest/cv4pve-cli/releases/download/VERSION/cv4pve-cli.exe-win-x64.zip" -OutFile "cv4pve-cli.zip"
+
+# Extract
+Expand-Archive cv4pve-cli.zip -DestinationPath "C:\Tools\cv4pve-cli"
+
+# Add to PATH (optional)
+$env:PATH += ";C:\Tools\cv4pve-cli"
+```
+
+### macOS Installation
+
+```bash
+# Check available releases at: https://github.com/Corsinvest/cv4pve-cli/releases
+# Download specific version (replace VERSION with actual version)
+wget https://github.com/Corsinvest/cv4pve-cli/releases/download/VERSION/cv4pve-cli-osx-x64.zip
+unzip cv4pve-cli-osx-x64.zip
+chmod +x cv4pve-cli
+
+# Move to applications
+sudo mv cv4pve-cli /usr/local/bin/
+```
+
+---
+
+## Configuration
+
+<div align="center">
+  <img src="https://img.shields.io/badge/CONFIGURATION-SETUP-blue?style=for-the-badge&logo=settings" alt="Configuration Setup">
+</div>
+
+### Authentication Methods
+
+<table>
+<tr>
+<td width="50%">
+
+#### **Username/Password**
+```bash
+cv4pve-cli --host=192.168.1.100 --username=root@pam --password=your_password [commands]
+```
+
+#### **API Token (Recommended)**
+```bash
+cv4pve-cli --host=192.168.1.100 --api-token=root@pam!token1=uuid-here [commands]
+```
+
+</td>
+<td width="50%">
+
+#### **Password from File**
+```bash
+# Store password in file
+echo "your_password" > /etc/cv4pve/password
+chmod 600 /etc/cv4pve/password
+
+# Use password file
+cv4pve-cli --host=192.168.1.100 --username=root@pam --password=file:/etc/cv4pve/password [commands]
+```
+
+</td>
+</tr>
+</table>
+
+### Connection Options
+
+| Parameter | Description | Example |
+|-----------|-------------|---------|
+| `--host` | Proxmox host(s) (multiple for HA) | `--host=pve1:8006,pve2:8006` |
+| `--username` | Username@realm | `--username=root@pam` |
+| `--password` | Password or file | `--password=secret` or `--password=file:/path` |
+| `--api-token` | API token | `--api-token=user@realm!token=uuid` |
+| `--validate-certificate` | Validate SSL certificate | `--validate-certificate` |
+
+---
+
+## Usage Examples
+
+<div align="center">
+  <img src="https://img.shields.io/badge/USAGE-EXAMPLES-orange?style=for-the-badge&logo=terminal" alt="Usage Examples">
+</div>
+
+### Interactive Shell
+
+<details>
+<summary><strong>Interactive Mode</strong></summary>
+
+#### Start Interactive Shell
+```bash
+cv4pve-cli --host=192.168.0.100 --username=root@pam --password=secret sh
+```
+
+**Output:**
 ```text
-     ______                _                      __
-    / ____/___  __________(_)___ _   _____  _____/ /_
-   / /   / __ \/ ___/ ___/ / __ \ | / / _ \/ ___/ __/
-  / /___/ /_/ / /  (__  ) / / / / |/ /  __(__  ) /_
-  \____/\____/_/  /____/_/_/ /_/|___/\___/____/\__/
-
-
-  Command line for Proxmox VE                    (Made in Italy)
-
-  cv4pve-cli is a part of suite cv4pve.
-  For more information visit https://www.corsinvest.it/cv4pve
-
-Options:
-  --api-token <api-token>   Api token format 'USER@REALM!TOKENID=UUID'. Require Proxmox VE 6.2 or later
-  --username <username>     User name <username>@<realm>
-  --password <password>     The password. Specify 'file:path_file' to store password in file.
-  --validate-certificate    Validate SSL Certificate Proxmox VE node.
-  --host <host> (REQUIRED)  The host name host[:port],host1[:port],host2[:port]
-  --version                 Show version information
-  -?, -h, --help            Show help and usage information
-
-Commands:
-  get <resource> <parameters>     Get (GET) from resource []
-  set <resource> <parameters>     Set (PUT) from resource []
-  create <resource> <parameters>  Create (POST) from resource []
-  delete <resource> <parameters>  Delete (DELETE) from resource []
-  usage <resource>                Usage resource
-  ls <resource>                   List child objects on <api_path>.
-  sh                              Interactive shell
-```
-
-## Copyright and License
-
-Copyright: Corsinvest Srl
-For licensing details please visit [LICENSE.md](LICENSE.md)
-
-## Commercial Support
-
-This software is part of a suite of tools called cv4pve-tools. If you want commercial support, visit the [site](https://www.cv4pve-tools.com)
-
-## Introduction
-
-Command line for Proxmox VE.
-
-this software aims to simplify the management of Proxmox VE single node or cluster using command line. The reasons are:
-
-* do not use graphical interface (GUI)
-* access to simplified operations
-* ability to automate processes through APIs
-
-## Main features
-
-* Completely written in C#
-* Use native api REST Proxmox VE (library C#)
-* Independent os (Windows, Linux, Macosx)
-* Installation unzip file extract binary
-* Not require installation in Proxmox VE
-* Execute out side Proxmox VE
-* API
-  * get/set/create/delete command
-  * usage command with complete documentation
-  * ls like directory filesystem
-  * multiple format return text,json,json pretty,png
-* Alias command
-* Documentation generated at runtime from server
-* Interactive shell
-* Support multiple host for HA in --host parameter es. host[:port],host1[:port],host2[:port]
-* Use Api token --api-token parameter
-* Execution with file parameter e.g. @FileParameter.parm
-* Validate certificate SSL, default not validate
-
-## Api token
-
-From version 6.2 of Proxmox VE is possible to use [Api token](https://pve.proxmox.com/pve-docs/pveum-plain.html).
-This feature permit execute Api without using user and password.
-If using **Privilege Separation** when create api token remember specify in permission.
-
-## Configuration and use
-
-E.g. install on linux 64
-
-Download last package e.g. Debian cv4pve-cli-linux-x64.zip, on your os and install:
-
-```sh
-root@debian:~# unzip cv4pve-cli-linux-x64.zip
-```
-
-This tool need basically no configuration.
-
-## API
-
-APIs are used to manage data directly.
-
-```text
-Commands:
-  create        Create (POST) from resource
-  delete        Delete (DELETE) from resource
-  get           Get (GET) from resource
-  ls            List child objects on <api_path>.
-  set           Set (PUT) from resource
-  usage         Usage resource
-```
-
-For any commands
-
-```text
-Arguments:
-  resource      Resource api request
-  parameters    Parameter for resource format key:value (Multiple)
-
-Options:
-  -v|--verbose  Show verbose output
-  -o|--output   Type output (default: unicode) Unicode, UnicodeAlt, Markdown, Text, Json, JsonPretty, Html, Png
-  --wait        Wait for task finish
-  -?|-h|--help  Show help information
-```
-
-### Get / Set / Create / Delete
-
-Retry version node
-
-```sh
-root@debian:~# cv4pve-cli --host=192.168.0.100 --username=root@pam --password=fagiano get /version
-```
-
-```text
-┌─────────┬──────────┐
-│ key     │ value    │
-├─────────┼──────────┤
-│ release │ 13       │
-├─────────┼──────────┤
-│ repoid  │ aee6f0ec │
-├─────────┼──────────┤
-│ version │ 5.4      │
-└─────────┴──────────┘
-```
-
-Retry version json
-
-```sh
-root@debian:~# cv4pve-cli --host=192.168.0.100 --username=root@pam --password=fagiano get--output Json
-```
-
-```text
-{"repoid":"aee6f0ec","release":"13","version":"5.4","keyboard":"it"}
-```
-
-Retry version json pretty
-
-```sh
-root@debian:~# cv4pve-cli --host=192.168.0.100 --username=root@pam --password=fagiano get --output JsonPretty
-```
-
-```text
-{
-  "repoid": "aee6f0ec",
-  "release": "13",
-  "version": "5.4",
-  "keyboard": "it"
-}
-```
-
-Get status nodes
-
-```sh
-root@debian:~# cv4pve-cli --host=192.168.0.100 --username=root@pam --password=fagiano get /nodes
-```
-
-```text
-┌──────┬────────┬───────┬───────┬────────┬───────────┬───────────┬─────────────────────────────────────────────────────────────────────────────────────────────────┬─────────────────┐
-│ node │ status │ cpu   │ level │ maxcpu │ maxmem    │ mem       │ ssl_fingerprint                                                                                 │ uptime          │
-├──────┼────────┼───────┼───────┼────────┼───────────┼───────────┼─────────────────────────────────────────────────────────────────────────────────────────────────┼─────────────────┤
-│ pve1 │ online │ 4,58% │ c     │ 8      │ 31,39 GiB │ 17,03 GiB │ 81:94:9C:7A:20:38:44:E3:5A:6C:96:E4:44:F2:FC:2E:61:14:CF:E1:13:61:D3:29:DB:18:DF:83:20:76:B9:04 │ 12d 19h 12m 55s │
-├──────┼────────┼───────┼───────┼────────┼───────────┼───────────┼─────────────────────────────────────────────────────────────────────────────────────────────────┼─────────────────┤
-│ pve2 │ online │ 4,92% │ c     │ 8      │ 31,39 GiB │ 16,77 GiB │ 70:41:5B:47:21:F4:5C:4D:4F:FD:D8:53:3E:AD:73:44:5E:F6:A2:75:F1:42:94:07:81:94:E2:D8:1C:0D:FF:0E │ 13d 23h 34m 25s │
-├──────┼────────┼───────┼───────┼────────┼───────────┼───────────┼─────────────────────────────────────────────────────────────────────────────────────────────────┼─────────────────┤
-│ pve3 │ online │ 0,88% │       │ 4      │ 11,72 GiB │ 7,46 GiB  │ 4A:9B:2D:2B:3B:05:D1:9B:03:36:1F:71:44:40:CE:19:55:AE:36:69:35:F9:BB:26:8E:9F:01:F9:A9:D4:00:D7 │ 19d 3h 33m 08s  │
-└──────┴────────┴───────┴───────┴────────┴───────────┴───────────┴─────────────────────────────────────────────────────────────────────────────────────────────────┴─────────────────┘
-```
-
-For request parameter specify in format key:value
-
-Get resource in cluster only node
-
-```sh
-root@debian:~# cv4pve-cli --host=192.168.0.100 --username=root@pam --password=fagiano get /cluster/resources type:node
-```
-
-```text
-┌───────────┬──────┬───────┬───────────┬─────────┬───────┬────────┬────────────┬───────────┬───────────┬──────┬──────┬────────┬─────────┬─────────────────┐
-│ id        │ type │ cpu   │ disk      │ hastate │ level │ maxcpu │ maxdisk    │ maxmem    │ mem       │ node │ pool │ status │ storage │ uptime          │
-├───────────┼──────┼───────┼───────────┼─────────┼───────┼────────┼────────────┼───────────┼───────────┼──────┼──────┼────────┼─────────┼─────────────────┤
-│ node/pve1 │ node │ 6,47% │ 14,65 GiB │         │ c     │ 8      │ 27,19 GiB  │ 31,39 GiB │ 17,38 GiB │ pve1 │      │ online │         │ 12d 19h 22m 45s │
-├───────────┼──────┼───────┼───────────┼─────────┼───────┼────────┼────────────┼───────────┼───────────┼──────┼──────┼────────┼─────────┼─────────────────┤
-│ node/pve2 │ node │ 4,38% │ 12,45 GiB │         │ c     │ 8      │ 27,19 GiB  │ 31,39 GiB │ 16,75 GiB │ pve2 │      │ online │         │ 13d 23h 44m 05s │
-├───────────┼──────┼───────┼───────────┼─────────┼───────┼────────┼────────────┼───────────┼───────────┼──────┼──────┼────────┼─────────┼─────────────────┤
-│ node/pve3 │ node │ 0,93% │ 10,08 GiB │         │       │ 4      │ 397,55 GiB │ 11,72 GiB │ 7,46 GiB  │ pve3 │      │ online │         │ 19d 3h 42m 48s  │
-└───────────┴──────┴───────┴───────────┴─────────┴───────┴────────┴────────────┴───────────┴───────────┴──────┴──────┴────────┴─────────┴─────────────────┘
-
-```
-
-For know documentation of command use usage
-
-### Usage
-
-Usage create documentation at runtime from API.
-
-```text
-Arguments:
-  resource      Resource api request
-
-Options:
-  -v|--verbose  Show verbose output
-  -c|--command  API command Get,Set,Create,Delete
-  -r|--returns  Including schema for returned data.
-  -?|-h|--help  Show help information
-```
-
-Get usage command
-
-```sh
-root@debian:~# cv4pve-cli --host=192.168.0.100 --username=root@pam --password=fagiano usage /cluster/resources
-```
-
-```text
-USAGE: get /cluster/resources [OPTIONS]
-```
-
-If you want know options use -v|--verbose
-
-```sh
-root@debian:~# cv4pve-cli --host=192.168.0.100 --username=root@pam --password=fagiano usage /cluster/resources -v
-```
-
-```text
-USAGE: get /cluster/resources [OPTIONS]
-
-  Resources index (cluster wide).
-┌───────┬─────────────────┬─────────────┐
-│ param │ type            │ description │
-├───────┼─────────────────┼─────────────┤
-│ type  │ vm,storage,node │             │
-└───────┴─────────────────┴─────────────┘
-```
-
-If you want know return use -r|--returns
-
-```sh
-root@debian:~# cv4pve-cli --host=192.168.0.100 --username=root@pam --password=fagiano usage /cluster/resources -v -r
-```
-
-```text
-USAGE: get /cluster/resources [OPTIONS]
-
-  Resources index (cluster wide).
-┌───────┬─────────────────┬─────────────┐
-│ param │ type            │ description │
-├───────┼─────────────────┼─────────────┤
-│ type  │ vm,storage,node │             │
-└───────┴─────────────────┴─────────────┘
-RETURNS:
-┌─────────┬────────────────────────┬─────────────────────────────────────────────────────────────┐
-│ param   │ type                   │ description                                                 │
-├─────────┼────────────────────────┼─────────────────────────────────────────────────────────────┤
-│ cpu     │ number                 │ CPU utilization (when type in node,qemu,lxc).               │
-│ disk    │ string                 │ Used disk space in bytes (when type in storage),            │
-│         │                        │ used root image spave for VMs (type in qemu,lxc).           │
-│ hastate │ string                 │ HA service status (for HA managed VMs).                     │
-│ id      │ string                 │                                                             │
-│ level   │ string                 │ Support level (when type == node).                          │
-│ maxcpu  │ number                 │ Number of available CPUs (when type in node,qemu,lxc).      │
-│ maxdisk │ integer                │ Storage size in bytes (when type in storage),               │
-│         │                        │ root image size for VMs (type in qemu,lxc).                 │
-│ maxmem  │ integer                │ Number of available memory in bytes (when type              │
-│         │                        │ in node,qemu,lxc).                                          │
-│ mem     │ string                 │ Used memory in bytes (when type in node,qemu,lxc).          │
-│ node    │ string                 │ The cluster node name (when type in node,storage,qemu,lxc). │
-│ pool    │ string                 │ The pool name (when type in pool,qemu,lxc).                 │
-│ status  │ string                 │ Resource type dependent status.                             │
-│ storage │ string                 │ The storage identifier (when type == storage).              │
-│ type    │ node,storage,pool,qemu │ Resource type.                                              │
-│         │ lxc,openvz             │                                                             │
-│ uptime  │ integer                │ Node uptime in seconds (when type in node,qemu,lxc).        │
-└─────────┴────────────────────────┴─────────────────────────────────────────────────────────────┘
-```
-
-If "usage" shows more commands you can specify a single command to display using -c | --command
-
-```sh
-root@debian:~# cv4pve-cli --host=192.168.0.100 --username=root@pam --password=fagiano usage /nodes/pve1/status
-```
-
-```text
-USAGE: get /nodes/pve1/status
-USAGE: create /nodes/pve1/status command:<string>
-```
-
-```sh
-root@debian:~# cv4pve-cli --host=192.168.0.100 --username=root@pam --password=fagiano usage /nodes/pve1/status -c create
-```
-
-```text
-USAGE: create /nodes/pve1/status command:<string>
-```
-
-### Ls
-
-Ls command list filesystem modal.
-
-List root
-
-```sh
-root@debian:~# cv4pve-cli --host=192.168.0.100 --username=root@pam --password=fagiano ls /
-```
-
-```text
-Dr---        access
-Dr---        cluster
-Dr---        nodes
-Dr--c        pools
-Dr--c        storage
--r---        version
-```
-
-List nodes
-
-```sh
-root@debian:~# cv4pve-cli --host=192.168.0.100 --username=root@pam --password=fagiano ls /nodes
-```
-
-```text
-Dr---        pve1
-Dr---        pve2
-Dr---        pve3
-```
-
-List **Qemu** on **pve1** node
-
-```sh
-root@debian:~# cv4pve-cli --host=192.168.0.100 --username=root@pam --password=fagiano ls /nodes/pve1/qemu
-```
-
-```text
-Dr---        100
-Dr---        101
-Dr---        102
-Dr---        118
-Dr---        134
-Dr---        135
-Dr---        205
-```
-
-## Sh
-
-The interactive shell allows executing API commands in continuous mode, and with completion of the commands.
-
-```text
-Options:
-  -s|--script       Script file name
-  -r|--only-result  Only result
-  -?|-h|--help      Show help information
-```
-
-```sh
-root@debian:~# cv4pve-cli --host=192.168.0.100 --username=root@pam --password=fagiano sh
-```
-
-```text
-Corsinvest Interactive Shell for Proxmox VE (martedì 27 agosto 2019)
+Corsinvest CLI for Proxmox VE (Tuesday, December 11, 2025)
 Type '<TAB>' for completion word
 Type 'help', 'quit' to close the application.
 Initialization metadata... 111ms
+
 >>>
 ```
 
-Help command:
+#### Help Command
+```text
+>>> help
 
-```txt
 Commands:
   alias         Alias commands
   clear         Clear screen
@@ -399,140 +238,420 @@ Commands:
   usage         Usage resource
 ```
 
-For specific help command using -h|--help.
-
-```txt
->>> usage -h
-
-Corsinvest Interactive Shell API for Proxmox VE
-
-Usage resource
-
-Usage:  usage [options] <resource>
-
-Arguments:
-  resource      Resource api request
-
-Options:
-  -v|--verbose  Show verbose output
-  -c|--command  API command Get,Set,Create,Delete
-  -r|--returns  Including schema for returned data.
-  -?|-h|--help  Show help information
-  ```
-
-### Alias
-
-Alias command il like alias shell.
-
-```txt
-Options:
-  -c|--create   Create new
-  -r|--remove   Delete
-  -v|--verbose  Show verbose output
-  -?|-h|--help  Show help information
+#### Interactive Commands
+```bash
+# Inside shell, explore the API
+>>> get /nodes
+>>> get /nodes/pve1/qemu
+>>> get /cluster/resources type:vm
+>>> ls /nodes/pve1
+>>> usage /cluster/resources
+>>> quit
 ```
 
-```txt
->>> alias
-┌──────────────────────────────┬───────────────────────────────────────────────────────┬─────┐
-│ name                         │ description                                           │ sys │
-├──────────────────────────────┼───────────────────────────────────────────────────────┼─────┤
-│ cluster-backup,cbck          │ Cluster list vzdump backup schedule                   │ X   │
-│ cluster-backup-info,cbckinf  │ Cluster info backup schedule                          │ X   │
-│ cluster-replication,crep     │ Cluster replication                                   │ X   │
-│ cluster-status,csts          │ Cluster status                                        │ X   │
-│ cluster-top,ct,top           │ Cluster top                                           │ X   │
-│ cluster-top-node,ctn,topn    │ Cluster top for node                                  │ X   │
-│ cluster-top-storage,cts,tops │ Cluster top for storage                               │ X   │
-│ cluster-top-vm,ctv,topv      │ Cluster top for VM/CT                                 │ X   │
-│ lcx-config,lcfg              │ LXC config vm                                         │ X   │
-│ lcx-list,llst                │ LXC list vm                                           │ X   │
-│ lcx-snap-config,lscfg        │ LXC snapshot vm delete                                │ X   │
-│ lcx-snap-create,lscrt        │ LXC snapshot vm create                                │ X   │
-│ lcx-snap-delete,lsdel        │ LXC snapshot vm delete                                │ X   │
-│ lcx-snap-list,lslst          │ LXC snapshot vm list                                  │ X   │
-│ lcx-start,lstr               │ LXC start vm                                          │ X   │
-│ lcx-status,lsts              │ LXC current status vm                                 │ X   │
-│ lcx-stop,lsto                │ LXC stop vm                                           │ X   │
-│ lxc-migrate,lmig             │ LXC migrate vm other node                             │ X   │
-│ lxc-shutdown,lsdwn           │ LXC shutdown vm                                       │ X   │
-│ lxc-snap-rollback,lsrbck     │ LXC snapshot vm rollback                              │ X   │
-│ lxc-vzdump-restore,lvrst     │ LXC restore vzdump                                    │ X   │
-│ node-disks-list,ndlst        │ Node discks list                                      │ X   │
-│ node-report,nrpt             │ Node report                                           │ X   │
-│ node-services,nsvc           │ Node services                                         │ X   │
-│ node-shutdown,nreb           │ Node reboot or shutdown                               │ X   │
-│ nodes-list,nlst              │ Node services                                         │ X   │
-│ node-status,nsts             │ Node status                                           │ X   │
-│ node-storage,nsto            │ Node storage info                                     │ X   │
-│ node-storage-content,nstoc   │ Node storage content                                  │ X   │
-│ node-tasks-active,ntact      │ Node tasks active                                     │ X   │
-│ node-tasks-error,nterr       │ Node tasks errors                                     │ X   │
-│ node-version,nver            │ Node version                                          │ X   │
-│ node-vzdump-config,nvcfg     │ Node Extract configuration from vzdump backup archive │ X   │
-│ qemu-config,qcfg             │ Qemu config vm                                        │ X   │
-│ qemu-exec,qexe               │ Qemu exec command vm                                  │ X   │
-│ qemu-list,qlst               │ Qemu list vm                                          │ X   │
-│ qemu-migrate,qmig            │ Qemu migrate vm other node                            │ X   │
-│ qemu-shutdown,qsdwn          │ Qemu shutdown vm                                      │ X   │
-│ qemu-snap-config,qscfg       │ Qemu snapshot vm delete                               │ X   │
-│ qemu-snap-create,qscrt       │ Qemu snapshot vm create                               │ X   │
-│ qemu-snap-delete,qsdel       │ Qemu snapshot vm delete                               │ X   │
-│ qemu-snap-list,qslst         │ Qemu snapshot vm list                                 │ X   │
-│ qemu-snap-rollback,qsrbck    │ Qemu snapshot vm rollback                             │ X   │
-│ qemu-start,qstr              │ Qemu start vm                                         │ X   │
-│ qemu-status,qsts             │ Qemu current status vm                                │ X   │
-│ qemu-stop,qsto               │ Qemu stop vm                                          │ X   │
-│ qemu-vzdump-restore,qvrst    │ Qemu restore vzdump                                   │ X   │
-└──────────────────────────────┴───────────────────────────────────────────────────────┴─────┘
-```
-
-If you want show alias command using -h option in specific command or "alias -v"
-
-```txt
->>> alias -v
-┌──────────────────────────────┬───────────────────────────────────────────────────────┬─────────────────────────────────────────────────────────────────────────────────────────┬────────────────────────────────┬─────┐
-│ name                         │ description                                           │ command                                                                                 │ args                           │ sys │
-├──────────────────────────────┼───────────────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────────────────────────────┼────────────────────────────────┼─────┤
-│ cluster-backup,cbck          │ Cluster list vzdump backup schedule                   │ get /cluster/backup                                                                     │                                │ X   │
-│ cluster-backup-info,cbckinf  │ Cluster info backup schedule                          │ get /cluster/backup/{backup}                                                            │ backup                         │ X   │
-│ cluster-replication,crep     │ Cluster replication                                   │ get /cluster/replication                                                                │                                │ X   │
-│ cluster-status,csts          │ Cluster status                                        │ get /cluster/ha/status/current                                                          │                                │ X   │
-│ cluster-top,ct,top           │ Cluster top                                           │ get /cluster/resources                                                                  │                                │ X   │
-│ cluster-top-node,ctn,topn    │ Cluster top for node                                  │ get /cluster/resources type:node                                                        │                                │ X   │
-│ cluster-top-storage,cts,tops │ Cluster top for storage                               │ get /cluster/resources type:storage                                                     │                                │ X   │
-│ cluster-top-vm,ctv           │ Cluster top for VM/CT                                 │ get /cluster/resources type:vm                                                          │                                │ X   │
-│ lcx-config,lcfg              │ LXC config vm                                         │ get /nodes/{node}/lcx/{vmid}/config                                                     │ node,vmid                      │ X   │
-....
-```
-
-It is possible to create alias using the alias -c command.
-
-```txt
->>> alias -c
-Create alias (using comma to more name)
-Name: mytop
-Description: Top Cluster
-Command: get /cluster/resources
-```
-
-The alias can have multiple names using the comma.
-
-Using parameter -s for execute command from script file.
-
-## Execution with file parameter
-
-Is possible execute with file parameter
-
-```sh
-root@debian:~# cv4pve-cli @FileParameter.parm
-```
-
-File **FileParameter.parm**
-
-```txt
---host=192.168.0.100
---username=root@pam
---password=fagiano
+#### Script File Execution
+```bash
+# Create script file
+cat > commands.txt <<EOF
 get /nodes
+get /cluster/resources
+ls /nodes/pve1
+EOF
+
+# Execute script
+cv4pve-cli --host=pve.local --username=root@pam --password=secret sh --script=commands.txt
 ```
+
+#### Alias Feature
+The shell supports custom aliases for frequently used commands:
+
+```text
+>>> alias
+
+System aliases available:
+  cluster-backup, cbck           - Cluster list vzdump backup schedule
+  cluster-status, csts           - Cluster status
+  cluster-top, ct, top           - Cluster top
+  qemu-list, qlst                - Qemu list vm
+  qemu-status, qsts              - Qemu current status vm
+  qemu-start, qstr               - Qemu start vm
+  qemu-stop, qsto                - Qemu stop vm
+  ... and many more
+```
+
+</details>
+
+### API Operations
+
+<details>
+<summary><strong>GET - Read Data</strong></summary>
+
+#### Get Version
+```bash
+cv4pve-cli --host=192.168.0.100 --username=root@pam --password=secret get /version
+```
+
+**Output:**
+```text
+┌─────────┬──────────┐
+│ key     │ value    │
+├─────────┼──────────┤
+│ release │ 13       │
+├─────────┼──────────┤
+│ repoid  │ aee6f0ec │
+├─────────┼──────────┤
+│ version │ 5.4      │
+└─────────┴──────────┘
+```
+
+#### Get Nodes Status
+```bash
+cv4pve-cli --host=192.168.0.100 --username=root@pam --password=secret get /nodes
+```
+
+**Output:**
+```text
+┌──────┬────────┬───────┬───────┬────────┬───────────┬───────────┬──────────────────────────┬─────────────────┐
+│ node │ status │ cpu   │ level │ maxcpu │ maxmem    │ mem       │ ssl_fingerprint          │ uptime          │
+├──────┼────────┼───────┼───────┼────────┼───────────┼───────────┼──────────────────────────┼─────────────────┤
+│ pve1 │ online │ 4,58% │ c     │ 8      │ 31,39 GiB │ 17,03 GiB │ 81:94:9C:7A:20:38:44...  │ 12d 19h 12m 55s │
+│ pve2 │ online │ 4,92% │ c     │ 8      │ 31,39 GiB │ 16,77 GiB │ 70:41:5B:47:21:F4:5C...  │ 13d 23h 34m 25s │
+└──────┴────────┴───────┴───────┴────────┴───────────┴───────────┴──────────────────────────┴─────────────────┘
+```
+
+#### Get Cluster Resources (with filter)
+```bash
+cv4pve-cli --host=192.168.0.100 --username=root@pam --password=secret get /cluster/resources type:node
+```
+
+**Output:**
+```text
+┌───────────┬──────┬───────┬───────────┬────────┬────────────┬───────────┬───────────┬──────┬────────┐
+│ id        │ type │ cpu   │ disk      │ maxcpu │ maxdisk    │ maxmem    │ mem       │ node │ status │
+├───────────┼──────┼───────┼───────────┼────────┼────────────┼───────────┼───────────┼──────┼────────┤
+│ node/pve1 │ node │ 6,47% │ 14,65 GiB │ 8      │ 27,19 GiB  │ 31,39 GiB │ 17,38 GiB │ pve1 │ online │
+│ node/pve2 │ node │ 4,38% │ 12,45 GiB │ 8      │ 27,19 GiB  │ 31,39 GiB │ 16,75 GiB │ pve2 │ online │
+└───────────┴──────┴───────┴───────────┴────────┴────────────┴───────────┴───────────┴──────┴────────┘
+```
+
+#### JSON Output
+```bash
+# Standard JSON
+cv4pve-cli --host=192.168.0.100 --username=root@pam --password=secret get /version --output=json
+```
+
+**Output:**
+```json
+{"repoid":"aee6f0ec","release":"13","version":"5.4","keyboard":"it"}
+```
+
+#### Pretty JSON Output
+```bash
+cv4pve-cli --host=192.168.0.100 --username=root@pam --password=secret get /version --output=jsonpretty
+```
+
+**Output:**
+```json
+{
+  "repoid": "aee6f0ec",
+  "release": "13",
+  "version": "5.4",
+  "keyboard": "it"
+}
+```
+
+</details>
+
+<details>
+<summary><strong>SET - Update Configuration</strong></summary>
+
+```bash
+# Update VM memory
+cv4pve-cli --host=pve.local --username=root@pam --password=secret set /nodes/pve1/qemu/100/config memory:4096
+
+# Update VM description
+cv4pve-cli --host=pve.local --username=root@pam --password=secret set /nodes/pve1/qemu/100/config description:"Updated by cv4pve-cli"
+
+# Update multiple parameters
+cv4pve-cli --host=pve.local --username=root@pam --password=secret set /nodes/pve1/qemu/100/config memory:4096 cores:2
+```
+
+</details>
+
+<details>
+<summary><strong>CREATE - Create Resources</strong></summary>
+
+```bash
+# Create snapshot
+cv4pve-cli --host=pve.local --username=root@pam --password=secret create /nodes/pve1/qemu/100/snapshot snapname:backup-$(date +%Y%m%d)
+
+# Create user
+cv4pve-cli --host=pve.local --username=root@pam --password=secret create /access/users userid:testuser@pve password:secret
+
+# Start VM
+cv4pve-cli --host=pve.local --username=root@pam --password=secret create /nodes/pve1/qemu/100/status/start
+```
+
+</details>
+
+<details>
+<summary><strong>DELETE - Remove Resources</strong></summary>
+
+```bash
+# Delete snapshot
+cv4pve-cli --host=pve.local --username=root@pam --password=secret delete /nodes/pve1/qemu/100/snapshot/backup-20250211
+
+# Stop VM
+cv4pve-cli --host=pve.local --username=root@pam --password=secret create /nodes/pve1/qemu/100/status/stop
+```
+
+</details>
+
+### Navigation & Documentation
+
+<details>
+<summary><strong>LS - Browse API Like Filesystem</strong></summary>
+
+#### List Root
+```bash
+cv4pve-cli --host=192.168.0.100 --username=root@pam --password=secret ls /
+```
+
+**Output:**
+```text
+Dr---        access
+Dr---        cluster
+Dr---        nodes
+Dr--c        pools
+Dr--c        storage
+-r---        version
+```
+
+#### List Nodes
+```bash
+cv4pve-cli --host=192.168.0.100 --username=root@pam --password=secret ls /nodes
+```
+
+**Output:**
+```text
+Dr---        pve1
+Dr---        pve2
+Dr---        pve3
+```
+
+#### List VMs on Node
+```bash
+cv4pve-cli --host=192.168.0.100 --username=root@pam --password=secret ls /nodes/pve1/qemu
+```
+
+**Output:**
+```text
+Dr---        100
+Dr---        101
+Dr---        102
+Dr---        118
+```
+
+</details>
+
+<details>
+<summary><strong>USAGE - API Documentation</strong></summary>
+
+#### Basic Usage Command
+```bash
+cv4pve-cli --host=192.168.0.100 --username=root@pam --password=secret usage /cluster/resources
+```
+
+**Output:**
+```text
+USAGE: get /cluster/resources [OPTIONS]
+```
+
+#### Verbose Usage (with parameters)
+```bash
+cv4pve-cli --host=192.168.0.100 --username=root@pam --password=secret usage /cluster/resources --verbose
+```
+
+**Output:**
+```text
+USAGE: get /cluster/resources [OPTIONS]
+
+  Resources index (cluster wide).
+┌───────┬─────────────────┬─────────────┐
+│ param │ type            │ description │
+├───────┼─────────────────┼─────────────┤
+│ type  │ vm,storage,node │             │
+└───────┴─────────────────┴─────────────┘
+```
+
+#### Usage with Returns Schema
+```bash
+cv4pve-cli --host=192.168.0.100 --username=root@pam --password=secret usage /cluster/resources --verbose --returns
+```
+
+**Output:**
+```text
+USAGE: get /cluster/resources [OPTIONS]
+
+  Resources index (cluster wide).
+┌───────┬─────────────────┬─────────────┐
+│ param │ type            │ description │
+├───────┼─────────────────┼─────────────┤
+│ type  │ vm,storage,node │             │
+└───────┴─────────────────┴─────────────┘
+RETURNS:
+┌─────────┬────────────────────────┬──────────────────────────────────────────┐
+│ param   │ type                   │ description                              │
+├─────────┼────────────────────────┼──────────────────────────────────────────┤
+│ cpu     │ number                 │ CPU utilization                          │
+│ disk    │ string                 │ Used disk space in bytes                 │
+│ maxcpu  │ number                 │ Number of available CPUs                 │
+│ maxmem  │ integer                │ Number of available memory in bytes      │
+│ mem     │ string                 │ Used memory in bytes                     │
+│ node    │ string                 │ The cluster node name                    │
+│ status  │ string                 │ Resource type dependent status           │
+│ type    │ node,storage,pool,qemu │ Resource type                            │
+└─────────┴────────────────────────┴──────────────────────────────────────────┘
+```
+
+#### Specific Command Usage
+```bash
+# Show all available commands for a resource
+cv4pve-cli --host=192.168.0.100 --username=root@pam --password=secret usage /nodes/pve1/status
+```
+
+**Output:**
+```text
+USAGE: get /nodes/pve1/status
+USAGE: create /nodes/pve1/status command:<string>
+```
+
+```bash
+# Show specific command documentation
+cv4pve-cli --host=192.168.0.100 --username=root@pam --password=secret usage /nodes/pve1/status --command=create
+```
+
+**Output:**
+```text
+USAGE: create /nodes/pve1/status command:<string>
+```
+
+</details>
+
+### Advanced Usage
+
+<details>
+<summary><strong>Parameter Files</strong></summary>
+
+#### Create Parameter File
+```bash
+# /etc/cv4pve/production.conf
+--host=pve-cluster.company.com
+--api-token=automation@pve!production=uuid-here
+--validate-certificate
+```
+
+#### Execute with Parameter File
+```bash
+cv4pve-cli @/etc/cv4pve/production.conf get /cluster/resources
+```
+
+</details>
+
+<details>
+<summary><strong>Output Formats</strong></summary>
+
+```bash
+# Text output (default)
+cv4pve-cli --host=pve.local --username=root@pam --password=secret get /nodes
+
+# JSON output
+cv4pve-cli --host=pve.local --username=root@pam --password=secret get /nodes --output=json
+
+# Pretty JSON
+cv4pve-cli --host=pve.local --username=root@pam --password=secret get /nodes --output=jsonpretty
+
+# Table output (for supported commands)
+cv4pve-cli --host=pve.local --username=root@pam --password=secret get /cluster/resources --output=table
+```
+
+</details>
+
+---
+
+## Command Reference
+
+<div align="center">
+  <img src="https://img.shields.io/badge/COMMAND-REFERENCE-navy?style=for-the-badge&logo=terminal" alt="Command Reference">
+</div>
+
+### Global Options
+
+```bash
+cv4pve-cli [global-options] [command] [parameters]
+```
+
+| Parameter | Description | Example |
+|-----------|-------------|---------|
+| `--host` | Host name (host[:port]) | `--host=pve.local:8006` |
+| `--username` | Username@realm | `--username=root@pam` |
+| `--password` | Password or file | `--password=secret` |
+| `--api-token` | API token | `--api-token=user@realm!token=uuid` |
+| `--validate-certificate` | Validate SSL certificate | `--validate-certificate` |
+| `--version` | Show version | `--version` |
+| `-?, -h, --help` | Show help | `--help` |
+
+### Commands
+
+#### API Commands
+
+| Command | Description | Syntax |
+|---------|-------------|--------|
+| `get` | GET from resource | `get <resource> [parameters]` |
+| `set` | PUT to resource | `set <resource> [parameters]` |
+| `create` | POST to resource | `create <resource> [parameters]` |
+| `delete` | DELETE resource | `delete <resource> [parameters]` |
+
+#### Utility Commands
+
+| Command | Description | Syntax |
+|---------|-------------|--------|
+| `usage` | Show API usage | `usage <resource> [options]` |
+| `ls` | List child objects | `ls <resource>` |
+| `sh` | Interactive shell | `sh [--script=file] [--only-result]` |
+
+### Command Options
+
+#### API Command Options
+```bash
+--output <format>     Output format: text, json, jsonpretty, table
+--wait                Wait for task to finish
+--verbose             Enable verbose output
+```
+
+#### Usage Command Options
+```bash
+--command, -c <type>  API command type: get, set, create, delete
+--returns, -r         Include schema for returned data
+--output <format>     Output format
+--verbose             Enable verbose output
+```
+
+#### Shell Command Options
+```bash
+--script, -s <file>   Script file to execute
+--only-result, -r     Only show result (no prompts)
+```
+
+---
+
+## Support
+
+Professional support and consulting available through [Corsinvest](https://www.corsinvest.it/cv4pve).
+
+---
+
+
+Part of [cv4pve](https://www.corsinvest.it/cv4pve) suite | Made with ❤️ in Italy by [Corsinvest](https://www.corsinvest.it)
+
+Copyright © Corsinvest Srl

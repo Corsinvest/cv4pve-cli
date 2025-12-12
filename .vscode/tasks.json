@@ -3,38 +3,24 @@
     "tasks": [
         {
             "label": "build",
+            "type": "shell",
             "command": "dotnet",
-            "type": "process",
             "args": [
                 "build",
-                "${workspaceFolder}/cv4pve-cli.sln",
+                "${workspaceFolder}/src/Corsinvest.ProxmoxVE.Cli/Corsinvest.ProxmoxVE.Cli.csproj",
                 "/property:GenerateFullPaths=true",
-                "/consoleloggerparameters:NoSummary;ForceNoAlign"
+                "/consoleloggerparameters:NoSummary"
             ],
-            "problemMatcher": "$msCompile"
-        },
-        {
-            "label": "publish",
-            "command": "dotnet",
-            "type": "process",
-            "args": [
-                "publish",
-                "${workspaceFolder}/cv4pve-cli.sln",
-                "/property:GenerateFullPaths=true",
-                "/consoleloggerparameters:NoSummary;ForceNoAlign"
-            ],
-            "problemMatcher": "$msCompile"
-        },
-        {
-            "label": "watch",
-            "command": "dotnet",
-            "type": "process",
-            "args": [
-                "watch",
-                "run",
-                "--project",
-                "${workspaceFolder}/cv4pve-cli.sln"
-            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
             "problemMatcher": "$msCompile"
         }
     ]

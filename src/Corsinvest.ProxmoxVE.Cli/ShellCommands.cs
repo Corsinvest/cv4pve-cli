@@ -5,9 +5,9 @@
 
 using System.CommandLine;
 using Corsinvest.ProxmoxVE.Api;
+using Corsinvest.ProxmoxVE.Api.Console.Helpers;
 using Corsinvest.ProxmoxVE.Api.Extension.Utils;
 using Corsinvest.ProxmoxVE.Api.Metadata;
-using Corsinvest.ProxmoxVE.Api.Shell.Helpers;
 using Microsoft.Extensions.Logging;
 
 namespace Corsinvest.ProxmoxVE.Cli;
@@ -19,7 +19,7 @@ internal class ShellCommands
 {
     public static readonly string AppName = "cv4pve-cli";
 
-    private static ILoggerFactory _loggerFactory;
+    private static ILoggerFactory _loggerFactory = null!;
 
     /// <summary>
     /// Initialize commands
@@ -30,7 +30,7 @@ internal class ShellCommands
     {
         _loggerFactory = loggerFactory;
 
-        ApiCommands(command, null, null);
+        ApiCommands(command, null!, null!);
         InteractiveShell(command);
     }
 
@@ -43,10 +43,12 @@ internal class ShellCommands
         var cmd = command.AddCommand("sh", "Interactive shell");
         var optScriptFile = cmd.AddOption<string>("--script|-s", "Script file name").AddValidatorExistFile();
         var optOnlyResult = cmd.AddOption<bool>("--only-result|-r", "Only result");
-        cmd.SetHandler(async (scriptFile, onlyResult) =>
+        cmd.SetAction(async (action) =>
         {
-            await InteractiveShellCommands.StartAsync(await command.ClientTryLoginAsync(_loggerFactory), scriptFile, onlyResult);
-        }, optScriptFile, optOnlyResult);
+            await Cli.InteractiveShell.StartAsync(await command.ClientTryLoginAsync(_loggerFactory),
+                                                      action.GetValue(optScriptFile)!,
+                                                      action.GetValue(optOnlyResult));
+        });
     }
 
     private static async Task<ClassApi> GetClassApiRootAsync(PveClient client)
@@ -81,27 +83,28 @@ internal class ShellCommands
         var optVerbose = cmd.VerboseOption();
         var argResource = CreateResourceArgument(cmd);
         var argParameters = cmd.AddArgument<string[]>("parameters", "Parameter for resource format key:value (Multiple).");
-        argParameters.SetDefaultValue(null);
+        argParameters.DefaultValueFactory = (_) => null!;
 
         var optOutput = cmd.TableOutputOption();
         var optWait = cmd.AddOption<bool>("--wait", "Wait for task finish");
-        command.AddCommand(cmd);
+        command.Add(cmd);
 
-        cmd.SetHandler(async (resource, parameters, output, verbose, wait) =>
+        cmd.SetAction(async (action) =>
         {
             client ??= await command.ClientTryLoginAsync(_loggerFactory);
             classApiRoot ??= await GetClassApiRootAsync(client);
+
             var (_, ResultText) = await ApiExplorerHelper.ExecuteAsync(client,
                                                                        classApiRoot,
-                                                                       resource,
+                                                                       action.GetValue(argResource),
                                                                        methodType,
-                                                                       ApiExplorerHelper.CreateParameterResource(parameters),
-                                                                       wait,
-                                                                       output,
-                                                                       verbose);
+                                                                       ApiExplorerHelper.CreateParameterResource(action.GetValue(argParameters)),
+                                                                       action.GetValue(optWait),
+                                                                       action.GetValue(optOutput),
+                                                                       action.GetValue(optVerbose));
 
             Console.Out.Write(ResultText);
-        }, argResource, argParameters, optOutput, optVerbose, optWait);
+        });
     }
 
     private static void Usage(RootCommand command, ClassApi classApiRoot)
@@ -113,29 +116,29 @@ internal class ShellCommands
         var optReturns = cmd.AddOption<bool>("--returns|-r", "Including schema for returned data.");
         var optOutput = cmd.TableOutputOption();
 
-        cmd.SetHandler(async (resource, output, returns, methodCommand, verbose) =>
+        cmd.SetAction(async (action) =>
         {
             var ret = ApiExplorerHelper.Usage(classApiRoot ?? await GetClassApiRootAsync(await command.ClientTryLoginAsync(_loggerFactory)),
-                                              resource,
-                                              output,
-                                              returns,
-                                              methodCommand?.ToString(),
-                                              verbose);
+                                              action.GetValue(argResource),
+                                              action.GetValue(optOutput),
+                                              action.GetValue(optReturns),
+                                              action.GetValue(optCommand)?.ToString(),
+                                              action.GetValue(optVerbose));
 
             Console.Out.Write(ret);
-        }, argResource, optOutput, optReturns, optCommand, optVerbose);
+        });
     }
 
     private static void List(RootCommand command, PveClient client, ClassApi classApiRoot)
     {
         var cmd = command.AddCommand("ls", "List child objects on <api_path>.");
         var argResource = CreateResourceArgument(cmd);
-        cmd.SetHandler(async (resource) =>
+        cmd.SetAction(async (action) =>
         {
             client ??= await command.ClientTryLoginAsync(_loggerFactory);
             Console.Out.Write(await ApiExplorerHelper.ListAsync(client,
                                                                 classApiRoot ?? await GetClassApiRootAsync(client),
-                                                                resource));
-        }, argResource);
+                                                                action.GetValue(argResource)));
+        });
     }
 }
