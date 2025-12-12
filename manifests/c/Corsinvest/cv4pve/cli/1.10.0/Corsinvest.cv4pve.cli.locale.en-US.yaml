@@ -2,7 +2,7 @@
 # yaml-language-server: $schema=https://aka.ms/winget-manifest.defaultLocale.1.10.0.schema.json
 
 PackageIdentifier: Corsinvest.cv4pve.cli
-PackageVersion: 1.9.0
+PackageVersion: 1.10.0
 PackageLocale: en-US
 Publisher: Corsinvest Srl
 PublisherUrl: https://www.corsinvest.it
@@ -37,6 +37,6 @@ Tags:
 - proxmox
 - proxmoxve
 - virtualization
-ReleaseNotesUrl: https://github.com/Corsinvest/cv4pve-cli/releases/tag/v1.9.0
+ReleaseNotesUrl: https://github.com/Corsinvest/cv4pve-cli/releases/tag/v1.10.0
 ManifestType: defaultLocale
 ManifestVersion: 1.10.0
