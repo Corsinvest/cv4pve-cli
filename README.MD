@@ -37,21 +37,6 @@ chmod +x cv4pve-cli
 
 ---
 
-## Table of Contents
-
-<details>
-<summary><strong>Click to expand navigation</strong></summary>
-
-- [Features](#-features)
-- [Installation](#-installation)
-- [Configuration](#-configuration)
-- [Usage Examples](#-usage-examples)
-- [Command Reference](#-command-reference)
-
-</details>
-
----
-
 ## Features
 
 ### Core Capabilities
@@ -88,10 +73,6 @@ chmod +x cv4pve-cli
 ---
 
 ## Installation
-
-<div align="center">
-  <img src="https://img.shields.io/badge/INSTALLATION-GUIDE-green?style=for-the-badge&logo=download" alt="Installation Guide">
-</div>
 
 ### Linux Installation
 
@@ -145,15 +126,7 @@ sudo mv cv4pve-cli /usr/local/bin/
 
 ## Configuration
 
-<div align="center">
-  <img src="https://img.shields.io/badge/CONFIGURATION-SETUP-blue?style=for-the-badge&logo=settings" alt="Configuration Setup">
-</div>
-
 ### Authentication Methods
-
-<table>
-<tr>
-<td width="50%">
 
 #### **Username/Password**
 ```bash
@@ -165,9 +138,6 @@ cv4pve-cli --host=192.168.1.100 --username=root@pam --password=your_password [co
 cv4pve-cli --host=192.168.1.100 --api-token=root@pam!token1=uuid-here [commands]
 ```
 
-</td>
-<td width="50%">
-
 #### **Password from File**
 ```bash
 # Store password in file
@@ -177,10 +147,6 @@ chmod 600 /etc/cv4pve/password
 # Use password file
 cv4pve-cli --host=192.168.1.100 --username=root@pam --password=file:/etc/cv4pve/password [commands]
 ```
-
-</td>
-</tr>
-</table>
 
 ### Connection Options
 
@@ -195,10 +161,6 @@ cv4pve-cli --host=192.168.1.100 --username=root@pam --password=file:/etc/cv4pve/
 ---
 
 ## Usage Examples
-
-<div align="center">
-  <img src="https://img.shields.io/badge/USAGE-EXAMPLES-orange?style=for-the-badge&logo=terminal" alt="Usage Examples">
-</div>
 
 ### Interactive Shell
 
@@ -221,7 +183,7 @@ Initialization metadata... 111ms
 ```
 
 #### Help Command
-```text
+```bash
 >>> help
 
 Commands:
@@ -433,7 +395,7 @@ cv4pve-cli --host=192.168.0.100 --username=root@pam --password=secret ls /nodes
 ```
 
 **Output:**
-```text
+```bash
 Dr---        pve1
 Dr---        pve2
 Dr---        pve3
@@ -445,7 +407,7 @@ cv4pve-cli --host=192.168.0.100 --username=root@pam --password=secret ls /nodes/
 ```
 
 **Output:**
-```text
+```bash
 Dr---        100
 Dr---        101
 Dr---        102
@@ -581,10 +543,6 @@ cv4pve-cli --host=pve.local --username=root@pam --password=secret get /cluster/r
 
 ## Command Reference
 
-<div align="center">
-  <img src="https://img.shields.io/badge/COMMAND-REFERENCE-navy?style=for-the-badge&logo=terminal" alt="Command Reference">
-</div>
-
 ### Global Options
 
 ```bash
@@ -645,12 +603,18 @@ cv4pve-cli [global-options] [command] [parameters]
 
 ---
 
+## Documentation Links
+
+- **[Proxmox VE API reference](https://pve.proxmox.com/pve-docs/api-viewer/index.html)** 
+- **[Proxmox VE API token documentation](https://pve.proxmox.com/pve-docs/pveum-plain.html)** 
+
+---
+
 ## Support
 
 Professional support and consulting available through [Corsinvest](https://www.corsinvest.it/cv4pve).
 
 ---
-
 
 Part of [cv4pve](https://www.corsinvest.it/cv4pve) suite | Made with ❤️ in Italy by [Corsinvest](https://www.corsinvest.it)
 
