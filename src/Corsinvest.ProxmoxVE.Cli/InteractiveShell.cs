@@ -8,9 +8,11 @@ using System.Diagnostics;
 using System.Text;
 using Corsinvest.ProxmoxVE.Api;
 using Corsinvest.ProxmoxVE.Api.Console.Helpers;
+using Corsinvest.ProxmoxVE.Api.Extension;
 using Corsinvest.ProxmoxVE.Api.Extension.Utils;
 using Corsinvest.ProxmoxVE.Api.Metadata;
 using Corsinvest.ProxmoxVE.Api.Shared.Utils;
+using Newtonsoft.Json.Linq;
 
 namespace Corsinvest.ProxmoxVE.Cli;
 
@@ -60,10 +62,10 @@ Type 'help', 'quit' to close the application.");
 
         #region ClassApi Metadata
         var watch = Stopwatch.StartNew();
-        if (!onlyResult) { Console.Out.Write("Initialization metadata..."); }
+        if (!onlyResult) { Console.Out.Write("Initialization metadata"); }
 
-        //get api metadata
-        var classApiRoot = await GeneratorClassApi.GenerateAsync(client.Host, client.Port);
+        //get api metadata with cache
+        var classApiRoot = await GetClassApiWithCacheAsync(client, onlyResult);
 
         watch.Stop();
         if (!onlyResult) { Console.Out.WriteLine($" {watch.ElapsedMilliseconds}ms"); }
@@ -110,6 +112,85 @@ Type 'help', 'quit' to close the application.");
         }
     }
 
+    #region API Metadata Cache
+    private static string GetCacheDirectory() => CommonHelper.GetApplicationDataDirectory(ShellCommands.AppName);
+
+    private static string GetCacheFileName(string host, string version)
+        => Path.Combine(GetCacheDirectory(), $"api-cache_{host.Replace(":", "_")}_{version}.json");
+
+    private static async Task<ClassApi> GetClassApiWithCacheAsync(PveClient client, bool onlyResult)
+    {
+        // Get PVE version
+        var version = (await client.Version.GetAsync()).Version;
+        var cacheFile = GetCacheFileName(client.Host, version);
+
+        if (File.Exists(cacheFile))
+        {
+            try
+            {
+                if (!onlyResult) { Console.Out.Write($" from cache ({Path.GetFileName(cacheFile)})..."); }
+                var json = await File.ReadAllTextAsync(cacheFile);
+                return GenerateClassApiFromJson(json);
+            }
+            catch
+            {
+                // Cache corrupted, delete and download
+                if (!onlyResult) { Console.Out.Write(" cache corrupted, reloading..."); }
+                File.Delete(cacheFile);
+            }
+        }
+
+        // Download and cache
+        if (!onlyResult) { Console.Out.Write(" from server..."); }
+        var apiJson = await GetJsonSchemaFromApiDocAsync(client.Host, client.Port);
+
+        // Save to cache
+        await File.WriteAllTextAsync(cacheFile, apiJson);
+        if (!onlyResult) { Console.Out.Write($" saved to {Path.GetFileName(cacheFile)}"); }
+
+        return GenerateClassApiFromJson(apiJson);
+    }
+
+    private static ClassApi GenerateClassApiFromJson(string json)
+    {
+        var classApi = new ClassApi();
+        foreach (var token in JArray.Parse(json)) { _ = new ClassApi(token, classApi); }
+        return classApi;
+    }
+
+    private static async Task<string> GetJsonSchemaFromApiDocAsync(string host, int port)
+    {
+        var url = $"https://{host}:{port}/pve-docs/api-viewer/apidoc.js";
+        var json = new StringBuilder();
+
+        using var httpClientHandler = new HttpClientHandler
+        {
+            ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true
+        };
+        using var httpClient = new HttpClient(httpClientHandler);
+        using var response = await httpClient.GetAsync(url);
+
+        var data = await response.Content.ReadAsStringAsync();
+        data = data[data.IndexOf('[')..];
+
+        foreach (var line in data.Split('\n'))
+        {
+            json.Append(line);
+            if (line.StartsWith(']')) { break; }
+        }
+
+        return json.ToString();
+    }
+
+    private static int ClearCache()
+    {
+        var cacheDir = GetCacheDirectory();
+        var files = Directory.GetFiles(cacheDir, "api-cache_*.json");
+        foreach (var file in files) { File.Delete(file); }
+        return files.Length;
+    }
+    #endregion
+
     #region History
     private static string GetHistoryFile() => Path.Combine(CommonHelper.GetApplicationDataDirectory(ShellCommands.AppName), "history.txt");
 
@@ -129,10 +210,17 @@ Type 'help', 'quit' to close the application.");
             //remove empty line
             var data = ReadLine.GetHistory().Where(a => !string.IsNullOrWhiteSpace(a));
             ReadLine.ClearHistory();
-            ReadLine.AddHistory(data.ToArray());
+            ReadLine.AddHistory([.. data]);
 
             File.WriteAllLines(GetHistoryFile(), data.Skip(Math.Max(0, data.Count() - 100)));
         }
+    }
+
+    private static void ClearHistory()
+    {
+        ReadLine.ClearHistory();
+        var file = GetHistoryFile();
+        if (File.Exists(file)) { File.Delete(file); }
     }
     #endregion
 
@@ -163,6 +251,16 @@ Type 'help', 'quit' to close the application.");
         #region Commands base
         rc.AddCommand("quit|exit", "Close application").SetAction((_) => exit = true);
         rc.AddCommand("clear|cls", "Clear screen").SetAction((_) => Console.Clear());
+        rc.AddCommand("clear-cache", "Clear API metadata cache").SetAction((_) =>
+        {
+            var count = ClearCache();
+            Console.Out.WriteLine($"Cache cleared ({count} file(s) deleted)");
+        });
+        rc.AddCommand("clear-history", "Clear command history").SetAction((_) =>
+        {
+            ClearHistory();
+            Console.Out.WriteLine("History cleared");
+        });
         var castle = rc.AddCommand("castle", "");
         castle.SetAction((_) => Console.Out.WriteLine(Castle));
         castle.Hidden = true;
@@ -347,13 +445,11 @@ Type 'help', 'quit' to close the application.");
                     var pos = resource.LastIndexOf('/');
                     ret = ApiExplorerHelper.ListValuesAsync(Client, ClassApiRoot, resource[..pos]).Result;
 
-                    return ret.Values.Where(a => a.Value.StartsWith(resource[(pos + 1)..]))
-                                     .Select(a => a.Value)
-                                     .ToArray();
+                    return [.. ret.Values.Where(a => a.Value.StartsWith(resource[(pos + 1)..])).Select(a => a.Value)];
                 }
                 else
                 {
-                    return ret.Values.Select(a => a.Value).ToArray();
+                    return [.. ret.Values.Select(a => a.Value)];
                 }
             }
             else

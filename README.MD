@@ -62,6 +62,8 @@ chmod +x cv4pve-cli
 - **SSL validation** options
 - **Parameter files** for complex setups
 - **Alias commands** for frequent operations
+- **API metadata cache** for faster startup
+- **Command history** persistence
 
 #### **Enterprise Features**
 - **Multiple host** support for HA
@@ -196,6 +198,8 @@ Initialization metadata... 111ms
 Commands:
   alias         Alias commands
   clear         Clear screen
+  clear-cache   Clear API metadata cache
+  clear-history Clear command history
   create        Create (POST) from resource
   delete        Delete (DELETE) from resource
   get           Get (GET) from resource
@@ -585,6 +589,17 @@ cv4pve-cli [global-options] [command] [parameters]
 | `ls` | List child objects | `ls <resource>` |
 | `sh` | Interactive shell | `sh [--script=file] [--only-result]` |
 
+#### Shell Commands (inside interactive shell)
+
+| Command | Description |
+|---------|-------------|
+| `clear` | Clear screen |
+| `clear-cache` | Clear API metadata cache files |
+| `clear-history` | Clear command history |
+| `history` | Show command history |
+| `alias` | Manage command aliases |
+| `quit` | Exit interactive shell |
+
 ### Command Options
 
 #### API Command Options
@@ -607,6 +622,23 @@ cv4pve-cli [global-options] [command] [parameters]
 --script, -s <file>   Script file to execute
 --only-result, -r     Only show result (no prompts)
 ```
+
+### Data Storage
+
+The interactive shell stores data in the application data directory:
+
+| Platform | Location |
+|----------|----------|
+| Windows | `%APPDATA%\cv4pve-cli\` |
+| Linux | `~/.config/cv4pve-cli/` |
+| macOS | `~/.config/cv4pve-cli/` |
+
+**Stored files:**
+- `api-cache_{host}_{version}.json` - API metadata cache (per host/version)
+- `history.txt` - Command history (last 100 commands)
+- `alias.txt` - Custom command aliases
+
+Use `clear-cache` and `clear-history` commands inside the shell to manage these files.
 
 ---
 
