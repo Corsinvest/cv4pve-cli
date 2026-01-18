@@ -46,8 +46,8 @@ internal class ShellCommands
         cmd.SetAction(async (action) =>
         {
             await Cli.InteractiveShell.StartAsync(await command.ClientTryLoginAsync(_loggerFactory),
-                                                      action.GetValue(optScriptFile)!,
-                                                      action.GetValue(optOnlyResult));
+                                                  action.GetValue(optScriptFile)!,
+                                                  action.GetValue(optOnlyResult));
         });
     }
 
