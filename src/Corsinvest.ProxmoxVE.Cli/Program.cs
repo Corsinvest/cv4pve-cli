@@ -1,14 +1,27 @@
-﻿/*
+/*
  * SPDX-FileCopyrightText: Copyright Corsinvest Srl
- * SPDX-License-Identifier: GPL-3.0-only
+ * SPDX-License-Identifier: MIT
  */
 
+using System.CommandLine;
 using Corsinvest.ProxmoxVE.Api.Console.Helpers;
 using Corsinvest.ProxmoxVE.Cli;
 using Microsoft.Extensions.Logging;
 
-var app = ConsoleHelper.CreateApp(ShellCommands.AppName, "CLI for Proxmox VE");
+var app = new RootCommand("CLI for Proxmox VE");
+app.AddFullNameLogo();
+app.AddDebugOption();
+app.AddDryRunOption();
+
 var loggerFactory = ConsoleHelper.CreateLoggerFactory<Program>(app.GetLogLevelFromDebug());
 
 ShellCommands.CreateCommands(app, loggerFactory);
-return await app.ExecuteAppAsync(args, loggerFactory.CreateLogger(typeof(Program)));
+SpecialCommands.AddCommands(app);
+CompletionHelper.AddCompleteCommand(app);
+CompletionHelper.EnsureRegistered();
+app.SetAction(ctx => app.Parse("--help").Invoke());
+
+var (effectiveArgs, exitCode) = ShellCommands.ResolveAliasArgs(args);
+if (effectiveArgs == null && exitCode != 0) { return exitCode; }
+
+return await app.ExecuteAppAsync(effectiveArgs ?? args, loggerFactory.CreateLogger<Program>());
