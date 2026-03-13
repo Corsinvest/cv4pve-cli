@@ -18,8 +18,8 @@ internal static class CompletionHelper
         Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".cv4pve", "cli");
 
     private static readonly string ShimFile = Path.Combine(ConfigDir,
-        RuntimeInformation.IsOSPlatform(OSPlatform.Windows) 
-            ? "completion.ps1" 
+        RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+            ? "completion.ps1"
             : "completion.bash");
 
     private static readonly string BashShim = """

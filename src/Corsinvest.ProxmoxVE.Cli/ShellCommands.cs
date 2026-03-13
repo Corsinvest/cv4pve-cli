@@ -53,14 +53,14 @@ internal class ShellCommands
 
     private static async Task<ClassApi> GetClassApiRootAsync(PveClient client)
     {
-        var version  = (await client.Version.Version()).ToData().version as string ?? "unknown";
+        var version = (await client.Version.Version()).ToData().version as string ?? "unknown";
         var flatFile = Path.Combine(CacheDir, $"{version}-flat.json");
 
         if (!File.Exists(flatFile))
         {
             // Download, build flat, save only flat — discard raw JSON
             var json = await GeneratorClassApi.GetJsonSchemaFromApiDocAsync(client.Host, client.Port);
-            var tmp  = new ClassApi();
+            var tmp = new ClassApi();
             foreach (var token in Newtonsoft.Json.Linq.JArray.Parse(json)) { _ = new ClassApi(token, tmp); }
             Directory.CreateDirectory(CacheDir);
             await File.WriteAllTextAsync(flatFile, GeneratorClassApi.BuildFlatCache(tmp));
@@ -94,29 +94,29 @@ internal class ShellCommands
                 var existing = leafParent.Subcommands.FirstOrDefault(c => c.Name == part);
                 var desc = part switch
                 {
-                    "do"       => "Execute an action",
-                    "get"      => "Read or list",
-                    "set"      => "Update configuration",
-                    "create"   => "Create a resource",
-                    "delete"   => "Delete a resource",
-                    "show"     => "Show details",
-                    "vm"           => "Virtual machines",
-                    "ct"           => "Containers (LXC)",
-                    "node"         => "Cluster nodes",
-                    "cluster"      => "Cluster-wide operations",
-                    "guest"        => "VMs and containers",
-                    "security"     => "Access and security",
-                    "storage"      => "Storage management",
-                    "pool"         => "Resource pools",
-                    "ha"           => "High availability",
-                    "mapping"      => "Hardware mappings",
+                    "do" => "Execute an action",
+                    "get" => "Read or list",
+                    "set" => "Update configuration",
+                    "create" => "Create a resource",
+                    "delete" => "Delete a resource",
+                    "show" => "Show details",
+                    "vm" => "Virtual machines",
+                    "ct" => "Containers (LXC)",
+                    "node" => "Cluster nodes",
+                    "cluster" => "Cluster-wide operations",
+                    "guest" => "VMs and containers",
+                    "security" => "Access and security",
+                    "storage" => "Storage management",
+                    "pool" => "Resource pools",
+                    "ha" => "High availability",
+                    "mapping" => "Hardware mappings",
                     "notification" => "Notifications",
-                    "notifications"=> "Notifications",
-                    "tfa"          => "Two-factor authentication",
-                    "agent"        => "Guest agent",
-                    "backup"       => "Backup management",
-                    "hardware"     => "Hardware devices",
-                    _              => $"{char.ToUpper(part[0])}{part[1..]}"
+                    "notifications" => "Notifications",
+                    "tfa" => "Two-factor authentication",
+                    "agent" => "Guest agent",
+                    "backup" => "Backup management",
+                    "hardware" => "Hardware devices",
+                    _ => $"{char.ToUpper(part[0])}{part[1..]}"
                 };
                 leafParent = existing ?? leafParent.AddCommand(part, desc);
             }
@@ -186,7 +186,7 @@ internal class ShellCommands
                     var classApiRoot = BuildClassApiFromCache();
                     if (classApiRoot == null) { return []; }
 
-                    var word      = ctx.WordToComplete ?? string.Empty;
+                    var word = ctx.WordToComplete ?? string.Empty;
                     var allTokens = ctx.ParseResult.Tokens.Skip(skipTokens).Select(t => t.Value).ToArray();
                     var argTokens = allTokens.Where(t => !t.StartsWith('-')).ToArray();
                     var filledPositional = (word.Length == 0 || word.StartsWith('-'))
@@ -199,9 +199,9 @@ internal class ShellCommands
                     {
                         expanded = expanded.Replace($"{{{tags[i]}}}", filledPositional[i]);
                     }
-                    var tokens     = expanded.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                    var tokens = expanded.Split(' ', StringSplitOptions.RemoveEmptyEntries);
                     var methodType = HttpVerbToMethodType(tokens[0]);
-                    var resource   = tokens[1];
+                    var resource = tokens[1];
 
                     // If prevToken is a --param with enum values, don't propose --options (enum source handles it)
                     var prevToken = word.Length == 0
@@ -249,9 +249,9 @@ internal class ShellCommands
                     {
                         expanded = expanded.Replace($"{{{tags[i]}}}", positionalTokens[i]);
                     }
-                    var tokens     = expanded.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                    var tokens = expanded.Split(' ', StringSplitOptions.RemoveEmptyEntries);
                     var methodType = HttpVerbToMethodType(tokens[0]);
-                    var resource   = tokens[1];
+                    var resource = tokens[1];
 
                     return ApiExplorerHelper.GetMethodParameterEnumValues(classApiRoot, resource, methodType, paramName)
                                            .Where(v => v.StartsWith(word, StringComparison.OrdinalIgnoreCase))
@@ -283,7 +283,7 @@ internal class ShellCommands
                 {
                     expanded = expanded.Replace($"{{{tags[i]}}}", i < positional.Length ? positional[i] : $"{{{tags[i]}}}");
                 }
-                var tokens     = expanded.Split(' ', StringSplitOptions.RemoveEmptyEntries).ToList();
+                var tokens = expanded.Split(' ', StringSplitOptions.RemoveEmptyEntries).ToList();
                 var methodType = HttpVerbToMethodType(tokens[0]);
                 var resource = tokens[1];
 
