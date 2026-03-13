@@ -7,16 +7,10 @@ However, includes several third-party Open-Source libraries, which are licensed 
 ## Libraries directly included
 
 [Corsinvest ProxmoxVE Api](https://github.com/Corsinvest/cv4pve-api-dotnet)
-License: GPLv3
-
-[Corsinvest ProxmoxVE Api Extension](https://github.com/Corsinvest/cv4pve-api-dotnet)
-License: GPLv3
+License: MIT
 
 [Dotnet Core](https://github.com/dotnet/core)
 License: MIT
 
-[System.CommandLine](https://github.com/dotnet/command-line-api)
-License: MIT
-
-[ReadLine](https://github.com/tonerdo/readline)
+[YamlDotNet](https://github.com/aaubry/YamlDotNet)
 License: MIT

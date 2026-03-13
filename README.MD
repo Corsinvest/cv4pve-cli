@@ -14,120 +14,56 @@ Command Line Interface for Proxmox VE (Made in Italy)
 [![Release](https://img.shields.io/github/release/Corsinvest/cv4pve-cli.svg?style=flat-square)](https://github.com/Corsinvest/cv4pve-cli/releases/latest)
 [![Downloads](https://img.shields.io/github/downloads/Corsinvest/cv4pve-cli/total.svg?style=flat-square&logo=download)](https://github.com/Corsinvest/cv4pve-cli/releases)
 
+cv4pve-cli is to Proxmox VE what `kubectl` is to Kubernetes — a remote-first CLI with context switching, direct API access, and aliases for common operations. Think of it as [`pvesh`](https://pve.proxmox.com/pve-docs/pvesh.1.html), but running from your workstation, supporting multiple clusters, and with tab completion that queries the live API.
+
+| | [pvesh](https://pve.proxmox.com/pve-docs/pvesh.1.html) | kubectl | cv4pve-cli |
+|---|---|---|---|
+| Direct API access | yes | yes | yes |
+| Runs remotely (off-node) | no | yes | yes |
+| Multiple clusters / contexts | no | yes | yes |
+| Tab completion (live) | yes (local only) | yes | yes |
+| Aliases / shortcuts | no | yes | yes |
 
 ---
 
 ## Quick Start
 
 ```bash
-# Check available releases at: https://github.com/Corsinvest/cv4pve-cli/releases
-# Download specific version (replace VERSION with actual version number)
-wget https://github.com/Corsinvest/cv4pve-cli/releases/download/VERSION/cv4pve-cli-linux-x64.zip
-unzip cv4pve-cli-linux-x64.zip
+# 1. Add a context (connection profile)
+cv4pve-cli config add homelab --host 192.168.1.100 --username root@pam --password secret
 
-# Make executable
-chmod +x cv4pve-cli
+# 2. Use it
+cv4pve-cli config use homelab
 
-# Run interactive shell
-./cv4pve-cli --host=YOUR_HOST --username=root@pam --password=YOUR_PASSWORD sh
-
-# Execute API command
-./cv4pve-cli --host=YOUR_HOST --username=root@pam --password=YOUR_PASSWORD get /nodes
+# 3. Run commands
+cv4pve-cli api get /nodes
+cv4pve-cli top
 ```
-
----
-
-## Features
-
-### Core Capabilities
-
-#### **Performance & Reliability**
-- **Native C#** implementation
-- **Cross-platform** (Windows, Linux, macOS)
-- **API-based** operation (no root access required)
-- **Cluster support** with automatic failover
-- **High availability** with multiple host support
-
-#### **Flexible API Access**
-- **Full REST API** coverage (GET/POST/PUT/DELETE)
-- **API documentation** generated at runtime
-- **Usage command** with complete documentation
-- **Multiple output** formats (text, json, table)
-- **ls command** like filesystem navigation
-
-#### **Advanced Features**
-- **Interactive shell** mode for exploration
-- **Script file** execution support
-- **API token** support (Proxmox VE 6.2+)
-- **SSL validation** options
-- **Parameter files** for complex setups
-- **Alias commands** for frequent operations
-- **API metadata cache** for faster startup
-- **Command history** persistence
-
-#### **Enterprise Features**
-- **Multiple host** support for HA
-- **Timeout management** for operations
-- **Error resilience** and detailed logging
-- **Comprehensive** command documentation
-- **Automated scripting** capabilities
 
 ---
 
 ## Installation
 
-### Linux Installation
+### Linux
 
 ```bash
-# Check available releases and get the specific version number
-# Visit: https://github.com/Corsinvest/cv4pve-cli/releases
-
-# Download specific version (replace VERSION with actual version like v1.9.0)
-wget https://github.com/Corsinvest/cv4pve-cli/releases/download/VERSION/cv4pve-cli-linux-x64.zip
-
-# Alternative: Get latest release URL programmatically
 LATEST_URL=$(curl -s https://api.github.com/repos/Corsinvest/cv4pve-cli/releases/latest | grep browser_download_url | grep linux-x64 | cut -d '"' -f 4)
-wget "$LATEST_URL"
-
-# Extract and make executable
-unzip cv4pve-cli-linux-x64.zip
+wget "$LATEST_URL" && unzip cv4pve-cli-linux-x64.zip
 chmod +x cv4pve-cli
-
-# Optional: Move to system path
 sudo mv cv4pve-cli /usr/local/bin/
 ```
 
-### Windows Installation
+### Windows
 
-#### Option 1: Winget (Recommended)
 ```powershell
-# Install using Windows Package Manager
 winget install Corsinvest.cv4pve.cli
 ```
 
-#### Option 2: Manual Installation
-```powershell
-# Check available releases at: https://github.com/Corsinvest/cv4pve-cli/releases
-# Download specific version (replace VERSION with actual version)
-Invoke-WebRequest -Uri "https://github.com/Corsinvest/cv4pve-cli/releases/download/VERSION/cv4pve-cli.exe-win-x64.zip" -OutFile "cv4pve-cli.zip"
-
-# Extract
-Expand-Archive cv4pve-cli.zip -DestinationPath "C:\Tools\cv4pve-cli"
-
-# Add to PATH (optional)
-$env:PATH += ";C:\Tools\cv4pve-cli"
-```
-
-### macOS Installation
+### macOS
 
 ```bash
-# Check available releases at: https://github.com/Corsinvest/cv4pve-cli/releases
-# Download specific version (replace VERSION with actual version)
-wget https://github.com/Corsinvest/cv4pve-cli/releases/download/VERSION/cv4pve-cli-osx-x64.zip
-unzip cv4pve-cli-osx-x64.zip
-chmod +x cv4pve-cli
-
-# Move to applications
+wget https://github.com/Corsinvest/cv4pve-cli/releases/latest/download/cv4pve-cli-osx-x64.zip
+unzip cv4pve-cli-osx-x64.zip && chmod +x cv4pve-cli
 sudo mv cv4pve-cli /usr/local/bin/
 ```
 
@@ -135,525 +71,275 @@ sudo mv cv4pve-cli /usr/local/bin/
 
 ## Configuration
 
-### Authentication Methods
+All configuration is managed through the `config` subcommand. Contexts are connection profiles — each one stores a host, credentials, and port.
 
-#### **Username/Password**
+### File locations
+
+| Platform | Base path |
+|----------|-----------|
+| Linux / macOS | `~/.cv4pve/cli/` |
+| Windows | `%USERPROFILE%\.cv4pve\cli\` |
+
+All files are in YAML format and can be edited directly with any text editor.
+
+| File | Content |
+|------|---------|
+| `config` | Contexts (connection profiles) |
+| `alias` | User-defined aliases |
+| `cache/<version>.json` | API schema cache (auto-generated) |
+
+### Add a context
+
 ```bash
-cv4pve-cli --host=192.168.1.100 --username=root@pam --password=your_password [commands]
+# Username/password
+cv4pve-cli config add homelab --host 192.168.1.100 --username root@pam --password secret
+
+# API token (recommended for production)
+cv4pve-cli config add prod --host pve.company.com --api-token root@pam!mytoken=uuid-here
+
+# Custom port, skip certificate validation
+cv4pve-cli config add dev --host 10.0.0.1 --port 8007 --username root@pam --password secret --validate-certificate false
+
+# Custom timeout (default: 30s)
+cv4pve-cli config add slow --host 10.0.0.1 --username root@pam --password secret --timeout 60
 ```
 
-#### **API Token (Recommended)**
+### Switch context
+
 ```bash
-cv4pve-cli --host=192.168.1.100 --api-token=root@pam!token1=uuid-here [commands]
+cv4pve-cli config use prod
+cv4pve-cli config current               # Show which context is active
 ```
 
-#### **Password from File**
-```bash
-# Store password in file
-echo "your_password" > /etc/cv4pve/password
-chmod 600 /etc/cv4pve/password
+### List and inspect contexts
 
-# Use password file
-cv4pve-cli --host=192.168.1.100 --username=root@pam --password=file:/etc/cv4pve/password [commands]
+```bash
+cv4pve-cli config list                  # List all contexts (* = active)
+cv4pve-cli config view                  # Full config dump (passwords hidden)
 ```
 
-### Connection Options
+### Update a context
 
-| Parameter | Description | Example |
-|-----------|-------------|---------|
-| `--host` | Proxmox host(s) (multiple for HA) | `--host=pve1:8006,pve2:8006` |
-| `--username` | Username@realm | `--username=root@pam` |
-| `--password` | Password or file | `--password=secret` or `--password=file:/path` |
-| `--api-token` | API token | `--api-token=user@realm!token=uuid` |
-| `--validate-certificate` | Validate SSL certificate | `--validate-certificate` |
+Only the fields you specify are changed:
+
+```bash
+cv4pve-cli config set homelab --password newpass
+cv4pve-cli config set homelab --host 192.168.1.200 --port 8006
+cv4pve-cli config set homelab --timeout 60
+```
+
+### Rename and delete
+
+```bash
+cv4pve-cli config rename homelab lab
+cv4pve-cli config delete lab
+```
+
+### Verify connection
+
+```bash
+cv4pve-cli config verify                # Test the current context
+cv4pve-cli config verify homelab        # Test a specific context
+```
 
 ---
 
-## Usage Examples
+## API Commands
 
-### Interactive Shell
+All Proxmox VE REST API calls go through the `api` subcommand.
 
-<details>
-<summary><strong>Interactive Mode</strong></summary>
-
-#### Start Interactive Shell
-```bash
-cv4pve-cli --host=192.168.0.100 --username=root@pam --password=secret sh
+```
+cv4pve-cli api get    <resource> [--key value ...]
+cv4pve-cli api set    <resource> [--key value ...]
+cv4pve-cli api create <resource> [--key value ...]
+cv4pve-cli api delete <resource>
+cv4pve-cli api ls     <resource>
+cv4pve-cli api usage  <resource> [method] [--returns] [--output <format>]
 ```
 
-**Output:**
-```text
-Corsinvest CLI for Proxmox VE (Tuesday, December 11, 2025)
-Type '<TAB>' for completion word
-Type 'help', 'quit' to close the application.
-Initialization metadata... 111ms
-
->>>
-```
-
-#### Help Command
-```bash
->>> help
-
-Commands:
-  alias         Alias commands
-  clear         Clear screen
-  clear-cache   Clear API metadata cache
-  clear-history Clear command history
-  create        Create (POST) from resource
-  delete        Delete (DELETE) from resource
-  get           Get (GET) from resource
-  help          Show help information
-  history       Show history command
-  ls            List child objects on <api_path>.
-  quit          Close application
-  set           Set (PUT) from resource
-  usage         Usage resource
-```
-
-#### Interactive Commands
-```bash
-# Inside shell, explore the API
->>> get /nodes
->>> get /nodes/pve1/qemu
->>> get /cluster/resources type:vm
->>> ls /nodes/pve1
->>> usage /cluster/resources
->>> quit
-```
-
-#### Script File Execution
-```bash
-# Create script file
-cat > commands.txt <<EOF
-get /nodes
-get /cluster/resources
-ls /nodes/pve1
-EOF
-
-# Execute script
-cv4pve-cli --host=pve.local --username=root@pam --password=secret sh --script=commands.txt
-```
-
-#### Alias Feature
-The shell supports custom aliases for frequently used commands:
-
-```text
->>> alias
-
-System aliases available:
-  cluster-backup, cbck           - Cluster list vzdump backup schedule
-  cluster-status, csts           - Cluster status
-  cluster-top, ct, top           - Cluster top
-  qemu-list, qlst                - Qemu list vm
-  qemu-status, qsts              - Qemu current status vm
-  qemu-start, qstr               - Qemu start vm
-  qemu-stop, qsto                - Qemu stop vm
-  ... and many more
-```
-
-</details>
-
-### API Operations
-
-<details>
-<summary><strong>GET - Read Data</strong></summary>
-
-#### Get Version
-```bash
-cv4pve-cli --host=192.168.0.100 --username=root@pam --password=secret get /version
-```
-
-**Output:**
-```text
-┌─────────┬──────────┐
-│ key     │ value    │
-├─────────┼──────────┤
-│ release │ 13       │
-├─────────┼──────────┤
-│ repoid  │ aee6f0ec │
-├─────────┼──────────┤
-│ version │ 5.4      │
-└─────────┴──────────┘
-```
-
-#### Get Nodes Status
-```bash
-cv4pve-cli --host=192.168.0.100 --username=root@pam --password=secret get /nodes
-```
-
-**Output:**
-```text
-┌──────┬────────┬───────┬───────┬────────┬───────────┬───────────┬──────────────────────────┬─────────────────┐
-│ node │ status │ cpu   │ level │ maxcpu │ maxmem    │ mem       │ ssl_fingerprint          │ uptime          │
-├──────┼────────┼───────┼───────┼────────┼───────────┼───────────┼──────────────────────────┼─────────────────┤
-│ pve1 │ online │ 4,58% │ c     │ 8      │ 31,39 GiB │ 17,03 GiB │ 81:94:9C:7A:20:38:44...  │ 12d 19h 12m 55s │
-│ pve2 │ online │ 4,92% │ c     │ 8      │ 31,39 GiB │ 16,77 GiB │ 70:41:5B:47:21:F4:5C...  │ 13d 23h 34m 25s │
-└──────┴────────┴───────┴───────┴────────┴───────────┴───────────┴──────────────────────────┴─────────────────┘
-```
-
-#### Get Cluster Resources (with filter)
-```bash
-cv4pve-cli --host=192.168.0.100 --username=root@pam --password=secret get /cluster/resources type:node
-```
-
-**Output:**
-```text
-┌───────────┬──────┬───────┬───────────┬────────┬────────────┬───────────┬───────────┬──────┬────────┐
-│ id        │ type │ cpu   │ disk      │ maxcpu │ maxdisk    │ maxmem    │ mem       │ node │ status │
-├───────────┼──────┼───────┼───────────┼────────┼────────────┼───────────┼───────────┼──────┼────────┤
-│ node/pve1 │ node │ 6,47% │ 14,65 GiB │ 8      │ 27,19 GiB  │ 31,39 GiB │ 17,38 GiB │ pve1 │ online │
-│ node/pve2 │ node │ 4,38% │ 12,45 GiB │ 8      │ 27,19 GiB  │ 31,39 GiB │ 16,75 GiB │ pve2 │ online │
-└───────────┴──────┴───────┴───────────┴────────┴────────────┴───────────┴───────────┴──────┴────────┘
-```
-
-#### JSON Output
-```bash
-# Standard JSON
-cv4pve-cli --host=192.168.0.100 --username=root@pam --password=secret get /version --output=json
-```
-
-**Output:**
-```json
-{"repoid":"aee6f0ec","release":"13","version":"5.4","keyboard":"it"}
-```
-
-#### Pretty JSON Output
-```bash
-cv4pve-cli --host=192.168.0.100 --username=root@pam --password=secret get /version --output=jsonpretty
-```
-
-**Output:**
-```json
-{
-  "repoid": "aee6f0ec",
-  "release": "13",
-  "version": "5.4",
-  "keyboard": "it"
-}
-```
-
-</details>
-
-<details>
-<summary><strong>SET - Update Configuration</strong></summary>
+Parameters use `--key value` format and can be repeated:
 
 ```bash
-# Update VM memory
-cv4pve-cli --host=pve.local --username=root@pam --password=secret set /nodes/pve1/qemu/100/config memory:4096
-
-# Update VM description
-cv4pve-cli --host=pve.local --username=root@pam --password=secret set /nodes/pve1/qemu/100/config description:"Updated by cv4pve-cli"
-
-# Update multiple parameters
-cv4pve-cli --host=pve.local --username=root@pam --password=secret set /nodes/pve1/qemu/100/config memory:4096 cores:2
+cv4pve-cli api get /cluster/resources --type vm
+cv4pve-cli api set /nodes/pve1/qemu/100/config --memory 4096 --cores 2
+cv4pve-cli api create /nodes/pve1/qemu/100/snapshot --snapname before-update
+cv4pve-cli api delete /nodes/pve1/qemu/100/snapshot/before-update
 ```
 
-</details>
+### Output formats
 
-<details>
-<summary><strong>CREATE - Create Resources</strong></summary>
+Use `--output` (or `-o`) to control the output format:
 
 ```bash
-# Create snapshot
-cv4pve-cli --host=pve.local --username=root@pam --password=secret create /nodes/pve1/qemu/100/snapshot snapname:backup-$(date +%Y%m%d)
-
-# Create user
-cv4pve-cli --host=pve.local --username=root@pam --password=secret create /access/users userid:testuser@pve password:secret
-
-# Start VM
-cv4pve-cli --host=pve.local --username=root@pam --password=secret create /nodes/pve1/qemu/100/status/start
+cv4pve-cli api get /nodes --output text        # default, table
+cv4pve-cli api get /nodes --output json
+cv4pve-cli api get /nodes --output jsonpretty
+cv4pve-cli api get /nodes --output html
+cv4pve-cli api get /nodes --output markdown
 ```
 
-</details>
-
-<details>
-<summary><strong>DELETE - Remove Resources</strong></summary>
+### Browse and explore the API
 
 ```bash
-# Delete snapshot
-cv4pve-cli --host=pve.local --username=root@pam --password=secret delete /nodes/pve1/qemu/100/snapshot/backup-20250211
+# List children of a path
+cv4pve-cli api ls /
+cv4pve-cli api ls /nodes
+cv4pve-cli api ls /nodes/pve1/qemu
 
-# Stop VM
-cv4pve-cli --host=pve.local --username=root@pam --password=secret create /nodes/pve1/qemu/100/status/stop
+# Show parameters and schema for a resource
+cv4pve-cli api usage /cluster/resources
+cv4pve-cli api usage /nodes/{node}/qemu/{vmid}/config get
+cv4pve-cli api usage /nodes/{node}/qemu/{vmid}/config get --returns --output json
 ```
-
-</details>
-
-### Navigation & Documentation
-
-<details>
-<summary><strong>LS - Browse API Like Filesystem</strong></summary>
-
-#### List Root
-```bash
-cv4pve-cli --host=192.168.0.100 --username=root@pam --password=secret ls /
-```
-
-**Output:**
-```text
-Dr---        access
-Dr---        cluster
-Dr---        nodes
-Dr--c        pools
-Dr--c        storage
--r---        version
-```
-
-#### List Nodes
-```bash
-cv4pve-cli --host=192.168.0.100 --username=root@pam --password=secret ls /nodes
-```
-
-**Output:**
-```bash
-Dr---        pve1
-Dr---        pve2
-Dr---        pve3
-```
-
-#### List VMs on Node
-```bash
-cv4pve-cli --host=192.168.0.100 --username=root@pam --password=secret ls /nodes/pve1/qemu
-```
-
-**Output:**
-```bash
-Dr---        100
-Dr---        101
-Dr---        102
-Dr---        118
-```
-
-</details>
-
-<details>
-<summary><strong>USAGE - API Documentation</strong></summary>
-
-#### Basic Usage Command
-```bash
-cv4pve-cli --host=192.168.0.100 --username=root@pam --password=secret usage /cluster/resources
-```
-
-**Output:**
-```text
-USAGE: get /cluster/resources [OPTIONS]
-```
-
-#### Verbose Usage (with parameters)
-```bash
-cv4pve-cli --host=192.168.0.100 --username=root@pam --password=secret usage /cluster/resources --verbose
-```
-
-**Output:**
-```text
-USAGE: get /cluster/resources [OPTIONS]
-
-  Resources index (cluster wide).
-┌───────┬─────────────────┬─────────────┐
-│ param │ type            │ description │
-├───────┼─────────────────┼─────────────┤
-│ type  │ vm,storage,node │             │
-└───────┴─────────────────┴─────────────┘
-```
-
-#### Usage with Returns Schema
-```bash
-cv4pve-cli --host=192.168.0.100 --username=root@pam --password=secret usage /cluster/resources --verbose --returns
-```
-
-**Output:**
-```text
-USAGE: get /cluster/resources [OPTIONS]
-
-  Resources index (cluster wide).
-┌───────┬─────────────────┬─────────────┐
-│ param │ type            │ description │
-├───────┼─────────────────┼─────────────┤
-│ type  │ vm,storage,node │             │
-└───────┴─────────────────┴─────────────┘
-RETURNS:
-┌─────────┬────────────────────────┬──────────────────────────────────────────┐
-│ param   │ type                   │ description                              │
-├─────────┼────────────────────────┼──────────────────────────────────────────┤
-│ cpu     │ number                 │ CPU utilization                          │
-│ disk    │ string                 │ Used disk space in bytes                 │
-│ maxcpu  │ number                 │ Number of available CPUs                 │
-│ maxmem  │ integer                │ Number of available memory in bytes      │
-│ mem     │ string                 │ Used memory in bytes                     │
-│ node    │ string                 │ The cluster node name                    │
-│ status  │ string                 │ Resource type dependent status           │
-│ type    │ node,storage,pool,qemu │ Resource type                            │
-└─────────┴────────────────────────┴──────────────────────────────────────────┘
-```
-
-#### Specific Command Usage
-```bash
-# Show all available commands for a resource
-cv4pve-cli --host=192.168.0.100 --username=root@pam --password=secret usage /nodes/pve1/status
-```
-
-**Output:**
-```text
-USAGE: get /nodes/pve1/status
-USAGE: create /nodes/pve1/status command:<string>
-```
-
-```bash
-# Show specific command documentation
-cv4pve-cli --host=192.168.0.100 --username=root@pam --password=secret usage /nodes/pve1/status --command=create
-```
-
-**Output:**
-```text
-USAGE: create /nodes/pve1/status command:<string>
-```
-
-</details>
-
-### Advanced Usage
-
-<details>
-<summary><strong>Parameter Files</strong></summary>
-
-#### Create Parameter File
-```bash
-# /etc/cv4pve/production.conf
---host=pve-cluster.company.com
---api-token=automation@pve!production=uuid-here
---validate-certificate
-```
-
-#### Execute with Parameter File
-```bash
-cv4pve-cli @/etc/cv4pve/production.conf get /cluster/resources
-```
-
-</details>
-
-<details>
-<summary><strong>Output Formats</strong></summary>
-
-```bash
-# Text output (default)
-cv4pve-cli --host=pve.local --username=root@pam --password=secret get /nodes
-
-# JSON output
-cv4pve-cli --host=pve.local --username=root@pam --password=secret get /nodes --output=json
-
-# Pretty JSON
-cv4pve-cli --host=pve.local --username=root@pam --password=secret get /nodes --output=jsonpretty
-
-# Table output (for supported commands)
-cv4pve-cli --host=pve.local --username=root@pam --password=secret get /cluster/resources --output=table
-```
-
-</details>
 
 ---
 
-## Command Reference
+## Aliases
 
-### Global Options
+Aliases are shortcuts for frequently used API commands. A command can contain named placeholders in curly braces (e.g. `{node}`, `{vmid}`). When you run the alias, you supply values for each placeholder positionally — the first argument fills the first placeholder, the second fills the second, and so on.
+
+### Built-in aliases
+
+A set of read-only aliases is available out of the box, organized by verb and resource. They cannot be modified or removed. A few examples:
+
+| Alias | Arguments | Description |
+|-------|-----------|-------------|
+| `top` | — | Cluster resource overview |
+| `get vms` | — | List all VMs (cluster-wide) |
+| `show vm` | `<node> <vmid>` | Show VM config |
+| `do start vm` | `<node> <vmid>` | Start a VM |
+| `do snapshot vm` | `<node> <vmid> <snapname>` | Create a VM snapshot |
+| `get cluster not-backed-up` | — | List guests with no backup job |
+
+See all built-in and user aliases:
 
 ```bash
-cv4pve-cli [global-options] [command] [parameters]
+cv4pve-cli alias list
+cv4pve-cli alias list --verbose        # includes command and placeholder args
+cv4pve-cli alias list --search snap    # filter by keyword
 ```
 
-| Parameter | Description | Example |
-|-----------|-------------|---------|
-| `--host` | Host name (host[:port]) | `--host=pve.local:8006` |
-| `--username` | Username@realm | `--username=root@pam` |
-| `--password` | Password or file | `--password=secret` |
-| `--api-token` | API token | `--api-token=user@realm!token=uuid` |
-| `--validate-certificate` | Validate SSL certificate | `--validate-certificate` |
-| `--version` | Show version | `--version` |
-| `-?, -h, --help` | Show help | `--help` |
+### Run an alias
 
-### Commands
-
-#### API Commands
-
-| Command | Description | Syntax |
-|---------|-------------|--------|
-| `get` | GET from resource | `get <resource> [parameters]` |
-| `set` | PUT to resource | `set <resource> [parameters]` |
-| `create` | POST to resource | `create <resource> [parameters]` |
-| `delete` | DELETE resource | `delete <resource> [parameters]` |
-
-#### Utility Commands
-
-| Command | Description | Syntax |
-|---------|-------------|--------|
-| `usage` | Show API usage | `usage <resource> [options]` |
-| `ls` | List child objects | `ls <resource>` |
-| `sh` | Interactive shell | `sh [--script=file] [--only-result]` |
-
-#### Shell Commands (inside interactive shell)
-
-| Command | Description |
-|---------|-------------|
-| `clear` | Clear screen |
-| `clear-cache` | Clear API metadata cache files |
-| `clear-history` | Clear command history |
-| `history` | Show command history |
-| `alias` | Manage command aliases |
-| `quit` | Exit interactive shell |
-
-### Command Options
-
-#### API Command Options
 ```bash
---output <format>     Output format: text, json, jsonpretty, table
---wait                Wait for task to finish
---verbose             Enable verbose output
+# No arguments
+cv4pve-cli top
+cv4pve-cli get vms
+
+# With arguments — placeholders filled positionally
+#   "show vm" command: "get /nodes/{node}/qemu/{vmid}/config"
+#                                          ↑          ↑
+cv4pve-cli show vm pve1 100            #  node=pve1  vmid=100
+cv4pve-cli do start vm pve1 100
+cv4pve-cli get vm snapshots pve1 100
+
+# Options: --output, --verbose, --wait (passed through to the underlying api call)
+cv4pve-cli get nodes --output json
+cv4pve-cli show vm pve1 100 --output jsonpretty
+cv4pve-cli do start vm pve1 100 --wait
 ```
 
-#### Usage Command Options
+If you omit a required placeholder, the CLI prints an error with the expected usage:
+
+```
+Error: missing arguments: {vmid}
+Usage: show vm <node> <vmid>
+```
+
+### User aliases
+
+You can create your own aliases using any API call as the command. Use `{name}` placeholders in the path wherever you want the caller to supply a value at runtime.
+
 ```bash
---command, -c <type>  API command type: get, set, create, delete
---returns, -r         Include schema for returned data
---output <format>     Output format
---verbose             Enable verbose output
+# Add an alias without placeholders
+cv4pve-cli alias add cluster-res \
+    --command "get /cluster/resources" \
+    --description "All cluster resources"
+
+# Add an alias with placeholders
+cv4pve-cli alias add vm-net \
+    --command "get /nodes/{node}/qemu/{vmid}/config" \
+    --description "Show VM network config"
+
+# Use them
+cv4pve-cli cluster-res
+cv4pve-cli vm-net pve1 100
+
+# Remove a user alias (built-in aliases cannot be removed)
+cv4pve-cli alias remove vm-net
 ```
 
-#### Shell Command Options
-```bash
---script, -s <file>   Script file to execute
---only-result, -r     Only show result (no prompts)
-```
-
-### Data Storage
-
-The interactive shell stores data in the application data directory:
-
-| Platform | Location |
-|----------|----------|
-| Windows | `%APPDATA%\cv4pve-cli\` |
-| Linux | `~/.config/cv4pve-cli/` |
-| macOS | `~/.config/cv4pve-cli/` |
-
-**Stored files:**
-- `api-cache_{host}_{version}.json` - API metadata cache (per host/version)
-- `history.txt` - Command history (last 100 commands)
-- `alias.txt` - Custom command aliases
-
-Use `clear-cache` and `clear-history` commands inside the shell to manage these files.
+> Built-in aliases cannot be added, modified, or removed. Attempting to create an alias with the same name as a built-in will return an error.
 
 ---
 
-## Documentation Links
+## Tab Completion
 
-- **[Proxmox VE API reference](https://pve.proxmox.com/pve-docs/api-viewer/index.html)** 
-- **[Proxmox VE API token documentation](https://pve.proxmox.com/pve-docs/pveum-plain.html)** 
+Tab completion is registered automatically on first run. It works across all commands, API paths, parameters, contexts, and alias arguments. Open a new terminal session after the first run to activate it.
+
+### What completes
+
+| Typing | TAB suggests |
+|--------|-------------|
+| `cv4pve-cli <TAB>` | `api`, `config`, `alias`, `top`, `get`, `show`, `do`, ... |
+| `cv4pve-cli get <TAB>` | `vms`, `nodes`, `storages`, `cluster`, `vm`, `ct`, ... |
+| `cv4pve-cli do <TAB>` | `start`, `stop`, `shutdown`, `migrate`, `clone`, ... |
+| `cv4pve-cli config <TAB>` | `add`, `use`, `list`, `set`, `delete`, `rename`, `verify`, `view` |
+| `cv4pve-cli config use <TAB>` | context names (e.g. `homelab`, `prod`) |
+| `cv4pve-cli alias remove <TAB>` | user alias names only |
+| `cv4pve-cli api get /nodes/<TAB>` | node names live from API (e.g. `pve1`, `pve2`) |
+| `cv4pve-cli api get /nodes/pve1/qemu/<TAB>` | VM IDs live from API (e.g. `100`, `101`) |
+| `cv4pve-cli api get /nodes/pve1/qemu/100/config <TAB>` | parameter names (e.g. `--cores`, `--memory`) |
+| `cv4pve-cli show vm <TAB>` | node names live from API |
+| `cv4pve-cli show vm pve1 <TAB>` | VM IDs live from API |
+
+Completion for API paths and alias arguments queries the live Proxmox VE API, so results reflect the actual state of your cluster.
+
+### Setup
+
+Tab completion shims are written to `~/.cv4pve/cli/` (`completion.ps1` on Windows, `completion.bash` / `completion.zsh` on Linux/macOS) and sourced automatically into your shell profile on first run.
+
+**After the first run, open a new terminal session** to activate completion. Alternatively, reload your profile in the current session:
+
+**PowerShell**
+```powershell
+. $PROFILE
+```
+
+**Bash**
+```bash
+source ~/.bashrc
+```
+
+**Zsh**
+```bash
+source ~/.zshrc
+```
+
+To force re-registration (e.g. after reinstalling or upgrading), run the following and then open a new terminal:
+
+```bash
+cv4pve-cli completion reset
+```
+
+---
+
+## API Metadata Cache
+
+The Proxmox VE API schema is downloaded once from the connected host and cached locally under `~/.cv4pve/cli/cache/`. The cache is keyed by PVE version, so it is refreshed automatically when the host is upgraded.
+
+---
+
+## Links
+
+- [Proxmox VE API reference](https://pve.proxmox.com/pve-docs/api-viewer/index.html)
+- [Proxmox VE API token documentation](https://pve.proxmox.com/pve-docs/pveum-plain.html)
 
 ---
 
 ## Support
 
-Professional support and consulting available through [Corsinvest](https://www.corsinvest.it/cv4pve).
-
----
+Professional support available through [Corsinvest](https://www.corsinvest.it/cv4pve).
 
 Part of [cv4pve](https://www.corsinvest.it/cv4pve) suite | Made with ❤️ in Italy by [Corsinvest](https://www.corsinvest.it)
 

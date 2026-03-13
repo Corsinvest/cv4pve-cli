@@ -1,11 +1,19 @@
 <Project>
   <PropertyGroup>
-    <Version>1.11.0</Version>
+    <Version>2.0.0</Version>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <LangVersion>latest</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <Company>Corsinvest Srl</Company>
     <Authors>Corsinvest Srl</Authors>
-    <Copyright>Corsinvest Srl</Copyright>
+    <Copyright>Copyright © Corsinvest Srl</Copyright>
+    <Product>Corsinvest for Proxmox VE Cli</Product>
+    <AssemblyTitle>Corsinvest for Proxmox VE Cli</AssemblyTitle>
+    <Description>Command-line interface for Proxmox VE — manage API calls, contexts and aliases.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/Corsinvest/cv4pve-cli</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/Corsinvest/cv4pve-cli</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
   </PropertyGroup>
 </Project>
