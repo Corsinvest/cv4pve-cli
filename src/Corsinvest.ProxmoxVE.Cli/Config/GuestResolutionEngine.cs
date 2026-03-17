@@ -19,7 +19,7 @@ internal static class GuestResolutionEngine
 {
     internal enum GuestResolution { None, Qemu, Lxc, Any }
 
-    internal const string ArgGuestLong  = "--guest";
+    internal const string ArgGuestLong = "--guest";
     internal const string ArgGuestShort = "-g";
 
     private const string SegNodes = "nodes";

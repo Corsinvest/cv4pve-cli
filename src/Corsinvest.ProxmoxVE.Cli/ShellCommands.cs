@@ -146,7 +146,7 @@ internal class ShellCommands
             var cmdDesc = guestResolution != GRE.GuestResolution.None
                             ? $"{alias.Description}\nTip: use {GRE.ArgGuestLong} <id|name> to resolve guest info automatically"
                             : alias.Description;
-                            
+
             var cmd = leafParent.AddCommand(finalName, cmdDesc);
 
             // Single variadic argument — no required-arg validation by System.CommandLine
@@ -442,7 +442,7 @@ internal class ShellCommands
             var parentNode = string.IsNullOrEmpty(parentPath)
                                 ? classApiRoot
                                 : ClassApi.GetFromResource(classApiRoot, parentPath);
-                                
+
             if (parentNode == null || !parentNode.SubClasses.Any(c => c.IsIndexed)) { return []; }
 
             var (values, error) = ApiExplorerHelper.ListValuesAsync(client, classApiRoot, parentPath).GetAwaiter().GetResult();
@@ -611,12 +611,12 @@ internal class ShellCommands
 
     private static string GetPrevToken(string[] allTokens, string word)
         => word.Length == 0
-            ? (allTokens.Length >= 1 
-                ? allTokens[^1] 
+            ? (allTokens.Length >= 1
+                ? allTokens[^1]
                 : string.Empty)
 
-            : (allTokens.Length >= 2 
-                ? allTokens[^2] 
+            : (allTokens.Length >= 2
+                ? allTokens[^2]
                 : string.Empty);
 
     private static bool IsGuestToken(string token)
@@ -715,10 +715,10 @@ internal class ShellCommands
 
         var positionalArgs = extraArgs.Where(a => !a.StartsWith('-')).ToArray();
         var kvArgs = extraArgs.Where(a => a.StartsWith('-')
-                                            && a != ArgVerboseLong 
+                                            && a != ArgVerboseLong
                                             && a != ArgVerboseShort
-                                            && a != ArgHelpLong 
-                                            && a != ArgHelpShort 
+                                            && a != ArgHelpLong
+                                            && a != ArgHelpShort
                                             && a != ArgHelpAlt).ToArray();
 
         var tags = ApiExplorerHelper.GetArgumentTags(expanded);

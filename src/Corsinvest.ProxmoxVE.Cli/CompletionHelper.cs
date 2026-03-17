@@ -223,13 +223,13 @@ compdef _cv4pve_cli_complete cv4pve-cli
             // Strip the command name prefix (e.g. "cv4pve-cli ") if present
             var spaceIdx = line.IndexOf(' ');
 
-            var input = spaceIdx >= 0 
-                            ? line[(spaceIdx + 1)..] 
+            var input = spaceIdx >= 0
+                            ? line[(spaceIdx + 1)..]
                             : string.Empty;
 
             var parseResult = app.Parse(input);
             var position = input.Length;
-            
+
             // Exclude built-in help/version/alias flags injected by System.CommandLine
             var builtIn = new HashSet<string>([ShellCommands.ArgHelpAlt, ShellCommands.ArgHelpShort,
                                                ShellCommands.ArgHelpSlashQ, ShellCommands.ArgHelpSlashH,
@@ -244,8 +244,8 @@ compdef _cv4pve_cli_complete cv4pve-cli
                                                   ShellCommands.ArgReturnsShort],
                                                   StringComparer.OrdinalIgnoreCase);
 
-            var word = input.Length > 0 && !input.EndsWith(' ') 
-                        ? input.Split(' ')[^1] 
+            var word = input.Length > 0 && !input.EndsWith(' ')
+                        ? input.Split(' ')[^1]
                         : string.Empty;
 
             var suppressCli = !word.StartsWith('-');
@@ -257,10 +257,10 @@ compdef _cv4pve_cli_complete cv4pve-cli
 
             // Determine previous token to detect "value after --param" context
             var tokens = input.TrimEnd().Split(' ', StringSplitOptions.RemoveEmptyEntries);
-            var prevInputToken = tokens.Length >= 2 
-                                    ? tokens[^(word.Length > 0 ? 2 : 1)] 
+            var prevInputToken = tokens.Length >= 2
+                                    ? tokens[^(word.Length > 0 ? 2 : 1)]
                                     : string.Empty;
-                                    
+
             var expectingParamValue = prevInputToken.StartsWith("--");
             if (expectingParamValue)
             {
