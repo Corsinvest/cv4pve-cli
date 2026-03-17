@@ -135,7 +135,7 @@ internal static class PveConfigManager
             using var stream = asm.GetManifestResourceStream(resName)!;
             using var reader = new StreamReader(stream);
             var data = Deserializer.Deserialize<AliasFileData>(reader) ?? new AliasFileData();
-            _builtinAliases = data.Aliases.Select(a => new PveAlias(a.Name, a.Description, a.Command, true, a.Confirm)).ToArray();
+            _builtinAliases = [.. data.Aliases.Select(a => new PveAlias(a.Name, a.Description, a.Command, true, a.Confirm))];
             return _builtinAliases;
         }
     }

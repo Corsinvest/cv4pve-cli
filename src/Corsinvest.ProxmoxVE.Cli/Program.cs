@@ -19,7 +19,7 @@ ShellCommands.CreateCommands(app, loggerFactory);
 SpecialCommands.AddCommands(app);
 CompletionHelper.AddCompleteCommand(app);
 CompletionHelper.EnsureRegistered();
-app.SetAction(ctx => app.Parse("--help").Invoke());
+app.SetAction(ctx => app.Parse(ShellCommands.ArgHelpLong).Invoke());
 
 var (effectiveArgs, exitCode) = ShellCommands.ResolveAliasArgs(args);
 if (effectiveArgs == null && exitCode != 0) { return exitCode; }

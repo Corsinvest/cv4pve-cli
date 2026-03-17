@@ -11,6 +11,8 @@ using Corsinvest.ProxmoxVE.Api.Extension.Utils;
 using Corsinvest.ProxmoxVE.Api.Metadata;
 using Corsinvest.ProxmoxVE.Cli.Config;
 using Microsoft.Extensions.Logging;
+using GRE = Corsinvest.ProxmoxVE.Cli.Config.GuestResolutionEngine;
+using Corsinvest.ProxmoxVE.Api.Extension;
 
 namespace Corsinvest.ProxmoxVE.Cli;
 
@@ -20,6 +22,20 @@ namespace Corsinvest.ProxmoxVE.Cli;
 internal class ShellCommands
 {
     private static ILoggerFactory _loggerFactory = null!;
+
+    internal const string ArgVerboseLong = "--verbose";
+    internal const string ArgVerboseShort = "-v";
+    internal const string ArgHelpLong = "--help";
+    internal const string ArgHelpShort = "-h";
+    internal const string ArgHelpAlt = "-?";
+    internal const string ArgHelpSlashH = "/h";
+    internal const string ArgHelpSlashQ = "/?";
+    internal const string ArgVersion = "--version";
+    internal const string ArgReturnsLong = "--returns";
+    internal const string ArgReturnsShort = "-r";
+    internal const string ArgOutputLong = "--output";
+    internal const string ArgOutputShort = "-o";
+    internal const string ArgWait = "--wait";
 
     /// <summary>
     /// Initialize commands
@@ -53,7 +69,7 @@ internal class ShellCommands
 
     private static async Task<ClassApi> GetClassApiRootAsync(PveClient client)
     {
-        var version = (await client.Version.Version()).ToData().version as string ?? "unknown";
+        var version = (await client.Version.GetAsync()).Version;
         var flatFile = Path.Combine(CacheDir, $"{version}-flat.json");
 
         if (!File.Exists(flatFile))
@@ -81,8 +97,9 @@ internal class ShellCommands
     {
         foreach (var alias in PveConfigManager.LoadAliases().OrderBy(a => a.Name))
         {
-            var nameParts = alias.Name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            var nameParts = SplitArgs(alias.Name);
             var tags = ApiExplorerHelper.GetArgumentTags(alias.Command);
+            var (guestResolution, _) = GRE.Detect(alias.Command);
             var skipTokens = nameParts.Length;
 
             // Navigate/create the command hierarchy for multi-word alias names
@@ -120,25 +137,44 @@ internal class ShellCommands
                 };
                 leafParent = existing ?? leafParent.AddCommand(part, desc);
             }
+
             var finalName = nameParts[^1];
 
             // Skip if leaf already registered
             if (leafParent.Subcommands.Any(c => c.Name == finalName)) { continue; }
 
-            var cmd = leafParent.AddCommand(finalName, alias.Description);
+            var cmdDesc = guestResolution != GRE.GuestResolution.None
+                            ? $"{alias.Description}\nTip: use {GRE.ArgGuestLong} <id|name> to resolve guest info automatically"
+                            : alias.Description;
+
+            var cmd = leafParent.AddCommand(finalName, cmdDesc);
 
             // Single variadic argument — no required-arg validation by System.CommandLine
             // Positional values come first, then --key value pairs
             var argAll = cmd.AddArgument<string[]>("args",
-                tags.Length > 0
-                    ? $"Arguments: {string.Join(" ", tags.Select(t => $"<{t}>"))} [--key value ...]"
-                    : "Extra --key value pairs");
+                                                   tags.Length > 0
+                                                        ? $"Arguments: {string.Join(" ", tags.Select(t => $"<{t}>"))} [--key value ...]"
+                                                        : "Extra --key value pairs");
             argAll.Arity = ArgumentArity.ZeroOrMore;
             argAll.HelpName = tags.Length > 0
-                ? string.Join(" ", tags.Select(t => $"<{t}>"))
-                : "[--key value ...]";
+                                ? string.Join(" ", tags.Select(t => $"<{t}>"))
+                                : "[--key value ...]";
+
             argAll.Hidden = tags.Length == 0;
             argAll.CompletionSources.Clear();
+
+            // Completion for --guest/-g value
+            if (guestResolution != GRE.GuestResolution.None)
+            {
+                var capturedResolution = guestResolution;
+                argAll.CompletionSources.Add((ctx) =>
+                {
+                    var allTokens = ctx.ParseResult.Tokens.Select(t => t.Value).ToArray();
+                    var word = ctx.WordToComplete ?? string.Empty;
+                    if (!IsGuestToken(GetPrevToken(allTokens, word))) { return []; }
+                    return GRE.GetCompletions(capturedResolution, GetLiveClient()).ToArray();
+                });
+            }
 
             // Completion per positional slot
             for (var i = 0; i < tags.Length; i++)
@@ -151,19 +187,22 @@ internal class ShellCommands
                         var classApiRoot = BuildClassApiFromCache();
                         if (classApiRoot == null) { return []; }
 
-                        var argTokens = ctx.ParseResult.Tokens
-                                                       .Skip(skipTokens)
-                                                       .Where(t => !t.Value.StartsWith('-'))
-                                                       .Select(t => t.Value)
-                                                       .ToArray();
+                        var allTokens = ctx.ParseResult.Tokens.Skip(skipTokens).Select(t => t.Value).ToArray();
+                        var word = ctx.WordToComplete ?? string.Empty;
+                        var prevToken = GetPrevToken(allTokens, word);
+                        if (IsGuestToken(prevToken)) { return []; }
+
+                        // Exclude the word being completed (partial token) from positional count
+                        var argTokens = allTokens.Where(t => !t.StartsWith('-'))
+                                                 .Where(t => word.Length == 0 || t != word)
+                                                 .ToArray();
 
                         if (argTokens.Length != tagIndex) { return []; }
 
-                        var expanded = alias.Command;
-                        for (var j = 0; j < tagIndex; j++)
-                        {
-                            expanded = expanded.Replace($"{{{tags[j]}}}", argTokens[j]);
-                        }
+                        // vmtype has only two possible values — no live call needed
+                        if (tags[tagIndex] == GRE.SegVmType) { return [GRE.TypeQemu, GRE.TypeLxc]; }
+
+                        var expanded = ExpandTags(alias.Command, tags[..tagIndex], argTokens);
                         var segs = expanded.Split('/', StringSplitOptions.RemoveEmptyEntries).Skip(1).ToArray();
                         var parentSegs = new List<string>();
                         foreach (var seg in segs)
@@ -190,33 +229,29 @@ internal class ShellCommands
                     var allTokens = ctx.ParseResult.Tokens.Skip(skipTokens).Select(t => t.Value).ToArray();
                     var argTokens = allTokens.Where(t => !t.StartsWith('-')).ToArray();
                     var filledPositional = (word.Length == 0 || word.StartsWith('-'))
-                        ? argTokens
-                        : argTokens.SkipLast(1).ToArray();
+                                            ? argTokens
+                                            : [.. argTokens.SkipLast(1)];
                     if (filledPositional.Length < tags.Length) { return []; }
 
-                    var expanded = alias.Command;
-                    for (var i = 0; i < tags.Length; i++)
-                    {
-                        expanded = expanded.Replace($"{{{tags[i]}}}", filledPositional[i]);
-                    }
-                    var tokens = expanded.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                    var tokens = SplitArgs(ExpandTags(alias.Command, tags, filledPositional));
                     var methodType = HttpVerbToMethodType(tokens[0]);
                     var resource = tokens[1];
 
                     // If prevToken is a --param with enum values, don't propose --options (enum source handles it)
-                    var prevToken = word.Length == 0
-                        ? (allTokens.Length >= 1 ? allTokens[^1] : string.Empty)
-                        : (allTokens.Length >= 2 ? allTokens[^2] : string.Empty);
+                    var prevToken = GetPrevToken(allTokens, word);
                     if (prevToken.StartsWith("--"))
                     {
-                        var enumVals = ApiExplorerHelper.GetMethodParameterEnumValues(classApiRoot, resource, methodType, prevToken[2..]);
+                        var enumVals = ApiExplorerHelper.GetMethodParameterEnumValues(classApiRoot,
+                                                                                      resource,
+                                                                                      methodType,
+                                                                                      prevToken[2..]);
                         if (enumVals.Length > 0) { return []; }
                     }
 
                     return ApiExplorerHelper.GetMethodParameters(classApiRoot, resource, methodType)
-                                           .Select(p => $"--{p}")
-                                           .Where(p => p.StartsWith(word))
-                                           .ToArray();
+                                            .Select(p => $"--{p}")
+                                            .Where(p => p.StartsWith(word))
+                                            .ToArray();
                 }
                 catch { return []; }
             });
@@ -233,10 +268,7 @@ internal class ShellCommands
                     if (word.StartsWith('-')) { return []; }
 
                     var allTokens = ctx.ParseResult.Tokens.Skip(skipTokens).Select(t => t.Value).ToArray();
-                    // When word is empty → prevToken is last token; when word is partial → prevToken is second-to-last
-                    var prevToken = word.Length == 0
-                        ? (allTokens.Length >= 1 ? allTokens[^1] : string.Empty)
-                        : (allTokens.Length >= 2 ? allTokens[^2] : string.Empty);
+                    var prevToken = GetPrevToken(allTokens, word);
                     if (!prevToken.StartsWith("--")) { return []; }
                     var paramName = prevToken[2..];
 
@@ -244,27 +276,23 @@ internal class ShellCommands
                     var positionalTokens = allTokens.Where(t => !t.StartsWith('-')).ToArray();
                     if (positionalTokens.Length < tags.Length) { return []; }
 
-                    var expanded = alias.Command;
-                    for (var i = 0; i < tags.Length; i++)
-                    {
-                        expanded = expanded.Replace($"{{{tags[i]}}}", positionalTokens[i]);
-                    }
-                    var tokens = expanded.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-                    var methodType = HttpVerbToMethodType(tokens[0]);
-                    var resource = tokens[1];
-
-                    return ApiExplorerHelper.GetMethodParameterEnumValues(classApiRoot, resource, methodType, paramName)
-                                           .Where(v => v.StartsWith(word, StringComparison.OrdinalIgnoreCase))
-                                           .ToArray();
+                    var expandedTokens = SplitArgs(ExpandTags(alias.Command, tags, positionalTokens));
+                    return ApiExplorerHelper.GetMethodParameterEnumValues(classApiRoot,
+                                                                          expandedTokens[1],
+                                                                          HttpVerbToMethodType(expandedTokens[0]),
+                                                                          paramName)
+                                            .Where(v => v.StartsWith(word, StringComparison.OrdinalIgnoreCase))
+                                            .ToArray();
                 }
                 catch { return []; }
             });
 
-            Option<bool>? optYes = null;
-            if (alias.Confirm)
-            {
-                optYes = cmd.AddOption<bool>("--yes|-y", "Confirm execution of dangerous operation");
-            }
+            var optYes = alias.Confirm
+                            ? cmd.AddOption<bool>("--yes|-y", "Confirm execution of dangerous operation")
+                            : null;
+
+            var optOutput = ApiOutputOption(cmd);
+            var optVerbose = cmd.VerboseOption();
 
             cmd.TreatUnmatchedTokensAsErrors = false;
             cmd.SetAction(async (action) =>
@@ -278,26 +306,18 @@ internal class ShellCommands
                 var positional = (action.GetValue(argAll) ?? []).ToArray();
                 var kvTokens = action.UnmatchedTokens.ToList();
 
-                var expanded = alias.Command;
-                for (var i = 0; i < tags.Length; i++)
-                {
-                    expanded = expanded.Replace($"{{{tags[i]}}}", i < positional.Length ? positional[i] : $"{{{tags[i]}}}");
-                }
-                var tokens = expanded.Split(' ', StringSplitOptions.RemoveEmptyEntries).ToList();
-                var methodType = HttpVerbToMethodType(tokens[0]);
-                var resource = tokens[1];
-
+                var tokens = SplitArgs(ExpandTags(alias.Command, tags, positional)).ToList();
                 var allExtra = tokens.Skip(2).Concat(kvTokens).ToList();
                 var extraParams = ConvertUnmatchedToKeyValue(allExtra);
                 var c = await GetClientAsync();
                 var (_, resultText) = await ApiExplorerHelper.ExecuteAsync(c,
                                                                            await GetClassApiRootAsync(c),
-                                                                           resource,
-                                                                           methodType,
+                                                                           tokens[1],
+                                                                           HttpVerbToMethodType(tokens[0]),
                                                                            ApiExplorerHelper.CreateParameterResource(extraParams),
                                                                            false,
-                                                                           TableGenerator.Output.Text,
-                                                                           false);
+                                                                           action.GetValue(optOutput),
+                                                                           action.GetValue(optVerbose));
                 Console.Out.Write(resultText);
             });
         }
@@ -325,14 +345,12 @@ internal class ShellCommands
             if (classApiRoot == null) { return []; }
 
             // word is empty → suggest root children directly (avoids shell treating "/" as filesystem path)
-            if (string.IsNullOrEmpty(word))
-            {
-                return ctx.ParseResult.Tokens.Any(t => t.Value.StartsWith('/'))
-                        ? []
-                        : GetApiPathCompletions("/", classApiRoot);
-            }
+            return string.IsNullOrEmpty(word)
+                    ? ctx.ParseResult.Tokens.Any(t => t.Value.StartsWith('/'))
+                            ? []
+                            : GetApiPathCompletions("/", classApiRoot)
+                    : GetApiPathCompletions(word, classApiRoot);
 
-            return GetApiPathCompletions(word, classApiRoot);
         });
         return arg;
     }
@@ -346,7 +364,7 @@ internal class ShellCommands
             // prefix="/nodes/cc" → parentPath="/nodes"  (incomplete last segment)
             // prefix="/nodes" → parentPath="" (root)
             var segs = prefix.TrimEnd('/').Split('/', StringSplitOptions.RemoveEmptyEntries);
-            var parentSegs = prefix.EndsWith('/') ? segs : segs.SkipLast(1).ToArray();
+            var parentSegs = prefix.EndsWith('/') ? segs : [.. segs.SkipLast(1)];
             var parentPath = parentSegs.Length == 0 ? string.Empty : "/" + string.Join("/", parentSegs);
 
             var parentNode = string.IsNullOrEmpty(parentPath)
@@ -369,17 +387,15 @@ internal class ShellCommands
                     result[i] = i < realSegs.Length ? realSegs[i] : schemaSegs[i];
                 }
 
-
                 return "/" + string.Join("/", result);
             }
 
             var staticChildren = parentNode.SubClasses.Where(c => !c.IsIndexed);
             var dynamicChildren = parentNode.SubClasses.Where(c => c.IsIndexed);
 
-            var staticPaths = staticChildren
-                .Select(c => ToRealPath(c.Resource))
-                .Where(r => r.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
-                .OrderBy(r => r);
+            var staticPaths = staticChildren.Select(c => ToRealPath(c.Resource))
+                                            .Where(r => r.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                                            .OrderBy(r => r);
 
             if (dynamicChildren.Any())
             {
@@ -424,8 +440,9 @@ internal class ShellCommands
             if (client == null) { return []; }
 
             var parentNode = string.IsNullOrEmpty(parentPath)
-                ? classApiRoot
-                : ClassApi.GetFromResource(classApiRoot, parentPath);
+                                ? classApiRoot
+                                : ClassApi.GetFromResource(classApiRoot, parentPath);
+
             if (parentNode == null || !parentNode.SubClasses.Any(c => c.IsIndexed)) { return []; }
 
             var (values, error) = ApiExplorerHelper.ListValuesAsync(client, classApiRoot, parentPath).GetAwaiter().GetResult();
@@ -440,7 +457,7 @@ internal class ShellCommands
 
     private static Option<TableGenerator.Output> ApiOutputOption(Command command)
     {
-        var opt = command.AddOption<TableGenerator.Output>("--output|-o", "Type output");
+        var opt = command.AddOption<TableGenerator.Output>($"{ArgOutputLong}|{ArgOutputShort}", "Type output");
         opt.DefaultValueFactory = (_) => TableGenerator.Output.Text;
         opt.CompletionSources.Clear();
         opt.CompletionSources.Add((_) => Enum.GetNames<TableGenerator.Output>().Select(n => n.ToLower()));
@@ -463,37 +480,6 @@ internal class ShellCommands
         var flatFile = Directory.GetFiles(CacheDir, "*-flat.json").LastOrDefault();
         if (flatFile == null) { return null; }
         return GeneratorClassApi.LoadFlatCache(File.ReadAllText(flatFile));
-    }
-
-    private static bool ResourceMatches(string pattern, string resource)
-    {
-        var pp = pattern.Split('/', StringSplitOptions.RemoveEmptyEntries);
-        var rp = resource.Split('/', StringSplitOptions.RemoveEmptyEntries);
-        if (pp.Length != rp.Length) { return false; }
-        return pp.Zip(rp).All(pair => pair.First.StartsWith('{') || pair.First == pair.Second);
-    }
-
-    private static FlatResourceInfo? FlatGetResource(Dictionary<string, FlatResourceInfo> flat, string resource)
-        => flat.TryGetValue(resource, out var exact) ? exact
-           : flat.FirstOrDefault(kv => ResourceMatches(kv.Key, resource)).Value;
-
-    private static string[] FlatGetParams(string resource, string httpMethod)
-    {
-        var flat = LoadFlatCacheFromDisk();
-        if (flat == null) { return []; }
-        var res = FlatGetResource(flat, resource);
-        if (res?.Methods == null || !res.Methods.TryGetValue(httpMethod, out var m)) { return []; }
-        return m.Params?.Select(p => p.Name).ToArray() ?? [];
-    }
-
-    private static string[] FlatGetEnumValues(string resource, string httpMethod, string paramName)
-    {
-        var flat = LoadFlatCacheFromDisk();
-        if (flat == null) { return []; }
-        var res = FlatGetResource(flat, resource);
-        if (res?.Methods == null || !res.Methods.TryGetValue(httpMethod, out var m)) { return []; }
-        var param = m.Params?.FirstOrDefault(p => string.Equals(p.Name, paramName, StringComparison.OrdinalIgnoreCase));
-        return param?.EnumValues ?? [];
     }
 
     private static string ToMethodName(MethodType methodType) => methodType switch
@@ -539,8 +525,8 @@ internal class ShellCommands
         argParameters.CompletionSources.Add((ctx) =>
         {
             var word = ctx.WordToComplete ?? string.Empty;
-            var resourceToken = ctx.ParseResult.Tokens.FirstOrDefault(t => t.Value.StartsWith('/'))?.Value ?? string.Empty;
-            if (string.IsNullOrEmpty(resourceToken)) { return []; }
+            var resourceToken = ctx.ParseResult.Tokens.FirstOrDefault(t => t.Value.StartsWith('/'))?.Value;
+            if (resourceToken == null) { return []; }
             var classApiRoot = BuildClassApiFromCache();
             if (classApiRoot == null) { return []; }
             var node = ClassApi.GetFromResource(classApiRoot, resourceToken);
@@ -573,7 +559,7 @@ internal class ShellCommands
         });
 
         var optOutput = ApiOutputOption(cmd);
-        var optWait = cmd.AddOption<bool>("--wait", "Wait for task finish");
+        var optWait = cmd.AddOption<bool>(ArgWait, "Wait for task finish");
 
         cmd.SetAction(async (action) =>
         {
@@ -623,6 +609,32 @@ internal class ShellCommands
     private static MethodType HttpVerbToMethodType(string verb)
         => Enum.Parse<MethodType>(verb.ToLower() switch { "put" => "set", "post" => "create", var v => v }, ignoreCase: true);
 
+    private static string GetPrevToken(string[] allTokens, string word)
+        => word.Length == 0
+            ? (allTokens.Length >= 1
+                ? allTokens[^1]
+                : string.Empty)
+
+            : (allTokens.Length >= 2
+                ? allTokens[^2]
+                : string.Empty);
+
+    private static bool IsGuestToken(string token)
+        => token == GRE.ArgGuestLong || token == GRE.ArgGuestShort;
+
+    private static string[] SplitArgs(string s)
+        => s.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+    private static string ExpandTags(string command, string[] tags, string[] values)
+    {
+        var result = command;
+        for (var i = 0; i < Math.Min(tags.Length, values.Length); i++)
+        {
+            result = result.Replace($"{{{tags[i]}}}", values[i]);
+        }
+        return result;
+    }
+
     private static void Usage(Command parent, ClassApi? classApiRoot = null)
     {
         var cmd = parent.AddCommand("usage", "Show usage for a resource (e.g. 'usage /nodes' or 'usage /nodes get')");
@@ -670,45 +682,56 @@ internal class ShellCommands
         if (args.Length == 0 || args[0].StartsWith('-')) { return (null, 0); }
 
         var alias = PveConfigManager.LoadAliases()
-            .OrderByDescending(a => a.Name.Split(' ').Length)
-            .FirstOrDefault(a =>
-            {
-                var parts = a.Name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-                if (parts.Length > args.Length) { return false; }
-                return parts.Zip(args).All(x => string.Equals(x.First, x.Second, StringComparison.OrdinalIgnoreCase));
-            });
+                                    .OrderByDescending(a => a.Name.Split(' ').Length)
+                                    .FirstOrDefault(a =>
+                                    {
+                                        var parts = SplitArgs(a.Name);
+                                        return parts.Length <= args.Length
+                                                && parts.Zip(args)
+                                                        .All(x => string.Equals(x.First, x.Second, StringComparison.OrdinalIgnoreCase));
+                                    });
 
         if (alias == null) { return (null, 0); }
 
-        var nameParts = alias.Name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        var extraArgs = args.Skip(nameParts.Length).ToArray();
-        var isVerbose = extraArgs.Contains("--verbose") || extraArgs.Contains("-v");
-        var isHelp = extraArgs.Contains("--help") || extraArgs.Contains("-h") || extraArgs.Contains("-?");
-        var positionalArgs = extraArgs.Where(a => !a.StartsWith('-')).ToArray();
-        var kvArgs = extraArgs.Where(a => a.StartsWith('-')
-                        && a != "--verbose"
-                        && a != "-v"
-                        && a != "--help"
-                        && a != "-h"
-                        && a != "-?").ToArray();
+        var nameParts = SplitArgs(alias.Name);
+        var extraArgs = args.Skip(nameParts.Length).ToList();
+        var isVerbose = extraArgs.Contains(ArgVerboseLong) || extraArgs.Contains(ArgVerboseShort);
+        var isHelp = extraArgs.Contains(ArgHelpLong) || extraArgs.Contains(ArgHelpShort) || extraArgs.Contains(ArgHelpAlt);
 
         var expanded = alias.Command;
-        var tags = ApiExplorerHelper.GetArgumentTags(expanded);
-        var index = 0;
-        for (var i = 0; i < Math.Min(tags.Length, positionalArgs.Length); i++)
+
+        // --guest/-g → resolve {node}, {vmid}, {vmtype} via GRE (must run before positional split)
+        var (guestResolution, _) = GRE.Detect(alias.Command);
+        for (var i = 0; i < extraArgs.Count - 1; i++)
         {
-            expanded = expanded.Replace($"{{{tags[i]}}}", positionalArgs[i]);
-            index++;
+            if (!IsGuestToken(extraArgs[i])) { continue; }
+            var guestValue = extraArgs[i + 1];
+            extraArgs.RemoveRange(i, 2);
+            var client = GetLiveClient();
+            if (client == null) { Console.WriteLine("Error: no context configured."); return (null, 1); }
+            expanded = GRE.ExpandAsync(expanded, client, guestValue, guestResolution).GetAwaiter().GetResult();
+            break;
         }
 
-        if (isHelp || isVerbose)
+        var positionalArgs = extraArgs.Where(a => !a.StartsWith('-')).ToArray();
+        var kvArgs = extraArgs.Where(a => a.StartsWith('-')
+                                            && a != ArgVerboseLong
+                                            && a != ArgVerboseShort
+                                            && a != ArgHelpLong
+                                            && a != ArgHelpShort
+                                            && a != ArgHelpAlt).ToArray();
+
+        var tags = ApiExplorerHelper.GetArgumentTags(expanded);
+        var index = Math.Min(tags.Length, positionalArgs.Length);
+        expanded = ExpandTags(expanded, tags, positionalArgs);
+
+        if (isHelp) { return (null, 0); }
+        if (isVerbose)
         {
-            var tokens = expanded.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            var tokens = SplitArgs(expanded);
             var method = HttpVerbToMethodType(tokens[0]).ToString().ToLower();
             var resource = tokens[1];
-            var usageArgs = new List<string> { "api", "usage", resource, method };
-            if (isVerbose) { usageArgs.Add("--verbose"); }
-            return ([.. usageArgs], 0);
+            return (["api", "usage", resource, method, ArgVerboseLong], 0);
         }
 
         var missing = tags.Skip(index).ToArray();
@@ -716,12 +739,17 @@ internal class ShellCommands
         {
             Console.WriteLine($"Error: missing arguments: {string.Join(", ", missing.Select(t => $"{{{t}}}"))}");
             Console.WriteLine($"Usage: {alias.Name} {string.Join(" ", tags.Select(t => $"<{t}>"))}");
+            if (guestResolution != GRE.GuestResolution.None)
+            {
+                Console.WriteLine($"Tip: use {GRE.ArgGuestLong} <id|name> to resolve guest info automatically");
+            }
+
             return (null, 1);
         }
 
         if (index < positionalArgs.Length) { expanded += " " + string.Join(' ', positionalArgs.Skip(index)); }
         if (kvArgs.Length > 0) { expanded += " " + string.Join(' ', kvArgs); }
 
-        return (["api", .. expanded.Split(' ', StringSplitOptions.RemoveEmptyEntries)], 0);
+        return (["api", .. SplitArgs(expanded)], 0);
     }
 }

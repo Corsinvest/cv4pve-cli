@@ -222,36 +222,57 @@ compdef _cv4pve_cli_complete cv4pve-cli
             var line = action.GetValue(argLine) ?? string.Empty;
             // Strip the command name prefix (e.g. "cv4pve-cli ") if present
             var spaceIdx = line.IndexOf(' ');
-            var input = spaceIdx >= 0 ? line[(spaceIdx + 1)..] : string.Empty;
+
+            var input = spaceIdx >= 0
+                            ? line[(spaceIdx + 1)..]
+                            : string.Empty;
+
             var parseResult = app.Parse(input);
             var position = input.Length;
+
             // Exclude built-in help/version/alias flags injected by System.CommandLine
-            var builtIn = new HashSet<string>(["-?", "-h", "/?", "/h", "--help", "--version"], StringComparer.OrdinalIgnoreCase);
+            var builtIn = new HashSet<string>([ShellCommands.ArgHelpAlt, ShellCommands.ArgHelpShort,
+                                               ShellCommands.ArgHelpSlashQ, ShellCommands.ArgHelpSlashH,
+                                               ShellCommands.ArgHelpLong, ShellCommands.ArgVersion],
+                                               StringComparer.OrdinalIgnoreCase);
+
             // CLI-level options (not API params) — suppress when user hasn't typed '--' yet,
             // so TAB after a resource path goes straight to API parameters/paths.
-            var cliOptions = new HashSet<string>(["--output", "--wait", "--verbose", "--returns", "-o", "-v", "-r"], StringComparer.OrdinalIgnoreCase);
-            var word = input.Length > 0 && !input.EndsWith(' ') ? input.Split(' ')[^1] : string.Empty;
+            var cliOptions = new HashSet<string>([ShellCommands.ArgOutputLong, ShellCommands.ArgWait,
+                                                  ShellCommands.ArgVerboseLong, ShellCommands.ArgReturnsLong,
+                                                  ShellCommands.ArgOutputShort, ShellCommands.ArgVerboseShort,
+                                                  ShellCommands.ArgReturnsShort],
+                                                  StringComparer.OrdinalIgnoreCase);
+
+            var word = input.Length > 0 && !input.EndsWith(' ')
+                        ? input.Split(' ')[^1]
+                        : string.Empty;
+
             var suppressCli = !word.StartsWith('-');
             var completions = parseResult.GetCompletions(position)
-                .Where(c => c.Label.Length > 0 && !builtIn.Contains(c.Label))
-                .Where(c => !suppressCli || !cliOptions.Contains(c.Label))
-                .DistinctBy(c => c.Label)
-                .ToList();
+                                         .Where(c => c.Label.Length > 0 && !builtIn.Contains(c.Label))
+                                         .Where(c => !suppressCli || !cliOptions.Contains(c.Label))
+                                         .DistinctBy(c => c.Label)
+                                         .ToList();
+
             // Determine previous token to detect "value after --param" context
             var tokens = input.TrimEnd().Split(' ', StringSplitOptions.RemoveEmptyEntries);
-            var prevInputToken = tokens.Length >= 2 ? tokens[^(word.Length > 0 ? 2 : 1)] : string.Empty;
+            var prevInputToken = tokens.Length >= 2
+                                    ? tokens[^(word.Length > 0 ? 2 : 1)]
+                                    : string.Empty;
+
             var expectingParamValue = prevInputToken.StartsWith("--");
             if (expectingParamValue)
             {
                 // Keep only enum/bool values (non --options), suppress stale positional suggestions
                 // Also exclude values that are already used as positional tokens in the command line
                 var usedTokens = new HashSet<string>(tokens, StringComparer.OrdinalIgnoreCase);
-                completions = completions.Where(c => !c.Label.StartsWith('-') && !usedTokens.Contains(c.Label)).ToList();
+                completions = [.. completions.Where(c => !c.Label.StartsWith('-') && !usedTokens.Contains(c.Label))];
             }
             else if (completions.Any(c => c.Label.StartsWith("--")))
             {
                 // Suppress stale positional suggestions when --options are available
-                completions = completions.Where(c => c.Label.StartsWith('-')).ToList();
+                completions = [.. completions.Where(c => c.Label.StartsWith('-'))];
             }
 
             foreach (var c in completions)
