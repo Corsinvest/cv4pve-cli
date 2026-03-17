@@ -359,6 +359,133 @@ aliases:
     description: List all VMs and containers (cluster-wide)
     command: get /cluster/resources --type vm
 
+  - name: show guest
+    description: Show guest config (VM or CT)
+    command: get /nodes/{node}/{vmtype}/{vmid}/config
+
+  - name: get guest status
+    description: Show guest runtime status (VM or CT)
+    command: get /nodes/{node}/{vmtype}/{vmid}/status/current
+
+  - name: set guest config
+    description: Update guest configuration (VM or CT)
+    command: set /nodes/{node}/{vmtype}/{vmid}/config
+
+  - name: get guest pending
+    description: Show guest configuration including pending (unapplied) changes
+    command: get /nodes/{node}/{vmtype}/{vmid}/pending
+
+  - name: get guest tags
+    description: Get current tags for a guest (VM or CT)
+    command: get /nodes/{node}/{vmtype}/{vmid}/config --property tags
+
+  - name: set guest tags
+    description: Set or overwrite tags for a guest (VM or CT)
+    command: set /nodes/{node}/{vmtype}/{vmid}/config --tags {tags}
+
+  - name: delete guest tags
+    description: Remove all tags from a guest (VM or CT)
+    command: set /nodes/{node}/{vmtype}/{vmid}/config --delete tags
+
+  - name: delete guest unused-disk
+    description: Remove an unattached disk from a guest (VM or CT)
+    command: set /nodes/{node}/{vmtype}/{vmid}/config --delete {unusedDisk}
+
+  - name: do resize guest disk
+    description: Expand a guest disk (VM or CT)
+    command: set /nodes/{node}/{vmtype}/{vmid}/resize --disk {disk} --size {size}
+
+  - name: do migrate guest
+    description: Migrate a guest to another node (VM or CT)
+    command: create /nodes/{node}/{vmtype}/{vmid}/migrate --target {target_node}
+
+  - name: create guest template
+    description: Convert a guest into a template (VM or CT)
+    command: create /nodes/{node}/{vmtype}/{vmid}/template
+
+  - name: do start guest
+    description: Start a guest (VM or CT)
+    command: create /nodes/{node}/{vmtype}/{vmid}/status/start
+
+  - name: do stop guest
+    description: Stop a guest (VM or CT)
+    command: create /nodes/{node}/{vmtype}/{vmid}/status/stop
+    confirm: true
+
+  - name: do reboot guest
+    description: Reboot a guest (VM or CT)
+    command: create /nodes/{node}/{vmtype}/{vmid}/status/reboot
+    confirm: true
+
+  - name: do shutdown guest
+    description: Shutdown a guest (VM or CT)
+    command: create /nodes/{node}/{vmtype}/{vmid}/status/shutdown
+    confirm: true
+
+  - name: do resume guest
+    description: Resume a suspended guest (VM or CT)
+    command: create /nodes/{node}/{vmtype}/{vmid}/status/resume
+
+  - name: get guest snapshots
+    description: List snapshots for a guest (VM or CT)
+    command: get /nodes/{node}/{vmtype}/{vmid}/snapshot
+
+  - name: show guest snapshot
+    description: Show configuration of a specific guest snapshot
+    command: get /nodes/{node}/{vmtype}/{vmid}/snapshot/{snapname}/config
+
+  - name: create guest snapshot
+    description: Create a new snapshot for a guest (VM or CT)
+    command: create /nodes/{node}/{vmtype}/{vmid}/snapshot --snapname {snapname} --description {descr}
+
+  - name: set guest snapshot
+    description: Update guest snapshot description
+    command: set /nodes/{node}/{vmtype}/{vmid}/snapshot/{snapname}/config --description {description}
+
+  - name: delete guest snapshot
+    description: Delete a specific guest snapshot
+    command: delete /nodes/{node}/{vmtype}/{vmid}/snapshot/{snapname}
+    confirm: true
+
+  - name: do rollback guest
+    description: Rollback guest state to a specific snapshot (VM or CT)
+    command: create /nodes/{node}/{vmtype}/{vmid}/snapshot/{snapname}/rollback
+    confirm: true
+
+  - name: get guest firewall
+    description: List firewall rules for a guest (VM or CT)
+    command: get /nodes/{node}/{vmtype}/{vmid}/firewall/rules
+
+  - name: set guest firewall
+    description: Enable/Disable guest firewall (VM or CT)
+    command: set /nodes/{node}/{vmtype}/{vmid}/firewall/options
+
+  - name: create guest firewall-rule
+    description: Add a new firewall rule to a guest (VM or CT)
+    command: create /nodes/{node}/{vmtype}/{vmid}/firewall/rules
+
+  - name: show guest firewall-rule
+    description: Show details of a specific guest firewall rule
+    command: get /nodes/{node}/{vmtype}/{vmid}/firewall/rules/{pos}
+
+  - name: set guest firewall-rule
+    description: Update a guest firewall rule (VM or CT)
+    command: set /nodes/{node}/{vmtype}/{vmid}/firewall/rules/{pos}
+
+  - name: delete guest firewall-rule
+    description: Remove a firewall rule from a guest (VM or CT)
+    command: delete /nodes/{node}/{vmtype}/{vmid}/firewall/rules/{pos}
+    confirm: true
+
+  - name: delete guest
+    description: Destroy a guest VM or CT (Permanent!)
+    command: delete /nodes/{node}/{vmtype}/{vmid}
+    confirm: true
+
+  - name: get guest feature
+    description: Check if a feature is available for a guest (VM or CT)
+    command: get /nodes/{node}/{vmtype}/{vmid}/feature --feature {feature}
+
   - name: get guest backups
     description: List all backups for a guest on a storage
     command: get /nodes/{node}/storage/{storage}/content --content backup --vmid {vmid}

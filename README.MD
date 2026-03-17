@@ -211,6 +211,32 @@ A set of read-only aliases is available out of the box, organized by verb and re
 | `do snapshot vm` | `<node> <vmid> <snapname>` | Create a VM snapshot |
 | `get cluster not-backed-up` | — | List guests with no backup job |
 
+Aliases prefixed with `guest` work for both VMs (`qemu`) and containers (`lxc`) — `{vmtype}` is resolved automatically from the cluster:
+
+| Alias | Arguments | Description |
+|-------|-----------|-------------|
+| `get guests` | — | List all VMs and containers (cluster-wide) |
+| `show guest` | `<node> <vmtype> <vmid>` | Show guest config (VM or CT) |
+| `get guest status` | `<node> <vmtype> <vmid>` | Show guest runtime status |
+| `do start guest` | `<node> <vmtype> <vmid>` | Start a guest |
+| `do stop guest` | `<node> <vmtype> <vmid>` | Stop a guest |
+| `do shutdown guest` | `<node> <vmtype> <vmid>` | Shutdown a guest |
+| `do reboot guest` | `<node> <vmtype> <vmid>` | Reboot a guest |
+| `do migrate guest` | `<node> <vmtype> <vmid> <target_node>` | Migrate a guest to another node |
+| `get guest snapshots` | `<node> <vmtype> <vmid>` | List snapshots |
+| `create guest snapshot` | `<node> <vmtype> <vmid> <snapname> <descr>` | Create a snapshot |
+| `do rollback guest` | `<node> <vmtype> <vmid> <snapname>` | Rollback to a snapshot |
+| `delete guest` | `<node> <vmtype> <vmid>` | Destroy a guest (permanent!) |
+
+With `--guest` you can skip `<node>`, `<vmtype>`, and `<vmid>` entirely — the CLI resolves them from a VM/CT name or ID:
+
+```bash
+cv4pve-cli get guest status --guest myvm
+cv4pve-cli do start guest --guest 100
+cv4pve-cli do shutdown guest --guest myct
+cv4pve-cli create guest snapshot --guest myvm snap1 "before update"
+```
+
 See all built-in and user aliases:
 
 ```bash
@@ -246,6 +272,41 @@ Error: missing arguments: {vmid}
 Usage: show vm <node> <vmid>
 ```
 
+### Guest auto-resolution (`--guest`)
+
+Aliases whose API path targets a specific guest — i.e. the path contains `/nodes/{node}/qemu/{vmid}`, `/nodes/{node}/lxc/{vmid}`, or `/nodes/{node}/{vmtype}/{vmid}` — accept an optional `--guest` (or `-g`) option. Instead of supplying the node and vmid separately, you can pass a VM/container **ID or name** and the CLI resolves node, vmid (and vmtype where needed) automatically.
+
+```bash
+# Old style — explicit positional arguments (still works)
+cv4pve-cli get vm status pve1 100
+cv4pve-cli show vm pve1 100
+cv4pve-cli do start vm pve1 100
+
+# New style — let the CLI find the node and vmid for you
+cv4pve-cli get vm status --guest 100       # by numeric vmid
+cv4pve-cli get vm status --guest myvm      # by VM name
+cv4pve-cli show vm --guest myvm
+cv4pve-cli do start vm --guest myvm
+
+# Works for containers too (aliases pointing to /lxc/{vmid})
+cv4pve-cli get ct status --guest myct
+```
+
+The `--guest` option is available on any alias whose command path requires node/vmid resolution. Tab completion on `--guest <TAB>` shows all VM and container IDs and names live from the cluster.
+
+To check whether an alias supports `--guest`, run it with `--help` — if the description contains the tip below, `--guest` is available:
+
+```
+Tip: use --guest <id|name> to resolve guest info automatically
+```
+
+```bash
+cv4pve-cli get guest status --help
+cv4pve-cli get vm status --help
+```
+
+> When `--guest` is used, the remaining positional arguments (node, vmid, vmtype) must not be supplied — they are filled automatically from the resolved guest info.
+
 ### User aliases
 
 You can create your own aliases using any API call as the command. Use `{name}` placeholders in the path wherever you want the caller to supply a value at runtime.
@@ -270,6 +331,35 @@ cv4pve-cli alias remove vm-net
 ```
 
 > Built-in aliases cannot be added, modified, or removed. Attempting to create an alias with the same name as a built-in will return an error.
+
+#### Special placeholders
+
+Most placeholders (e.g. `{snapname}`, `{storage}`) are generic: the caller supplies their values positionally at runtime.
+
+Three placeholders have a **special meaning** and enable guest auto-resolution via `--guest`:
+
+| Placeholder | Filled with | Example value |
+|-------------|-------------|---------------|
+| `{node}` | The cluster node where the guest runs | `pve1` |
+| `{vmid}` | The numeric ID of the guest | `100` |
+| `{vmtype}` | The guest type | `qemu` or `lxc` |
+
+When a command path contains `/nodes/{node}/qemu/{vmid}` or `/nodes/{node}/lxc/{vmid}`, the CLI automatically offers `--guest` and resolves `{node}` and `{vmid}` from the cluster. When the path uses `/{vmtype}/{vmid}` instead of a fixed type, `{vmtype}` is also resolved automatically (either `qemu` or `lxc` depending on the guest).
+
+```bash
+# These two aliases both get --guest support automatically:
+cv4pve-cli alias add vm-status \
+    --command "get /nodes/{node}/qemu/{vmid}/status/current" \
+    --description "VM status"
+
+cv4pve-cli alias add guest-status \
+    --command "get /nodes/{node}/{vmtype}/{vmid}/status/current" \
+    --description "VM or container status"
+
+# Usage
+cv4pve-cli vm-status --guest myvm           # {node} and {vmid} resolved automatically
+cv4pve-cli guest-status --guest myct        # {node}, {vmtype} and {vmid} resolved automatically
+```
 
 ---
 
