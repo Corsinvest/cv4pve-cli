@@ -5,7 +5,7 @@
 pkgname=cv4pve-cli
 pkgver=SKIP
 pkgrel=1
-pkgdesc="Command-line interface for Proxmox VE — manage API calls, contexts and aliases — checks nodes, VMs, LXC containers and storage for common issues"
+pkgdesc="Command-line interface for Proxmox VE — manage API calls, contexts and aliases"
 arch=('x86_64' 'aarch64' 'armv7h')
 url="https://github.com/Corsinvest/cv4pve-cli"
 license=('MIT')
