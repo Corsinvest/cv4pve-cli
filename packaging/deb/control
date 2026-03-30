@@ -1,0 +1,7 @@
+Package: cv4pve-cli
+Version: SKIP
+Architecture: SKIP
+Maintainer: Corsinvest Srl <corsinvest@corsinvest.it>
+Homepage: https://github.com/Corsinvest/cv4pve-cli
+Description: Command-line interface for Proxmox VE
+ Manage API calls, contexts and aliases from the command line.

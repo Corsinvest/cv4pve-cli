@@ -1,0 +1,22 @@
+Name: cv4pve-cli
+Version: SKIP
+Release: 1
+Summary: Command-line interface for Proxmox VE
+License: MIT
+URL: https://github.com/Corsinvest/cv4pve-cli
+
+%define __strip /bin/true
+%define __os_install_post %{nil}
+
+%description
+Manage API calls, contexts and aliases from the command line.
+
+%prep
+
+%build
+
+%install
+install -Dm755 %{_sourcedir}/%{name} %{buildroot}/usr/bin/%{name}
+
+%files
+/usr/bin/%{name}

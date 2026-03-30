@@ -1,0 +1,5 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Corsinvest.ProxmoxVE.Cli/Corsinvest.ProxmoxVE.Cli.csproj" />
+  </Folder>
+</Solution>
