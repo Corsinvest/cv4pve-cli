@@ -232,6 +232,15 @@ cv4pve-cli do shutdown guest --guest myct
 cv4pve-cli create guest snapshot --guest myvm snap1 "before update"
 ```
 
+The same operation is available at all three levels — `guest` (both), `vm` (qemu only), `ct` (lxc only):
+
+```bash
+cv4pve-cli create guest snapshot --guest myvm  snap1 "before update"  # VM or CT — by name
+cv4pve-cli create guest snapshot --guest 100   snap1 "before update"  # VM or CT — by id
+cv4pve-cli create vm snapshot pve1 100 snap1 "before update"           # VM only
+cv4pve-cli create ct snapshot pve1 200 snap1 "before update"           # CT only
+```
+
 See all built-in and user aliases:
 
 ```bash
