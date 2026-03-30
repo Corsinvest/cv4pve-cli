@@ -44,28 +44,23 @@ cv4pve-cli top
 
 ## Installation
 
-### Linux
-
-```bash
-LATEST_URL=$(curl -s https://api.github.com/repos/Corsinvest/cv4pve-cli/releases/latest | grep browser_download_url | grep linux-x64 | cut -d '"' -f 4)
-wget "$LATEST_URL" && unzip cv4pve-cli-linux-x64.zip
-chmod +x cv4pve-cli
-sudo mv cv4pve-cli /usr/local/bin/
-```
-
 ### Windows
 
 ```powershell
 winget install Corsinvest.cv4pve.cli
 ```
 
-### macOS
+### Linux / macOS
+
+Download the binary for your platform from the [releases page](https://github.com/Corsinvest/cv4pve-cli/releases/latest), then:
 
 ```bash
-wget https://github.com/Corsinvest/cv4pve-cli/releases/latest/download/cv4pve-cli-osx-x64.zip
-unzip cv4pve-cli-osx-x64.zip && chmod +x cv4pve-cli
+unzip cv4pve-cli-linux-x64.zip
+chmod +x cv4pve-cli
 sudo mv cv4pve-cli /usr/local/bin/
 ```
+
+Packages for deb, rpm and AUR are also available on the releases page.
 
 ---
 
