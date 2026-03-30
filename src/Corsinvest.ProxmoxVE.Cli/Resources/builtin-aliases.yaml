@@ -12,14 +12,22 @@ aliases:
     description: List all cluster resources
     command: get /cluster/resources
 
-  # --- Cluster ---
+  # =============================================================
+  # CLUSTER
+  # =============================================================
+
+  # status
   - name: get cluster status
     description: Show health and quorum status of the cluster
     command: get /cluster/status
 
-  - name: get cluster ha
-    description: Show HA manager status
-    command: get /cluster/ha/status/current
+  - name: get cluster options
+    description: Show cluster-wide options
+    command: get /cluster/options
+
+  - name: set cluster options
+    description: Update cluster-wide options
+    command: set /cluster/options
 
   - name: get cluster tasks
     description: Show all active tasks in the cluster
@@ -28,6 +36,14 @@ aliases:
   - name: get cluster log
     description: Show recent cluster-wide logs
     command: get /cluster/log
+
+  - name: get cluster nextid
+    description: Get the next free VM/CT ID in the cluster
+    command: get /cluster/nextid
+
+  - name: get cluster schedule-analyze
+    description: Show when a schedule expression will trigger next
+    command: get /cluster/jobs/schedule-analyze --schedule {schedule}
 
   # backup
   - name: get cluster backup-jobs
@@ -51,16 +67,15 @@ aliases:
     command: delete /cluster/backup/{id}
     confirm: true
 
-  # options
-  - name: get cluster options
-    description: Show cluster-wide options
-    command: get /cluster/options
+  - name: get cluster not-backed-up
+    description: List all guests not covered by any backup job
+    command: get /cluster/backup-info/not-backed-up
 
-  - name: set cluster options
-    description: Update cluster-wide options
-    command: set /cluster/options
+  - name: get cluster backup volumes
+    description: List volumes included in a specific backup job
+    command: get /cluster/backup/{id}/included_volumes
 
-  # cluster firewall
+  # firewall
   - name: get cluster firewall
     description: List cluster-wide firewall rules
     command: get /cluster/firewall/rules
@@ -73,945 +88,32 @@ aliases:
     description: Update cluster firewall options
     command: set /cluster/firewall/options
 
+  - name: show cluster firewall-rule
+    description: Show details of a specific cluster firewall rule
+    command: get /cluster/firewall/rules/{pos}
+
   - name: create cluster firewall-rule
     description: Add a new firewall rule to the cluster
     command: create /cluster/firewall/rules
+
+  - name: set cluster firewall-rule
+    description: Update a specific cluster firewall rule
+    command: set /cluster/firewall/rules/{pos}
 
   - name: delete cluster firewall-rule
     description: Remove a cluster firewall rule by position
     command: delete /cluster/firewall/rules/{pos}
     confirm: true
 
-  # replication
-  - name: get cluster replications
-    description: List all replication jobs
-    command: get /nodes/{node}/replication
+  # HA
+  - name: get cluster ha
+    description: Show HA manager status
+    command: get /cluster/ha/status/current
+
+  - name: get cluster ha manager-status
+    description: Show full HA manager status including LRM
+    command: get /cluster/ha/status/manager_status
 
-  - name: show cluster replication
-    description: Show status of a specific replication job
-    command: get /nodes/{node}/replication/{id}
-
-  - name: create cluster replication
-    description: Create a new ZFS replication job
-    command: create /nodes/{node}/replication --id {id} --vmid {vmid} --target {target_node} --schedule {interval}
-
-  - name: set cluster replication
-    description: Update a replication job
-    command: set /nodes/{node}/replication/{id}
-
-  - name: delete cluster replication
-    description: Remove a replication job
-    command: delete /nodes/{node}/replication/{id}
-    confirm: true
-
-  - name: do sync cluster replication
-    description: Force an immediate replication sync
-    command: create /nodes/{node}/replication/{id}/schedule_now
-
-  # --- Access & Security ---
-  # Users
-  - name: get security users
-    description: List all users and their status
-    command: get /access/users
-
-  - name: show security user
-    description: Show details of a specific user
-    command: get /access/users/{userid}
-
-  - name: create security user
-    description: Create a new user account
-    command: create /access/users --userid {userid} --password {password}
-
-  - name: set security user
-    description: Update user account settings
-    command: set /access/users/{userid}
-
-  - name: delete security user
-    description: Remove a user account
-    command: delete /access/users/{userid}
-    confirm: true
-
-  # Groups
-  - name: get security groups
-    description: List all user groups
-    command: get /access/groups
-
-  - name: show security group
-    description: Show details of a group
-    command: get /access/groups/{groupid}
-
-  - name: create security group
-    description: Create a new user group
-    command: create /access/groups --groupid {groupid}
-
-  - name: set security group
-    description: Update a user group
-    command: set /access/groups/{groupid}
-
-  - name: delete security group
-    description: Remove a user group
-    command: delete /access/groups/{groupid}
-    confirm: true
-
-  # ACLs
-  - name: get security acls
-    description: List all access control rules
-    command: get /access/acl
-
-  - name: set security acl
-    description: Update permissions for a path/user/group
-    command: set /access/acl --path {path} --roles {role} --users {userid}
-
-  # API Tokens
-  - name: get security tokens
-    description: List all API tokens for a user
-    command: get /access/users/{userid}/token
-
-  - name: show security token
-    description: Show details of a specific API token
-    command: get /access/users/{userid}/token/{tokenid}
-
-  - name: create security token
-    description: Generate a new API token for a user
-    command: "create /access/users/{userid}/token --tokenid {tokenid} --privsep {0|1}"
-
-  - name: delete security token
-    description: Remove an API token
-    command: delete /access/users/{userid}/token/{tokenid}
-    confirm: true
-
-  # Roles
-  - name: get security roles
-    description: List all defined roles and their privileges
-    command: get /access/roles
-
-  - name: show security role
-    description: Show privileges assigned to a specific role
-    command: get /access/roles/{roleid}
-
-  - name: create security role
-    description: Create a new custom role with specific privileges
-    command: create /access/roles --roleid {roleid} --privs {privileges}
-
-  - name: set security role
-    description: Update privileges for an existing custom role
-    command: set /access/roles/{roleid} --privs {privileges}
-
-  - name: delete security role
-    description: Remove a custom role
-    command: delete /access/roles/{roleid}
-    confirm: true
-
-  # Permissions
-  - name: get security privileges
-    description: List all available privileges in the system
-    command: get /access/permissions
-
-  # --- Node ---
-  - name: get nodes
-    description: List all nodes
-    command: get /nodes
-
-  - name: show node
-    description: Show node status
-    command: get /nodes/{node}/status
-
-  - name: do reboot node
-    description: Reboot a node
-    command: create /nodes/{node}/status --command reboot
-    confirm: true
-
-  - name: do shutdown node
-    description: Shutdown a node
-    command: create /nodes/{node}/status --command shutdown
-    confirm: true
-
-  - name: get node tasks
-    description: List recent tasks on node
-    command: get /nodes/{node}/tasks
-
-  - name: show node task
-    description: Show log of a specific task
-    command: get /nodes/{node}/tasks/{upid}/log
-
-  - name: do stop node task
-    description: Stop/Kill a running task
-    command: delete /nodes/{node}/tasks/{upid}
-
-  - name: get node network
-    description: List network interfaces on a node
-    command: get /nodes/{node}/network
-
-  - name: get node dns
-    description: Show DNS settings for a node
-    command: get /nodes/{node}/dns
-
-  - name: get node storages
-    description: List storages available on a node
-    command: get /nodes/{node}/storage
-
-  - name: get node backups
-    description: List backup files on a storage
-    command: get /nodes/{node}/storage/{storage}/content --content backup
-
-  - name: get node iso
-    description: List ISO images on storage
-    command: get /nodes/{node}/storage/{storage}/content --content iso
-
-  # Disk
-  - name: get node disks
-    description: List physical disks on a node
-    command: get /nodes/{node}/disks/list
-
-  - name: get node disk smart
-    description: Show S.M.A.R.T. status for a disk
-    command: get /nodes/{node}/disks/smart --disk {disk}
-
-  - name: get node disk zfs
-    description: List ZFS pools on a node
-    command: get /nodes/{node}/disks/zfs
-
-  - name: show node disk zfs
-    description: Show detailed status of a ZFS pool
-    command: get /nodes/{node}/disks/zfs/{name}
-
-  - name: get node disk lvm
-    description: List LVM volume groups
-    command: get /nodes/{node}/disks/lvm
-
-  # node services
-  - name: get node services
-    description: List all services on a node
-    command: get /nodes/{node}/services
-
-  - name: do start node service
-    description: Start a service on a node
-    command: create /nodes/{node}/services/{service}/start
-
-  - name: do stop node service
-    description: Stop a service on a node
-    command: create /nodes/{node}/services/{service}/stop
-
-  - name: do restart node service
-    description: Restart a service on a node
-    command: create /nodes/{node}/services/{service}/restart
-
-  # node certificates
-  - name: get node certificates
-    description: List certificates on a node
-    command: get /nodes/{node}/certificates/info
-
-  # node firewall
-  - name: get node firewall
-    description: List firewall rules for a node
-    command: get /nodes/{node}/firewall/rules
-
-  - name: set node firewall
-    description: Enable/Disable node firewall
-    command: set /nodes/{node}/firewall/options
-
-  - name: create node firewall-rule
-    description: Add a new firewall rule to a node
-    command: create /nodes/{node}/firewall/rules
-
-  - name: delete node firewall-rule
-    description: Remove a firewall rule from a node
-    command: delete /nodes/{node}/firewall/rules/{pos}
-    confirm: true
-
-  # --- Storage ---
-  - name: get storages
-    description: List all storages (cluster-wide)
-    command: get /cluster/resources --type storage
-
-  - name: show storage
-    description: Show storage status/usage
-    command: get /nodes/{node}/storage/{storage}/status
-
-  - name: show node storage
-    description: Show configuration of a specific storage on a node
-    command: get /nodes/{node}/storage/{storage}
-
-  # --- Pools ---
-  - name: get pools
-    description: List all resource pools
-    command: get /pools
-
-  - name: show pool
-    description: Show details of a specific pool
-    command: get /pools/{poolid}
-
-  - name: create pool
-    description: Create a new resource pool
-    command: create /pools --poolid {poolid} --comment {comment}
-
-  - name: set pool
-    description: Update pool configuration
-    command: set /pools/{poolid}
-
-  - name: delete pool
-    description: Remove a resource pool
-    command: delete /pools/{poolid}
-    confirm: true
-
-  # --- Guest (VM & CT) ---
-  - name: get guests
-    description: List all VMs and containers (cluster-wide)
-    command: get /cluster/resources --type vm
-
-  - name: show guest
-    description: Show guest config (VM or CT)
-    command: get /nodes/{node}/{vmtype}/{vmid}/config
-
-  - name: get guest status
-    description: Show guest runtime status (VM or CT)
-    command: get /nodes/{node}/{vmtype}/{vmid}/status/current
-
-  - name: set guest config
-    description: Update guest configuration (VM or CT)
-    command: set /nodes/{node}/{vmtype}/{vmid}/config
-
-  - name: get guest pending
-    description: Show guest configuration including pending (unapplied) changes
-    command: get /nodes/{node}/{vmtype}/{vmid}/pending
-
-  - name: get guest tags
-    description: Get current tags for a guest (VM or CT)
-    command: get /nodes/{node}/{vmtype}/{vmid}/config --property tags
-
-  - name: set guest tags
-    description: Set or overwrite tags for a guest (VM or CT)
-    command: set /nodes/{node}/{vmtype}/{vmid}/config --tags {tags}
-
-  - name: delete guest tags
-    description: Remove all tags from a guest (VM or CT)
-    command: set /nodes/{node}/{vmtype}/{vmid}/config --delete tags
-
-  - name: delete guest unused-disk
-    description: Remove an unattached disk from a guest (VM or CT)
-    command: set /nodes/{node}/{vmtype}/{vmid}/config --delete {unusedDisk}
-
-  - name: do resize guest disk
-    description: Expand a guest disk (VM or CT)
-    command: set /nodes/{node}/{vmtype}/{vmid}/resize --disk {disk} --size {size}
-
-  - name: do migrate guest
-    description: Migrate a guest to another node (VM or CT)
-    command: create /nodes/{node}/{vmtype}/{vmid}/migrate --target {target_node}
-
-  - name: create guest template
-    description: Convert a guest into a template (VM or CT)
-    command: create /nodes/{node}/{vmtype}/{vmid}/template
-
-  - name: do start guest
-    description: Start a guest (VM or CT)
-    command: create /nodes/{node}/{vmtype}/{vmid}/status/start
-
-  - name: do stop guest
-    description: Stop a guest (VM or CT)
-    command: create /nodes/{node}/{vmtype}/{vmid}/status/stop
-    confirm: true
-
-  - name: do reboot guest
-    description: Reboot a guest (VM or CT)
-    command: create /nodes/{node}/{vmtype}/{vmid}/status/reboot
-    confirm: true
-
-  - name: do shutdown guest
-    description: Shutdown a guest (VM or CT)
-    command: create /nodes/{node}/{vmtype}/{vmid}/status/shutdown
-    confirm: true
-
-  - name: do resume guest
-    description: Resume a suspended guest (VM or CT)
-    command: create /nodes/{node}/{vmtype}/{vmid}/status/resume
-
-  - name: get guest snapshots
-    description: List snapshots for a guest (VM or CT)
-    command: get /nodes/{node}/{vmtype}/{vmid}/snapshot
-
-  - name: show guest snapshot
-    description: Show configuration of a specific guest snapshot
-    command: get /nodes/{node}/{vmtype}/{vmid}/snapshot/{snapname}/config
-
-  - name: create guest snapshot
-    description: Create a new snapshot for a guest (VM or CT)
-    command: create /nodes/{node}/{vmtype}/{vmid}/snapshot --snapname {snapname} --description {descr}
-
-  - name: set guest snapshot
-    description: Update guest snapshot description
-    command: set /nodes/{node}/{vmtype}/{vmid}/snapshot/{snapname}/config --description {description}
-
-  - name: delete guest snapshot
-    description: Delete a specific guest snapshot
-    command: delete /nodes/{node}/{vmtype}/{vmid}/snapshot/{snapname}
-    confirm: true
-
-  - name: do rollback guest
-    description: Rollback guest state to a specific snapshot (VM or CT)
-    command: create /nodes/{node}/{vmtype}/{vmid}/snapshot/{snapname}/rollback
-    confirm: true
-
-  - name: get guest firewall
-    description: List firewall rules for a guest (VM or CT)
-    command: get /nodes/{node}/{vmtype}/{vmid}/firewall/rules
-
-  - name: set guest firewall
-    description: Enable/Disable guest firewall (VM or CT)
-    command: set /nodes/{node}/{vmtype}/{vmid}/firewall/options
-
-  - name: create guest firewall-rule
-    description: Add a new firewall rule to a guest (VM or CT)
-    command: create /nodes/{node}/{vmtype}/{vmid}/firewall/rules
-
-  - name: show guest firewall-rule
-    description: Show details of a specific guest firewall rule
-    command: get /nodes/{node}/{vmtype}/{vmid}/firewall/rules/{pos}
-
-  - name: set guest firewall-rule
-    description: Update a guest firewall rule (VM or CT)
-    command: set /nodes/{node}/{vmtype}/{vmid}/firewall/rules/{pos}
-
-  - name: delete guest firewall-rule
-    description: Remove a firewall rule from a guest (VM or CT)
-    command: delete /nodes/{node}/{vmtype}/{vmid}/firewall/rules/{pos}
-    confirm: true
-
-  - name: delete guest
-    description: Destroy a guest VM or CT (Permanent!)
-    command: delete /nodes/{node}/{vmtype}/{vmid}
-    confirm: true
-
-  - name: get guest feature
-    description: Check if a feature is available for a guest (VM or CT)
-    command: get /nodes/{node}/{vmtype}/{vmid}/feature --feature {feature}
-
-  - name: get guest backups
-    description: List all backups for a guest on a storage
-    command: get /nodes/{node}/storage/{storage}/content --content backup --vmid {vmid}
-
-  - name: do backup guest
-    description: Start a backup job immediately for a VM or CT
-    command: create /nodes/{node}/vzdump --vmid {vmid} --storage {storage}
-
-  - name: show guest backup
-    description: Show details of a specific backup file
-    command: get /nodes/{node}/storage/{storage}/content/{volume}
-
-  - name: get guest backup config
-    description: Extract VM/CT configuration from a vzdump backup archive
-    command: get /nodes/{node}/vzdump/extractconfig --volume {volume}
-
-  - name: delete guest backup
-    description: Permanently delete a backup file from storage
-    command: delete /nodes/{node}/storage/{storage}/content/{volume}
-    confirm: true
-
-  # --- VM ---
-  - name: get vms
-    description: List all VMs (cluster-wide)
-    command: get /cluster/resources --type vm
-
-  - name: show vm
-    description: Show VM config
-    command: get /nodes/{node}/qemu/{vmid}/config
-
-  - name: get vm status
-    description: Show VM runtime status
-    command: get /nodes/{node}/qemu/{vmid}/status/current
-
-  - name: set vm config
-    description: Update VM configuration (RAM, Cores, etc.)
-    command: set /nodes/{node}/qemu/{vmid}/config
-
-  - name: delete vm
-    description: Destroy a VM (Permanent!)
-    command: delete /nodes/{node}/qemu/{vmid}
-    confirm: true
-
-  - name: do migrate vm
-    description: Live migrate a VM to another node
-    command: create /nodes/{node}/qemu/{vmid}/migrate --target {target_node}
-
-  - name: do clone vm
-    description: Clone a VM
-    command: create /nodes/{node}/qemu/{vmid}/clone --newid {newid} --name {name}
-
-  - name: create vm template
-    description: Convert the VM into a read-only template
-    command: create /nodes/{node}/qemu/{vmid}/template
-
-  - name: do resize vm disk
-    description: Expand a VM disk
-    command: set /nodes/{node}/qemu/{vmid}/resize --disk {disk} --size {size}
-
-  - name: delete vm unused-disk
-    description: Remove an unattached disk from a VM
-    command: set /nodes/{node}/qemu/{vmid}/config --delete {unusedDisk}
-
-  # vm tags
-  - name: get vm tags
-    description: Get current tags for a VM
-    command: get /nodes/{node}/qemu/{vmid}/config --property tags
-
-  - name: set vm tags
-    description: Set or overwrite tags for a VM
-    command: set /nodes/{node}/qemu/{vmid}/config --tags {tags}
-
-  - name: delete vm tags
-    description: Remove all tags from a VM
-    command: set /nodes/{node}/qemu/{vmid}/config --delete tags
-
-  # vm snapshot
-  - name: get vm snapshots
-    description: List VM snapshots
-    command: get /nodes/{node}/qemu/{vmid}/snapshot
-
-  - name: show vm snapshot
-    description: Show configuration of a specific VM snapshot
-    command: get /nodes/{node}/qemu/{vmid}/snapshot/{snapname}/config
-
-  - name: create vm snapshot
-    description: Create a new snapshot for a VM
-    command: create /nodes/{node}/qemu/{vmid}/snapshot --snapname {snapname} --description {descr}
-
-  - name: set vm snapshot
-    description: Update VM snapshot description
-    command: set /nodes/{node}/qemu/{vmid}/snapshot/{snapname}/config --description {description}
-
-  - name: delete vm snapshot
-    description: Delete a specific VM snapshot
-    command: delete /nodes/{node}/qemu/{vmid}/snapshot/{snapname}
-    confirm: true
-
-  - name: do rollback vm
-    description: Rollback VM state to a specific snapshot
-    command: create /nodes/{node}/qemu/{vmid}/snapshot/{snapname}/rollback
-    confirm: true
-
-  # vm status
-  - name: do start vm
-    description: Start a VM
-    command: create /nodes/{node}/qemu/{vmid}/status/start
-
-  - name: do stop vm
-    description: Stop a VM
-    command: create /nodes/{node}/qemu/{vmid}/status/stop
-    confirm: true
-
-  - name: do reboot vm
-    description: Reboot a VM
-    command: create /nodes/{node}/qemu/{vmid}/status/reboot
-    confirm: true
-
-  - name: do reset vm
-    description: Reset a VM
-    command: create /nodes/{node}/qemu/{vmid}/status/reset
-    confirm: true
-
-  - name: do shutdown vm
-    description: Shutdown a VM
-    command: create /nodes/{node}/qemu/{vmid}/status/shutdown
-    confirm: true
-
-  - name: do suspend vm
-    description: Suspend a VM
-    command: create /nodes/{node}/qemu/{vmid}/status/suspend
-
-  - name: do resume vm
-    description: Resume a suspended VM
-    command: create /nodes/{node}/qemu/{vmid}/status/resume
-
-  # vm firewall
-  - name: get vm firewall
-    description: List firewall rules for a VM
-    command: get /nodes/{node}/qemu/{vmid}/firewall/rules
-
-  - name: set vm firewall
-    description: Enable/Disable VM firewall
-    command: set /nodes/{node}/qemu/{vmid}/firewall/options
-
-  - name: create vm firewall-rule
-    description: Add a new firewall rule to a VM
-    command: create /nodes/{node}/qemu/{vmid}/firewall/rules
-
-  - name: show vm firewall-rule
-    description: Show details of a specific VM firewall rule
-    command: get /nodes/{node}/qemu/{vmid}/firewall/rules/{pos}
-
-  - name: set vm firewall-rule
-    description: Update a VM firewall rule
-    command: set /nodes/{node}/qemu/{vmid}/firewall/rules/{pos}
-
-  - name: delete vm firewall-rule
-    description: Remove a firewall rule from a VM
-    command: delete /nodes/{node}/qemu/{vmid}/firewall/rules/{pos}
-    confirm: true
-
-  # --- CT ---
-  - name: show ct
-    description: Show container config
-    command: get /nodes/{node}/lxc/{vmid}/config
-
-  - name: get ct status
-    description: Show container runtime status
-    command: get /nodes/{node}/lxc/{vmid}/status/current
-
-  - name: set ct config
-    description: Update CT configuration (RAM, Cores, etc.)
-    command: set /nodes/{node}/lxc/{vmid}/config
-
-  - name: delete ct
-    description: Destroy a container (Permanent!)
-    command: delete /nodes/{node}/lxc/{vmid}
-    confirm: true
-
-  - name: do migrate ct
-    description: Migrate a container to another node
-    command: create /nodes/{node}/lxc/{vmid}/migrate --target {target_node}
-
-  - name: do clone ct
-    description: Clone a container
-    command: create /nodes/{node}/lxc/{vmid}/clone --newid {newid} --hostname {name}
-
-  - name: create ct template
-    description: Convert the container into a template
-    command: create /nodes/{node}/lxc/{vmid}/template
-
-  - name: do resize ct disk
-    description: Expand a CT disk
-    command: set /nodes/{node}/lxc/{vmid}/resize --disk {disk} --size {size}
-
-  - name: delete ct unused-disk
-    description: Remove an unattached disk from a CT
-    command: set /nodes/{node}/lxc/{vmid}/config --delete {unusedDisk}
-
-  - name: get ct templates
-    description: List CT templates on storage
-    command: get /nodes/{node}/storage/{storage}/content --content vztmpl
-
-  - name: get ct network
-    description: Show CT network interfaces
-    command: get /nodes/{node}/lxc/{vmid}/config --property net0
-
-  # ct tags
-  - name: get ct tags
-    description: Get current tags for a container
-    command: get /nodes/{node}/lxc/{vmid}/config --property tags
-
-  - name: set ct tags
-    description: Set or overwrite tags for a container
-    command: set /nodes/{node}/lxc/{vmid}/config --tags {tags}
-
-  - name: delete ct tags
-    description: Remove all tags from a container
-    command: set /nodes/{node}/lxc/{vmid}/config --delete tags
-
-  # ct snapshot
-  - name: get ct snapshots
-    description: List container snapshots
-    command: get /nodes/{node}/lxc/{vmid}/snapshot
-
-  - name: show ct snapshot
-    description: Show configuration of a specific container snapshot
-    command: get /nodes/{node}/lxc/{vmid}/snapshot/{snapname}/config
-
-  - name: create ct snapshot
-    description: Create a new snapshot for a container
-    command: create /nodes/{node}/lxc/{vmid}/snapshot --snapname {snapname} --description {descr}
-
-  - name: set ct snapshot
-    description: Update CT snapshot description
-    command: set /nodes/{node}/lxc/{vmid}/snapshot/{snapname}/config --description {description}
-
-  - name: delete ct snapshot
-    description: Delete a specific container snapshot
-    command: delete /nodes/{node}/lxc/{vmid}/snapshot/{snapname}
-    confirm: true
-
-  - name: do rollback ct
-    description: Rollback container state to a specific snapshot
-    command: create /nodes/{node}/lxc/{vmid}/snapshot/{snapname}/rollback
-    confirm: true
-
-  # ct status
-  - name: do start ct
-    description: Start a container
-    command: create /nodes/{node}/lxc/{vmid}/status/start
-
-  - name: do stop ct
-    description: Stop a container
-    command: create /nodes/{node}/lxc/{vmid}/status/stop
-    confirm: true
-
-  - name: do reboot ct
-    description: Reboot a container
-    command: create /nodes/{node}/lxc/{vmid}/status/reboot
-    confirm: true
-
-  - name: do shutdown ct
-    description: Shutdown a container
-    command: create /nodes/{node}/lxc/{vmid}/status/shutdown
-    confirm: true
-
-  # ct firewall
-  - name: get ct firewall
-    description: List firewall rules for a container
-    command: get /nodes/{node}/lxc/{vmid}/firewall/rules
-
-  - name: set ct firewall
-    description: Enable/Disable container firewall
-    command: set /nodes/{node}/lxc/{vmid}/firewall/options
-
-  - name: create ct firewall-rule
-    description: Add a new firewall rule to a container
-    command: create /nodes/{node}/lxc/{vmid}/firewall/rules
-
-  - name: show ct firewall-rule
-    description: Show details of a specific CT firewall rule
-    command: get /nodes/{node}/lxc/{vmid}/firewall/rules/{pos}
-
-  - name: set ct firewall-rule
-    description: Update a CT firewall rule
-    command: set /nodes/{node}/lxc/{vmid}/firewall/rules/{pos}
-
-  - name: delete ct firewall-rule
-    description: Remove a firewall rule from a container
-    command: delete /nodes/{node}/lxc/{vmid}/firewall/rules/{pos}
-    confirm: true
-
-  # ct interfaces (runtime)
-  - name: get ct interfaces
-    description: Show runtime network interfaces of a running container (via guest agent)
-    command: get /nodes/{node}/lxc/{vmid}/interfaces
-
-  # ct move disk
-  - name: do move ct disk
-    description: Move a CT volume to a different storage
-    command: create /nodes/{node}/lxc/{vmid}/move_volume --volume {disk} --storage {storage}
-
-  # --- VM extra ---
-  # vm cloudinit
-  - name: get vm cloudinit
-    description: Dump the cloud-init configuration for a VM (user/network/meta)
-    command: "get /nodes/{node}/qemu/{vmid}/cloudinit/dump --type {user|network|meta}"
-
-  # vm move disk
-  - name: do move vm disk
-    description: Move a VM disk to a different storage
-    command: create /nodes/{node}/qemu/{vmid}/move_disk --disk {disk} --storage {storage}
-
-  # vm agent
-  - name: get vm agent info
-    description: Show guest OS info via QEMU guest agent
-    command: get /nodes/{node}/qemu/{vmid}/agent/info
-
-  - name: get vm agent network
-    description: Show guest network interfaces via QEMU guest agent
-    command: get /nodes/{node}/qemu/{vmid}/agent/network-get-interfaces
-
-  # --- Node extra ---
-  # apt / package management
-  - name: get node packages
-    description: List available package updates on a node
-    command: get /nodes/{node}/apt/updates
-
-  - name: do update node packages
-    description: Trigger an apt update (refresh package cache) on a node
-    command: create /nodes/{node}/apt/update
-
-  # syslog / journal
-  - name: get node syslog
-    description: Read the system log (syslog) of a node
-    command: get /nodes/{node}/syslog
-
-  - name: get node journal
-    description: Read the systemd journal of a node
-    command: get /nodes/{node}/journal
-
-  # subscription
-  - name: get node subscription
-    description: Show subscription status of a node
-    command: get /nodes/{node}/subscription
-
-  # time
-  - name: get node time
-    description: Show current time and timezone of a node
-    command: get /nodes/{node}/time
-
-  - name: set node time
-    description: Set the timezone of a node
-    command: set /nodes/{node}/time --timezone {timezone}
-
-  # report
-  - name: get node report
-    description: Generate a full diagnostic report for a node
-    command: get /nodes/{node}/report
-
-  # wakeonlan
-  - name: do wakeup node
-    description: Send Wake-on-LAN magic packet to a node
-    command: create /nodes/{node}/wakeonlan
-
-  # dns
-  - name: set node dns
-    description: Set DNS servers for a node
-    command: set /nodes/{node}/dns --search {domain} --dns1 {dns1}
-
-  # hosts
-  - name: get node hosts
-    description: Show /etc/hosts content of a node
-    command: get /nodes/{node}/hosts
-
-  - name: set node hosts
-    description: Write /etc/hosts content of a node
-    command: set /nodes/{node}/hosts --data {data}
-
-  # --- Security extra ---
-  # domains (realms)
-  - name: get security domains
-    description: List all authentication domains/realms
-    command: get /access/domains
-
-  - name: show security domain
-    description: Show configuration of an authentication domain
-    command: get /access/domains/{realm}
-
-  - name: create security domain
-    description: Create a new authentication domain (LDAP, AD, OpenID, …)
-    command: "create /access/domains --realm {realm} --type {pam|pve|ldap|ad|openid}"
-
-  - name: set security domain
-    description: Update an authentication domain
-    command: set /access/domains/{realm}
-
-  - name: delete security domain
-    description: Remove an authentication domain
-    command: delete /access/domains/{realm}
-    confirm: true
-
-  - name: do sync security domain
-    description: Sync users/groups from an external authentication domain
-    command: create /access/domains/{realm}/sync
-
-  # password
-  - name: set security password
-    description: Change the password of a user
-    command: set /access/password --userid {userid} --password {password}
-
-  # --- Storage management ---
-  - name: get storages config
-    description: List all configured storages (cluster-wide config)
-    command: get /storage
-
-  - name: show storage config
-    description: Show configuration of a specific storage
-    command: get /storage/{storage}
-
-  - name: create storage
-    description: Add a new storage definition to the cluster
-    command: "create /storage --storage {storage} --type {dir|nfs|cifs|lvm|zfspool|rbd|cephfs|pbs}"
-
-  - name: set storage config
-    description: Update an existing storage configuration
-    command: set /storage/{storage}
-
-  - name: delete storage config
-    description: Remove a storage definition from the cluster
-    command: delete /storage/{storage}
-    confirm: true
-
-  # --- VM extra (pending / agent exec / monitor) ---
-  - name: get vm pending
-    description: Show VM configuration including pending (unapplied) changes
-    command: get /nodes/{node}/qemu/{vmid}/pending
-
-  - name: do exec vm agent
-    description: Execute a command inside the VM via QEMU guest agent
-    command: create /nodes/{node}/qemu/{vmid}/agent/exec --command {command}
-
-  - name: get vm agent exec-status
-    description: Get the result/status of a command executed via guest agent
-    command: get /nodes/{node}/qemu/{vmid}/agent/exec-status --pid {pid}
-
-  - name: get vm agent osinfo
-    description: Show guest OS information via QEMU guest agent
-    command: get /nodes/{node}/qemu/{vmid}/agent/get-osinfo
-
-  - name: get vm agent users
-    description: List users logged into the guest via QEMU guest agent
-    command: get /nodes/{node}/qemu/{vmid}/agent/get-users
-
-  - name: get vm agent fsinfo
-    description: Show filesystem info of the guest via QEMU guest agent
-    command: get /nodes/{node}/qemu/{vmid}/agent/get-fsinfo
-
-  - name: do monitor vm
-    description: Execute a QEMU monitor (HMP) command on a VM
-    command: create /nodes/{node}/qemu/{vmid}/monitor --command {command}
-
-  # --- CT extra ---
-  - name: get ct pending
-    description: Show CT configuration including pending (unapplied) changes
-    command: get /nodes/{node}/lxc/{vmid}/pending
-
-  - name: do resume ct
-    description: Resume a suspended container
-    command: create /nodes/{node}/lxc/{vmid}/status/resume
-
-  # --- Backup extra ---
-  - name: get cluster not-backed-up
-    description: List all guests not covered by any backup job
-    command: get /cluster/backup-info/not-backed-up
-
-  - name: get cluster backup volumes
-    description: List volumes included in a specific backup job
-    command: get /cluster/backup/{id}/included_volumes
-
-  - name: get node backup defaults
-    description: Show the currently configured vzdump default settings
-    command: get /nodes/{node}/vzdump/defaults
-
-  - name: get node prune-info
-    description: Preview which backups would be removed by a prune operation
-    command: get /nodes/{node}/storage/{storage}/prunebackups
-
-  - name: do prune node backups
-    description: Prune old backups on a storage according to retention settings
-    command: delete /nodes/{node}/storage/{storage}/prunebackups
-    confirm: true
-
-  - name: do download storage
-    description: Download an ISO, template or image from a URL to a storage
-    command: create /nodes/{node}/storage/{storage}/download-url --url {url} --filename {filename} --content {iso|vztmpl}
-
-  # --- Node extra (startall / stopall / hardware / config) ---
-  - name: do startall node
-    description: Start all VMs and containers on a node (onboot=1 by default)
-    command: create /nodes/{node}/startall
-
-  - name: do stopall node
-    description: Stop all VMs and containers on a node
-    command: create /nodes/{node}/stopall
-    confirm: true
-
-  - name: get node config
-    description: Show node configuration (NTP, DNS, notify, etc.)
-    command: get /nodes/{node}/config
-
-  - name: set node config
-    description: Update node configuration options
-    command: set /nodes/{node}/config
-
-  - name: get node hardware pci
-    description: List local PCI devices on a node
-    command: get /nodes/{node}/hardware/pci
-
-  - name: get node hardware usb
-    description: List local USB devices on a node
-    command: get /nodes/{node}/hardware/usb
-
-  # --- HA ---
   - name: get cluster ha groups
     description: List all HA groups
     command: get /cluster/ha/groups
@@ -1062,11 +164,93 @@ aliases:
     description: Relocate a HA resource to another node (stop and restart)
     command: create /cluster/ha/resources/{sid}/relocate --node {node}
 
-  - name: get cluster ha manager-status
-    description: Show full HA manager status including LRM
-    command: get /cluster/ha/status/manager_status
+  # replication
+  - name: get cluster replications
+    description: List all replication jobs on a node
+    command: get /nodes/{node}/replication
 
-  # --- Notifications ---
+  - name: show cluster replication
+    description: Show status of a specific replication job
+    command: get /nodes/{node}/replication/{id}
+
+  - name: create cluster replication
+    description: Create a new ZFS replication job
+    command: create /nodes/{node}/replication --id {id} --vmid {vmid} --target {target_node} --schedule {interval}
+
+  - name: set cluster replication
+    description: Update a replication job
+    command: set /nodes/{node}/replication/{id}
+
+  - name: delete cluster replication
+    description: Remove a replication job
+    command: delete /nodes/{node}/replication/{id}
+    confirm: true
+
+  - name: do sync cluster replication
+    description: Force an immediate replication sync
+    command: create /nodes/{node}/replication/{id}/schedule_now
+
+  - name: get cluster replications all
+    description: List all replication jobs (cluster-wide)
+    command: get /cluster/replication
+
+  - name: create cluster replication job
+    description: Create a new replication job (cluster-level)
+    command: create /cluster/replication --id {id} --target {target} --type {local}
+
+  - name: set cluster replication job
+    description: Update a cluster replication job
+    command: set /cluster/replication/{id}
+
+  - name: delete cluster replication job
+    description: Remove a cluster replication job
+    command: delete /cluster/replication/{id}
+    confirm: true
+
+  # SDN
+  - name: get cluster sdn zones
+    description: List all SDN zones
+    command: get /cluster/sdn/zones
+
+  - name: show cluster sdn zone
+    description: Show configuration of a specific SDN zone
+    command: get /cluster/sdn/zones/{zone}
+
+  - name: get cluster sdn vnets
+    description: List all SDN virtual networks
+    command: get /cluster/sdn/vnets
+
+  - name: show cluster sdn vnet
+    description: Show configuration of a specific SDN vnet
+    command: get /cluster/sdn/vnets/{vnet}
+
+  - name: get cluster sdn controllers
+    description: List all SDN controllers
+    command: get /cluster/sdn/controllers
+
+  # metrics
+  - name: get cluster metrics-servers
+    description: List all configured metric server targets
+    command: get /cluster/metrics/server
+
+  - name: show cluster metrics-server
+    description: Show configuration of a specific metric server
+    command: get /cluster/metrics/server/{id}
+
+  - name: create cluster metrics-server
+    description: Add a new metric server target (InfluxDB/Graphite)
+    command: "create /cluster/metrics/server/{id} --type {influxdb|graphite} --server {server}"
+
+  - name: set cluster metrics-server
+    description: Update a metric server configuration
+    command: set /cluster/metrics/server/{id}
+
+  - name: delete cluster metrics-server
+    description: Remove a metric server configuration
+    command: delete /cluster/metrics/server/{id}
+    confirm: true
+
+  # notifications
   - name: get cluster notification-targets
     description: List all available notification targets
     command: get /cluster/notifications/targets
@@ -1083,25 +267,7 @@ aliases:
     description: List all configured notification endpoints
     command: get /cluster/notifications/endpoints
 
-  # --- TFA (Two-Factor Authentication) ---
-  - name: get security tfa
-    description: List TFA configurations for all users
-    command: get /access/tfa
-
-  - name: get security user tfa
-    description: List TFA entries for a specific user
-    command: get /access/tfa/{userid}
-
-  - name: create security tfa
-    description: Add a TFA entry (TOTP, WebAuthn, recovery keys) for a user
-    command: "create /access/tfa/{userid} --type {totp|webauthn|u2f|recovery}"
-
-  - name: delete security tfa
-    description: Remove a TFA entry for a user
-    command: delete /access/tfa/{userid}/{id}
-    confirm: true
-
-  # --- Hardware Mapping ---
+  # hardware mappings
   - name: get cluster mappings pci
     description: List all PCI hardware mappings
     command: get /cluster/mapping/pci
@@ -1143,3 +309,1088 @@ aliases:
     description: Remove a USB hardware mapping
     command: delete /cluster/mapping/usb/{id}
     confirm: true
+
+  # =============================================================
+  # ACCESS & SECURITY
+  # =============================================================
+
+  # users
+  - name: get security users
+    description: List all users and their status
+    command: get /access/users
+
+  - name: show security user
+    description: Show details of a specific user
+    command: get /access/users/{userid}
+
+  - name: create security user
+    description: Create a new user account
+    command: create /access/users --userid {userid} --password {password}
+
+  - name: set security user
+    description: Update user account settings
+    command: set /access/users/{userid}
+
+  - name: delete security user
+    description: Remove a user account
+    command: delete /access/users/{userid}
+    confirm: true
+
+  - name: set security password
+    description: Change the password of a user
+    command: set /access/password --userid {userid} --password {password}
+
+  # groups
+  - name: get security groups
+    description: List all user groups
+    command: get /access/groups
+
+  - name: show security group
+    description: Show details of a group
+    command: get /access/groups/{groupid}
+
+  - name: create security group
+    description: Create a new user group
+    command: create /access/groups --groupid {groupid}
+
+  - name: set security group
+    description: Update a user group
+    command: set /access/groups/{groupid}
+
+  - name: delete security group
+    description: Remove a user group
+    command: delete /access/groups/{groupid}
+    confirm: true
+
+  # roles
+  - name: get security roles
+    description: List all defined roles and their privileges
+    command: get /access/roles
+
+  - name: show security role
+    description: Show privileges assigned to a specific role
+    command: get /access/roles/{roleid}
+
+  - name: create security role
+    description: Create a new custom role with specific privileges
+    command: create /access/roles --roleid {roleid} --privs {privileges}
+
+  - name: set security role
+    description: Update privileges for an existing custom role
+    command: set /access/roles/{roleid} --privs {privileges}
+
+  - name: delete security role
+    description: Remove a custom role
+    command: delete /access/roles/{roleid}
+    confirm: true
+
+  # ACLs
+  - name: get security acls
+    description: List all access control rules
+    command: get /access/acl
+
+  - name: set security acl
+    description: Update permissions for a path/user/group
+    command: set /access/acl --path {path} --roles {role} --users {userid}
+
+  - name: get security privileges
+    description: List all available privileges in the system
+    command: get /access/permissions
+
+  # API tokens
+  - name: get security tokens
+    description: List all API tokens for a user
+    command: get /access/users/{userid}/token
+
+  - name: show security token
+    description: Show details of a specific API token
+    command: get /access/users/{userid}/token/{tokenid}
+
+  - name: create security token
+    description: Generate a new API token for a user
+    command: "create /access/users/{userid}/token --tokenid {tokenid} --privsep {0|1}"
+
+  - name: delete security token
+    description: Remove an API token
+    command: delete /access/users/{userid}/token/{tokenid}
+    confirm: true
+
+  # domains (realms)
+  - name: get security domains
+    description: List all authentication domains/realms
+    command: get /access/domains
+
+  - name: show security domain
+    description: Show configuration of an authentication domain
+    command: get /access/domains/{realm}
+
+  - name: create security domain
+    description: Create a new authentication domain (LDAP, AD, OpenID, …)
+    command: "create /access/domains --realm {realm} --type {pam|pve|ldap|ad|openid}"
+
+  - name: set security domain
+    description: Update an authentication domain
+    command: set /access/domains/{realm}
+
+  - name: delete security domain
+    description: Remove an authentication domain
+    command: delete /access/domains/{realm}
+    confirm: true
+
+  - name: do sync security domain
+    description: Sync users/groups from an external authentication domain
+    command: create /access/domains/{realm}/sync
+
+  # TFA
+  - name: get security tfa
+    description: List TFA configurations for all users
+    command: get /access/tfa
+
+  - name: get security user tfa
+    description: List TFA entries for a specific user
+    command: get /access/tfa/{userid}
+
+  - name: create security tfa
+    description: Add a TFA entry (TOTP, WebAuthn, recovery keys) for a user
+    command: "create /access/tfa/{userid} --type {totp|webauthn|u2f|recovery}"
+
+  - name: delete security tfa
+    description: Remove a TFA entry for a user
+    command: delete /access/tfa/{userid}/{id}
+    confirm: true
+
+  # =============================================================
+  # NODE
+  # =============================================================
+
+  # status / info
+  - name: get nodes
+    description: List all nodes
+    command: get /nodes
+
+  - name: show node
+    description: Show node status
+    command: get /nodes/{node}/status
+
+  - name: get node version
+    description: Show PVE version installed on a node
+    command: get /nodes/{node}/version
+
+  - name: get node config
+    description: Show node configuration (NTP, DNS, notify, etc.)
+    command: get /nodes/{node}/config
+
+  - name: set node config
+    description: Update node configuration options
+    command: set /nodes/{node}/config
+
+  - name: get node report
+    description: Generate a full diagnostic report for a node
+    command: get /nodes/{node}/report
+
+  - name: get node rrddata
+    description: Show node performance data (RRD)
+    command: get /nodes/{node}/rrddata
+
+  - name: get node subscription
+    description: Show subscription status of a node
+    command: get /nodes/{node}/subscription
+
+  # power / lifecycle
+  - name: do reboot node
+    description: Reboot a node
+    command: create /nodes/{node}/status --command reboot
+    confirm: true
+
+  - name: do shutdown node
+    description: Shutdown a node
+    command: create /nodes/{node}/status --command shutdown
+    confirm: true
+
+  - name: do wakeup node
+    description: Send Wake-on-LAN magic packet to a node
+    command: create /nodes/{node}/wakeonlan
+
+  - name: do startall node
+    description: Start all VMs and containers on a node (onboot=1 by default)
+    command: create /nodes/{node}/startall
+
+  - name: do stopall node
+    description: Stop all VMs and containers on a node
+    command: create /nodes/{node}/stopall
+    confirm: true
+
+  - name: do migrateall node
+    description: Migrate all guests from a node to other nodes
+    command: create /nodes/{node}/migrateall --target {target_node}
+    confirm: true
+
+  - name: do suspendall node
+    description: Suspend all guests on a node
+    command: create /nodes/{node}/suspendall
+    confirm: true
+
+  # tasks
+  - name: get node tasks
+    description: List recent tasks on node
+    command: get /nodes/{node}/tasks
+
+  - name: show node task
+    description: Show log of a specific task
+    command: get /nodes/{node}/tasks/{upid}/log
+
+  - name: show node task status
+    description: Show status of a specific task on a node
+    command: get /nodes/{node}/tasks/{upid}/status
+
+  - name: do stop node task
+    description: Stop/Kill a running task
+    command: delete /nodes/{node}/tasks/{upid}
+
+  # network
+  - name: get node network
+    description: List network interfaces on a node
+    command: get /nodes/{node}/network
+
+  - name: get node netstat
+    description: Show network statistics for a node
+    command: get /nodes/{node}/netstat
+
+  - name: get node dns
+    description: Show DNS settings for a node
+    command: get /nodes/{node}/dns
+
+  - name: set node dns
+    description: Set DNS servers for a node
+    command: set /nodes/{node}/dns --search {domain} --dns1 {dns1}
+
+  - name: get node hosts
+    description: Show /etc/hosts content of a node
+    command: get /nodes/{node}/hosts
+
+  - name: set node hosts
+    description: Write /etc/hosts content of a node
+    command: set /nodes/{node}/hosts --data {data}
+
+  # time
+  - name: get node time
+    description: Show current time and timezone of a node
+    command: get /nodes/{node}/time
+
+  - name: set node time
+    description: Set the timezone of a node
+    command: set /nodes/{node}/time --timezone {timezone}
+
+  # syslog / journal
+  - name: get node syslog
+    description: Read the system log (syslog) of a node
+    command: get /nodes/{node}/syslog
+
+  - name: get node journal
+    description: Read the systemd journal of a node
+    command: get /nodes/{node}/journal
+
+  # storage
+  - name: get node storages
+    description: List storages available on a node
+    command: get /nodes/{node}/storage
+
+  - name: get node backups
+    description: List backup files on a storage
+    command: get /nodes/{node}/storage/{storage}/content --content backup
+
+  - name: get node iso
+    description: List ISO images on storage
+    command: get /nodes/{node}/storage/{storage}/content --content iso
+
+  - name: get node backup defaults
+    description: Show the currently configured vzdump default settings
+    command: get /nodes/{node}/vzdump/defaults
+
+  - name: get node prune-info
+    description: Preview which backups would be removed by a prune operation
+    command: get /nodes/{node}/storage/{storage}/prunebackups
+
+  - name: do prune node backups
+    description: Prune old backups on a storage according to retention settings
+    command: delete /nodes/{node}/storage/{storage}/prunebackups
+    confirm: true
+
+  - name: do download storage
+    description: Download an ISO, template or image from a URL to a storage
+    command: create /nodes/{node}/storage/{storage}/download-url --url {url} --filename {filename} --content {iso|vztmpl}
+
+  # disks
+  - name: get node disks
+    description: List physical disks on a node
+    command: get /nodes/{node}/disks/list
+
+  - name: get node disk smart
+    description: Show S.M.A.R.T. status for a disk
+    command: get /nodes/{node}/disks/smart --disk {disk}
+
+  - name: get node disk zfs
+    description: List ZFS pools on a node
+    command: get /nodes/{node}/disks/zfs
+
+  - name: show node disk zfs
+    description: Show detailed status of a ZFS pool
+    command: get /nodes/{node}/disks/zfs/{name}
+
+  - name: get node disk lvm
+    description: List LVM volume groups
+    command: get /nodes/{node}/disks/lvm
+
+  # services
+  - name: get node services
+    description: List all services on a node
+    command: get /nodes/{node}/services
+
+  - name: do start node service
+    description: Start a service on a node
+    command: create /nodes/{node}/services/{service}/start
+
+  - name: do stop node service
+    description: Stop a service on a node
+    command: create /nodes/{node}/services/{service}/stop
+
+  - name: do restart node service
+    description: Restart a service on a node
+    command: create /nodes/{node}/services/{service}/restart
+
+  # firewall
+  - name: get node firewall
+    description: List firewall rules for a node
+    command: get /nodes/{node}/firewall/rules
+
+  - name: get node firewall options
+    description: Show firewall options for a node
+    command: get /nodes/{node}/firewall/options
+
+  - name: set node firewall
+    description: Enable/Disable node firewall
+    command: set /nodes/{node}/firewall/options
+
+  - name: set node firewall options
+    description: Update firewall options for a node
+    command: set /nodes/{node}/firewall/options
+
+  - name: show node firewall-rule
+    description: Show details of a specific node firewall rule
+    command: get /nodes/{node}/firewall/rules/{pos}
+
+  - name: create node firewall-rule
+    description: Add a new firewall rule to a node
+    command: create /nodes/{node}/firewall/rules
+
+  - name: set node firewall-rule
+    description: Update a specific node firewall rule
+    command: set /nodes/{node}/firewall/rules/{pos}
+
+  - name: delete node firewall-rule
+    description: Remove a firewall rule from a node
+    command: delete /nodes/{node}/firewall/rules/{pos}
+    confirm: true
+
+  - name: get node firewall log
+    description: Show firewall log for a node
+    command: get /nodes/{node}/firewall/log
+
+  # certificates
+  - name: get node certificates
+    description: List certificates on a node
+    command: get /nodes/{node}/certificates/info
+
+  # hardware
+  - name: get node hardware pci
+    description: List local PCI devices on a node
+    command: get /nodes/{node}/hardware/pci
+
+  - name: get node hardware usb
+    description: List local USB devices on a node
+    command: get /nodes/{node}/hardware/usb
+
+  # capabilities
+  - name: get node cpu-models
+    description: List available CPU models on a node
+    command: get /nodes/{node}/capabilities/qemu/cpu
+
+  - name: get node machine-types
+    description: List available QEMU machine types on a node
+    command: get /nodes/{node}/capabilities/qemu/machines
+
+  # apt / package management
+  - name: get node packages
+    description: List available package updates on a node
+    command: get /nodes/{node}/apt/updates
+
+  - name: do update node packages
+    description: Trigger an apt update (refresh package cache) on a node
+    command: create /nodes/{node}/apt/update
+
+  - name: get node apt changelog
+    description: Show changelog of a package available on a node
+    command: get /nodes/{node}/apt/changelog --name {package}
+
+  - name: get node apt repos
+    description: Show APT repository configuration on a node
+    command: get /nodes/{node}/apt/repositories
+
+  # scan
+  - name: get node scan nfs
+    description: Scan a remote host for NFS shares accessible from a node
+    command: get /nodes/{node}/scan/nfs --server {server}
+
+  - name: get node scan cifs
+    description: Scan a remote host for CIFS/SMB shares accessible from a node
+    command: get /nodes/{node}/scan/cifs --server {server}
+
+  - name: get node scan pbs
+    description: Scan a Proxmox Backup Server accessible from a node
+    command: get /nodes/{node}/scan/pbs --server {server} --username {username}
+
+  - name: get node scan iscsi
+    description: Scan for iSCSI targets accessible from a node
+    command: get /nodes/{node}/scan/iscsi --portal {portal}
+
+  - name: get node scan zfs
+    description: Scan for ZFS pools accessible from a node
+    command: get /nodes/{node}/scan/zfs
+
+  - name: get node scan lvm
+    description: List LVM volume groups accessible from a node
+    command: get /nodes/{node}/scan/lvm
+
+  # replication
+  - name: get node replication status
+    description: Show status of a replication job on a specific node
+    command: get /nodes/{node}/replication/{id}/status
+
+  - name: get node replication log
+    description: Show log of a replication job on a specific node
+    command: get /nodes/{node}/replication/{id}/log
+
+  # =============================================================
+  # STORAGE
+  # =============================================================
+
+  - name: get storages
+    description: List all storages (cluster-wide)
+    command: get /cluster/resources --type storage
+
+  - name: show storage
+    description: Show storage status/usage
+    command: get /nodes/{node}/storage/{storage}/status
+
+  - name: show node storage
+    description: Show configuration of a specific storage on a node
+    command: get /nodes/{node}/storage/{storage}
+
+  - name: get storages config
+    description: List all configured storages (cluster-wide config)
+    command: get /storage
+
+  - name: show storage config
+    description: Show configuration of a specific storage
+    command: get /storage/{storage}
+
+  - name: create storage
+    description: Add a new storage definition to the cluster
+    command: "create /storage --storage {storage} --type {dir|nfs|cifs|lvm|zfspool|rbd|cephfs|pbs}"
+
+  - name: set storage config
+    description: Update an existing storage configuration
+    command: set /storage/{storage}
+
+  - name: delete storage config
+    description: Remove a storage definition from the cluster
+    command: delete /storage/{storage}
+    confirm: true
+
+  # =============================================================
+  # POOLS
+  # =============================================================
+
+  - name: get pools
+    description: List all resource pools
+    command: get /pools
+
+  - name: show pool
+    description: Show details of a specific pool
+    command: get /pools/{poolid}
+
+  - name: create pool
+    description: Create a new resource pool
+    command: create /pools --poolid {poolid} --comment {comment}
+
+  - name: set pool
+    description: Update pool configuration
+    command: set /pools/{poolid}
+
+  - name: delete pool
+    description: Remove a resource pool
+    command: delete /pools/{poolid}
+    confirm: true
+
+  # =============================================================
+  # GUEST (VM & CT) — aliases using {vmtype}, support --guest
+  # =============================================================
+
+  - name: get guests
+    description: List all VMs and containers (cluster-wide)
+    command: get /cluster/resources --type vm
+
+  - name: show guest
+    description: Show guest config (VM or CT)
+    command: get /nodes/{node}/{vmtype}/{vmid}/config
+
+  - name: get guest status
+    description: Show guest runtime status (VM or CT)
+    command: get /nodes/{node}/{vmtype}/{vmid}/status/current
+
+  - name: set guest config
+    description: Update guest configuration (VM or CT)
+    command: set /nodes/{node}/{vmtype}/{vmid}/config
+
+  - name: get guest pending
+    description: Show guest configuration including pending (unapplied) changes
+    command: get /nodes/{node}/{vmtype}/{vmid}/pending
+
+  - name: get guest feature
+    description: Check if a feature is available for a guest (VM or CT)
+    command: get /nodes/{node}/{vmtype}/{vmid}/feature --feature {feature}
+
+  # guest tags
+  - name: get guest tags
+    description: Get current tags for a guest (VM or CT)
+    command: get /nodes/{node}/{vmtype}/{vmid}/config --property tags
+
+  - name: set guest tags
+    description: Set or overwrite tags for a guest (VM or CT)
+    command: set /nodes/{node}/{vmtype}/{vmid}/config --tags {tags}
+
+  - name: delete guest tags
+    description: Remove all tags from a guest (VM or CT)
+    command: set /nodes/{node}/{vmtype}/{vmid}/config --delete tags
+
+  # guest disk
+  - name: delete guest unused-disk
+    description: Remove an unattached disk from a guest (VM or CT)
+    command: set /nodes/{node}/{vmtype}/{vmid}/config --delete {unusedDisk}
+
+  - name: do resize guest disk
+    description: Expand a guest disk (VM or CT)
+    command: set /nodes/{node}/{vmtype}/{vmid}/resize --disk {disk} --size {size}
+
+  # guest lifecycle
+  - name: do start guest
+    description: Start a guest (VM or CT)
+    command: create /nodes/{node}/{vmtype}/{vmid}/status/start
+
+  - name: do stop guest
+    description: Stop a guest (VM or CT)
+    command: create /nodes/{node}/{vmtype}/{vmid}/status/stop
+    confirm: true
+
+  - name: do reboot guest
+    description: Reboot a guest (VM or CT)
+    command: create /nodes/{node}/{vmtype}/{vmid}/status/reboot
+    confirm: true
+
+  - name: do shutdown guest
+    description: Shutdown a guest (VM or CT)
+    command: create /nodes/{node}/{vmtype}/{vmid}/status/shutdown
+    confirm: true
+
+  - name: do resume guest
+    description: Resume a suspended guest (VM or CT)
+    command: create /nodes/{node}/{vmtype}/{vmid}/status/resume
+
+  - name: do migrate guest
+    description: Migrate a guest to another node (VM or CT)
+    command: create /nodes/{node}/{vmtype}/{vmid}/migrate --target {target_node}
+
+  - name: create guest template
+    description: Convert a guest into a template (VM or CT)
+    command: create /nodes/{node}/{vmtype}/{vmid}/template
+
+  - name: delete guest
+    description: Destroy a guest VM or CT (Permanent!)
+    command: delete /nodes/{node}/{vmtype}/{vmid}
+    confirm: true
+
+  # guest snapshots
+  - name: get guest snapshots
+    description: List snapshots for a guest (VM or CT)
+    command: get /nodes/{node}/{vmtype}/{vmid}/snapshot
+
+  - name: show guest snapshot
+    description: Show configuration of a specific guest snapshot
+    command: get /nodes/{node}/{vmtype}/{vmid}/snapshot/{snapname}/config
+
+  - name: create guest snapshot
+    description: Create a new snapshot for a guest (VM or CT)
+    command: create /nodes/{node}/{vmtype}/{vmid}/snapshot --snapname {snapname} --description {descr}
+
+  - name: set guest snapshot
+    description: Update guest snapshot description
+    command: set /nodes/{node}/{vmtype}/{vmid}/snapshot/{snapname}/config --description {description}
+
+  - name: delete guest snapshot
+    description: Delete a specific guest snapshot
+    command: delete /nodes/{node}/{vmtype}/{vmid}/snapshot/{snapname}
+    confirm: true
+
+  - name: do rollback guest
+    description: Rollback guest state to a specific snapshot (VM or CT)
+    command: create /nodes/{node}/{vmtype}/{vmid}/snapshot/{snapname}/rollback
+    confirm: true
+
+  # guest firewall
+  - name: get guest firewall
+    description: List firewall rules for a guest (VM or CT)
+    command: get /nodes/{node}/{vmtype}/{vmid}/firewall/rules
+
+  - name: get guest firewall options
+    description: Show firewall options for a guest (VM or CT)
+    command: get /nodes/{node}/{vmtype}/{vmid}/firewall/options
+
+  - name: set guest firewall
+    description: Enable/Disable guest firewall (VM or CT)
+    command: set /nodes/{node}/{vmtype}/{vmid}/firewall/options
+
+  - name: set guest firewall options
+    description: Update firewall options for a guest (VM or CT)
+    command: set /nodes/{node}/{vmtype}/{vmid}/firewall/options
+
+  - name: show guest firewall-rule
+    description: Show details of a specific guest firewall rule
+    command: get /nodes/{node}/{vmtype}/{vmid}/firewall/rules/{pos}
+
+  - name: create guest firewall-rule
+    description: Add a new firewall rule to a guest (VM or CT)
+    command: create /nodes/{node}/{vmtype}/{vmid}/firewall/rules
+
+  - name: set guest firewall-rule
+    description: Update a guest firewall rule (VM or CT)
+    command: set /nodes/{node}/{vmtype}/{vmid}/firewall/rules/{pos}
+
+  - name: delete guest firewall-rule
+    description: Remove a firewall rule from a guest (VM or CT)
+    command: delete /nodes/{node}/{vmtype}/{vmid}/firewall/rules/{pos}
+    confirm: true
+
+  # guest backup
+  - name: get guest backups
+    description: List all backups for a guest on a storage
+    command: get /nodes/{node}/storage/{storage}/content --content backup --vmid {vmid}
+
+  - name: do backup guest
+    description: Start a backup job immediately for a VM or CT
+    command: create /nodes/{node}/vzdump --vmid {vmid} --storage {storage}
+
+  - name: show guest backup
+    description: Show details of a specific backup file
+    command: get /nodes/{node}/storage/{storage}/content/{volume}
+
+  - name: get guest backup config
+    description: Extract VM/CT configuration from a vzdump backup archive
+    command: get /nodes/{node}/vzdump/extractconfig --volume {volume}
+
+  - name: delete guest backup
+    description: Permanently delete a backup file from storage
+    command: delete /nodes/{node}/storage/{storage}/content/{volume}
+    confirm: true
+
+  # =============================================================
+  # VM (qemu-specific)
+  # =============================================================
+
+  - name: get vms
+    description: List all VMs (cluster-wide)
+    command: get /cluster/resources --type vm
+
+  - name: show vm
+    description: Show VM config
+    command: get /nodes/{node}/qemu/{vmid}/config
+
+  - name: get vm status
+    description: Show VM runtime status
+    command: get /nodes/{node}/qemu/{vmid}/status/current
+
+  - name: set vm config
+    description: Update VM configuration (RAM, Cores, etc.)
+    command: set /nodes/{node}/qemu/{vmid}/config
+
+  - name: get vm pending
+    description: Show VM configuration including pending (unapplied) changes
+    command: get /nodes/{node}/qemu/{vmid}/pending
+
+  # vm tags
+  - name: get vm tags
+    description: Get current tags for a VM
+    command: get /nodes/{node}/qemu/{vmid}/config --property tags
+
+  - name: set vm tags
+    description: Set or overwrite tags for a VM
+    command: set /nodes/{node}/qemu/{vmid}/config --tags {tags}
+
+  - name: delete vm tags
+    description: Remove all tags from a VM
+    command: set /nodes/{node}/qemu/{vmid}/config --delete tags
+
+  # vm disk
+  - name: delete vm unused-disk
+    description: Remove an unattached disk from a VM
+    command: set /nodes/{node}/qemu/{vmid}/config --delete {unusedDisk}
+
+  - name: do resize vm disk
+    description: Expand a VM disk
+    command: set /nodes/{node}/qemu/{vmid}/resize --disk {disk} --size {size}
+
+  - name: do move vm disk
+    description: Move a VM disk to a different storage
+    command: create /nodes/{node}/qemu/{vmid}/move_disk --disk {disk} --storage {storage}
+
+  # vm lifecycle
+  - name: do start vm
+    description: Start a VM
+    command: create /nodes/{node}/qemu/{vmid}/status/start
+
+  - name: do stop vm
+    description: Stop a VM
+    command: create /nodes/{node}/qemu/{vmid}/status/stop
+    confirm: true
+
+  - name: do reboot vm
+    description: Reboot a VM
+    command: create /nodes/{node}/qemu/{vmid}/status/reboot
+    confirm: true
+
+  - name: do reset vm
+    description: Reset a VM
+    command: create /nodes/{node}/qemu/{vmid}/status/reset
+    confirm: true
+
+  - name: do shutdown vm
+    description: Shutdown a VM
+    command: create /nodes/{node}/qemu/{vmid}/status/shutdown
+    confirm: true
+
+  - name: do suspend vm
+    description: Suspend a VM
+    command: create /nodes/{node}/qemu/{vmid}/status/suspend
+
+  - name: do resume vm
+    description: Resume a suspended VM
+    command: create /nodes/{node}/qemu/{vmid}/status/resume
+
+  - name: do migrate vm
+    description: Live migrate a VM to another node
+    command: create /nodes/{node}/qemu/{vmid}/migrate --target {target_node}
+
+  - name: do clone vm
+    description: Clone a VM
+    command: create /nodes/{node}/qemu/{vmid}/clone --newid {newid} --name {name}
+
+  - name: create vm template
+    description: Convert the VM into a read-only template
+    command: create /nodes/{node}/qemu/{vmid}/template
+
+  - name: delete vm
+    description: Destroy a VM (Permanent!)
+    command: delete /nodes/{node}/qemu/{vmid}
+    confirm: true
+
+  # vm snapshots
+  - name: get vm snapshots
+    description: List VM snapshots
+    command: get /nodes/{node}/qemu/{vmid}/snapshot
+
+  - name: show vm snapshot
+    description: Show configuration of a specific VM snapshot
+    command: get /nodes/{node}/qemu/{vmid}/snapshot/{snapname}/config
+
+  - name: create vm snapshot
+    description: Create a new snapshot for a VM
+    command: create /nodes/{node}/qemu/{vmid}/snapshot --snapname {snapname} --description {descr}
+
+  - name: set vm snapshot
+    description: Update VM snapshot description
+    command: set /nodes/{node}/qemu/{vmid}/snapshot/{snapname}/config --description {description}
+
+  - name: delete vm snapshot
+    description: Delete a specific VM snapshot
+    command: delete /nodes/{node}/qemu/{vmid}/snapshot/{snapname}
+    confirm: true
+
+  - name: do rollback vm
+    description: Rollback VM state to a specific snapshot
+    command: create /nodes/{node}/qemu/{vmid}/snapshot/{snapname}/rollback
+    confirm: true
+
+  # vm firewall
+  - name: get vm firewall
+    description: List firewall rules for a VM
+    command: get /nodes/{node}/qemu/{vmid}/firewall/rules
+
+  - name: get vm firewall options
+    description: Show firewall options for a VM
+    command: get /nodes/{node}/qemu/{vmid}/firewall/options
+
+  - name: set vm firewall
+    description: Enable/Disable VM firewall
+    command: set /nodes/{node}/qemu/{vmid}/firewall/options
+
+  - name: set vm firewall options
+    description: Update firewall options for a VM
+    command: set /nodes/{node}/qemu/{vmid}/firewall/options
+
+  - name: show vm firewall-rule
+    description: Show details of a specific VM firewall rule
+    command: get /nodes/{node}/qemu/{vmid}/firewall/rules/{pos}
+
+  - name: create vm firewall-rule
+    description: Add a new firewall rule to a VM
+    command: create /nodes/{node}/qemu/{vmid}/firewall/rules
+
+  - name: set vm firewall-rule
+    description: Update a VM firewall rule
+    command: set /nodes/{node}/qemu/{vmid}/firewall/rules/{pos}
+
+  - name: delete vm firewall-rule
+    description: Remove a firewall rule from a VM
+    command: delete /nodes/{node}/qemu/{vmid}/firewall/rules/{pos}
+    confirm: true
+
+  # vm cloudinit
+  - name: get vm cloudinit
+    description: Dump the cloud-init configuration for a VM (user/network/meta)
+    command: "get /nodes/{node}/qemu/{vmid}/cloudinit/dump --type {user|network|meta}"
+
+  # vm agent
+  - name: get vm agent info
+    description: Show guest OS info via QEMU guest agent
+    command: get /nodes/{node}/qemu/{vmid}/agent/info
+
+  - name: get vm agent network
+    description: Show guest network interfaces via QEMU guest agent
+    command: get /nodes/{node}/qemu/{vmid}/agent/network-get-interfaces
+
+  - name: get vm agent osinfo
+    description: Show guest OS information via QEMU guest agent
+    command: get /nodes/{node}/qemu/{vmid}/agent/get-osinfo
+
+  - name: get vm agent users
+    description: List users logged into the guest via QEMU guest agent
+    command: get /nodes/{node}/qemu/{vmid}/agent/get-users
+
+  - name: get vm agent fsinfo
+    description: Show filesystem info of the guest via QEMU guest agent
+    command: get /nodes/{node}/qemu/{vmid}/agent/get-fsinfo
+
+  - name: get vm agent hostname
+    description: Show hostname of the guest OS via QEMU guest agent
+    command: get /nodes/{node}/qemu/{vmid}/agent/get-host-name
+
+  - name: get vm agent timezone
+    description: Show timezone of the guest OS via QEMU guest agent
+    command: get /nodes/{node}/qemu/{vmid}/agent/get-timezone
+
+  - name: get vm agent vcpus
+    description: Show virtual CPU info of the guest via QEMU guest agent
+    command: get /nodes/{node}/qemu/{vmid}/agent/get-vcpus
+
+  - name: get vm agent time
+    description: Show system time of the guest via QEMU guest agent
+    command: get /nodes/{node}/qemu/{vmid}/agent/get-time
+
+  - name: get vm agent memory
+    description: Show memory blocks info of the guest via QEMU guest agent
+    command: get /nodes/{node}/qemu/{vmid}/agent/get-memory-blocks
+
+  - name: do exec vm agent
+    description: Execute a command inside the VM via QEMU guest agent
+    command: create /nodes/{node}/qemu/{vmid}/agent/exec --command {command}
+
+  - name: get vm agent exec-status
+    description: Get the result/status of a command executed via guest agent
+    command: get /nodes/{node}/qemu/{vmid}/agent/exec-status --pid {pid}
+
+  - name: do vm agent ping
+    description: Ping the QEMU guest agent to verify it is running
+    command: create /nodes/{node}/qemu/{vmid}/agent/ping
+
+  - name: do vm agent fstrim
+    description: Run fstrim inside the guest via QEMU guest agent
+    command: create /nodes/{node}/qemu/{vmid}/agent/fstrim
+
+  - name: do monitor vm
+    description: Execute a QEMU monitor (HMP) command on a VM
+    command: create /nodes/{node}/qemu/{vmid}/monitor --command {command}
+
+  # =============================================================
+  # CT (lxc-specific)
+  # =============================================================
+
+  - name: get cts
+    description: List all containers (cluster-wide)
+    command: get /cluster/resources --type vm --guest lxc
+
+  - name: show ct
+    description: Show container config
+    command: get /nodes/{node}/lxc/{vmid}/config
+
+  - name: get ct status
+    description: Show container runtime status
+    command: get /nodes/{node}/lxc/{vmid}/status/current
+
+  - name: set ct config
+    description: Update CT configuration (RAM, Cores, etc.)
+    command: set /nodes/{node}/lxc/{vmid}/config
+
+  - name: get ct pending
+    description: Show CT configuration including pending (unapplied) changes
+    command: get /nodes/{node}/lxc/{vmid}/pending
+
+  # ct tags
+  - name: get ct tags
+    description: Get current tags for a container
+    command: get /nodes/{node}/lxc/{vmid}/config --property tags
+
+  - name: set ct tags
+    description: Set or overwrite tags for a container
+    command: set /nodes/{node}/lxc/{vmid}/config --tags {tags}
+
+  - name: delete ct tags
+    description: Remove all tags from a container
+    command: set /nodes/{node}/lxc/{vmid}/config --delete tags
+
+  # ct network
+  - name: get ct network
+    description: Show CT network interfaces
+    command: get /nodes/{node}/lxc/{vmid}/config --property net0
+
+  - name: get ct interfaces
+    description: Show runtime network interfaces of a running container (via guest agent)
+    command: get /nodes/{node}/lxc/{vmid}/interfaces
+
+  # ct disk
+  - name: delete ct unused-disk
+    description: Remove an unattached disk from a CT
+    command: set /nodes/{node}/lxc/{vmid}/config --delete {unusedDisk}
+
+  - name: do resize ct disk
+    description: Expand a CT disk
+    command: set /nodes/{node}/lxc/{vmid}/resize --disk {disk} --size {size}
+
+  - name: do move ct disk
+    description: Move a CT volume to a different storage
+    command: create /nodes/{node}/lxc/{vmid}/move_volume --volume {disk} --storage {storage}
+
+  # ct lifecycle
+  - name: do start ct
+    description: Start a container
+    command: create /nodes/{node}/lxc/{vmid}/status/start
+
+  - name: do stop ct
+    description: Stop a container
+    command: create /nodes/{node}/lxc/{vmid}/status/stop
+    confirm: true
+
+  - name: do reboot ct
+    description: Reboot a container
+    command: create /nodes/{node}/lxc/{vmid}/status/reboot
+    confirm: true
+
+  - name: do shutdown ct
+    description: Shutdown a container
+    command: create /nodes/{node}/lxc/{vmid}/status/shutdown
+    confirm: true
+
+  - name: do resume ct
+    description: Resume a suspended container
+    command: create /nodes/{node}/lxc/{vmid}/status/resume
+
+  - name: do migrate ct
+    description: Migrate a container to another node
+    command: create /nodes/{node}/lxc/{vmid}/migrate --target {target_node}
+
+  - name: do clone ct
+    description: Clone a container
+    command: create /nodes/{node}/lxc/{vmid}/clone --newid {newid} --hostname {name}
+
+  - name: create ct template
+    description: Convert the container into a template
+    command: create /nodes/{node}/lxc/{vmid}/template
+
+  - name: delete ct
+    description: Destroy a container (Permanent!)
+    command: delete /nodes/{node}/lxc/{vmid}
+    confirm: true
+
+  # ct snapshots
+  - name: get ct snapshots
+    description: List container snapshots
+    command: get /nodes/{node}/lxc/{vmid}/snapshot
+
+  - name: show ct snapshot
+    description: Show configuration of a specific container snapshot
+    command: get /nodes/{node}/lxc/{vmid}/snapshot/{snapname}/config
+
+  - name: create ct snapshot
+    description: Create a new snapshot for a container
+    command: create /nodes/{node}/lxc/{vmid}/snapshot --snapname {snapname} --description {descr}
+
+  - name: set ct snapshot
+    description: Update CT snapshot description
+    command: set /nodes/{node}/lxc/{vmid}/snapshot/{snapname}/config --description {description}
+
+  - name: delete ct snapshot
+    description: Delete a specific container snapshot
+    command: delete /nodes/{node}/lxc/{vmid}/snapshot/{snapname}
+    confirm: true
+
+  - name: do rollback ct
+    description: Rollback container state to a specific snapshot
+    command: create /nodes/{node}/lxc/{vmid}/snapshot/{snapname}/rollback
+    confirm: true
+
+  # ct firewall
+  - name: get ct firewall
+    description: List firewall rules for a container
+    command: get /nodes/{node}/lxc/{vmid}/firewall/rules
+
+  - name: get ct firewall options
+    description: Show firewall options for a container
+    command: get /nodes/{node}/lxc/{vmid}/firewall/options
+
+  - name: set ct firewall
+    description: Enable/Disable container firewall
+    command: set /nodes/{node}/lxc/{vmid}/firewall/options
+
+  - name: set ct firewall options
+    description: Update firewall options for a container
+    command: set /nodes/{node}/lxc/{vmid}/firewall/options
+
+  - name: show ct firewall-rule
+    description: Show details of a specific CT firewall rule
+    command: get /nodes/{node}/lxc/{vmid}/firewall/rules/{pos}
+
+  - name: create ct firewall-rule
+    description: Add a new firewall rule to a container
+    command: create /nodes/{node}/lxc/{vmid}/firewall/rules
+
+  - name: set ct firewall-rule
+    description: Update a CT firewall rule
+    command: set /nodes/{node}/lxc/{vmid}/firewall/rules/{pos}
+
+  - name: delete ct firewall-rule
+    description: Remove a firewall rule from a container
+    command: delete /nodes/{node}/lxc/{vmid}/firewall/rules/{pos}
+    confirm: true
+
+  # ct templates
+  - name: get ct templates
+    description: List CT templates on storage
+    command: get /nodes/{node}/storage/{storage}/content --content vztmpl
