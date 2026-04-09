@@ -6,13 +6,13 @@
 using System.CommandLine;
 using Corsinvest.ProxmoxVE.Api;
 using Corsinvest.ProxmoxVE.Api.Console.Helpers;
-using Corsinvest.ProxmoxVE.Api.Shared.Utils;
+using Corsinvest.ProxmoxVE.Api.Extension;
 using Corsinvest.ProxmoxVE.Api.Extension.Utils;
 using Corsinvest.ProxmoxVE.Api.Metadata;
+using Corsinvest.ProxmoxVE.Api.Shared.Utils;
 using Corsinvest.ProxmoxVE.Cli.Config;
 using Microsoft.Extensions.Logging;
 using GRE = Corsinvest.ProxmoxVE.Cli.Config.GuestResolutionEngine;
-using Corsinvest.ProxmoxVE.Api.Extension;
 
 namespace Corsinvest.ProxmoxVE.Cli;
 
@@ -54,14 +54,16 @@ internal class ShellCommands
     }
 
     /// <summary>
-    /// Get PveClient from context file or fallback to CLI options (--host/--user/--password)
+    /// Get PveClient from context file — singleton per process to avoid multiple logins.
     /// </summary>
+    private static PveClient? _cachedClient;
     private static async Task<PveClient> GetClientAsync()
     {
+        if (_cachedClient != null) { return _cachedClient; }
         var context = PveConfigManager.GetCurrentContext()
                         ?? throw new InvalidOperationException("No context configured. Run 'config add-context' first.");
-
-        return await PveConfigManager.CreateClientAsync(context, _loggerFactory);
+        _cachedClient = await PveConfigManager.CreateClientAsync(context, _loggerFactory);
+        return _cachedClient;
     }
 
     private static readonly string CacheDir
@@ -141,7 +143,10 @@ internal class ShellCommands
             var finalName = nameParts[^1];
 
             // Skip if leaf already registered
-            if (leafParent.Subcommands.Any(c => c.Name == finalName)) { continue; }
+            if (leafParent.Subcommands.Any(c => c.Name == finalName))
+            {
+                continue;
+            }
 
             var cmdDesc = guestResolution != GRE.GuestResolution.None
                             ? $"{alias.Description}\nTip: use {GRE.ArgGuestLong} <id|name> to resolve guest info automatically"
@@ -211,7 +216,7 @@ internal class ShellCommands
                             parentSegs.Add(seg);
                         }
                         var parentPath = parentSegs.Count == 0 ? string.Empty : "/" + string.Join("/", parentSegs);
-                        return GetLiveIndexedValues(parentPath, classApiRoot).ToArray();
+                        return [.. GetLiveIndexedValues(parentPath, classApiRoot)];
                     }
                     catch { return []; }
                 });
@@ -304,14 +309,27 @@ internal class ShellCommands
                 }
 
                 var positional = (action.GetValue(argAll) ?? []).ToArray();
-                var kvTokens = action.UnmatchedTokens.ToList();
 
                 var tokens = SplitArgs(ExpandTags(alias.Command, tags, positional)).ToList();
-                var allExtra = tokens.Skip(2).Concat(kvTokens).ToList();
-                var extraParams = ConvertUnmatchedToKeyValue(allExtra);
-                var c = await GetClientAsync();
-                var (_, resultText) = await ApiExplorerHelper.ExecuteAsync(c,
-                                                                           await GetClassApiRootAsync(c),
+
+                // System.CommandLine splits "--limit 100" across UnmatchedTokens (["--limit"])
+                // and positional argAll (["cc01", "100"]) because argAll only captures non-option tokens.
+                // Reconstruct the interleaved key/value list by merging UnmatchedTokens (keys starting
+                // with "--") with the positional values that exceed the tag count (extra values).
+                var extraValues = positional.Skip(tags.Length).ToList();
+                var kvKeys = action.UnmatchedTokens.Where(t => t.StartsWith("--")).ToList();
+                var merged = new List<string>();
+                var valueIdx = 0;
+                foreach (var key in kvKeys)
+                {
+                    merged.Add(key);
+                    if (valueIdx < extraValues.Count) { merged.Add(extraValues[valueIdx++]); }
+                }
+                // Also include any inline --key:value or --key value pairs already in tokens.Skip(2)
+                var extraParams = ConvertUnmatchedToKeyValue(tokens.Skip(2).Concat(merged).ToList());
+                var client = await GetClientAsync();
+                var (_, resultText) = await ApiExplorerHelper.ExecuteAsync(client,
+                                                                           await GetClassApiRootAsync(client),
                                                                            tokens[1],
                                                                            HttpVerbToMethodType(tokens[0]),
                                                                            ApiExplorerHelper.CreateParameterResource(extraParams),
@@ -410,9 +428,8 @@ internal class ShellCommands
 
     private static PveClient? GetLiveClient()
     {
-        var context = PveConfigManager.GetCurrentContext();
-        if (context == null) { return null; }
-        return PveConfigManager.CreateClientAsync(context).GetAwaiter().GetResult();
+        try { return GetClientAsync().GetAwaiter().GetResult(); }
+        catch { return null; }
     }
 
     private static IEnumerable<string> GetLivePathCompletions(string parentPath, ClassApi classApiRoot)
@@ -565,8 +582,22 @@ internal class ShellCommands
         {
             var c = client ?? await GetClientAsync();
 
-            var allTokens = (action.GetValue(argParameters) ?? []).Concat(action.UnmatchedTokens).ToList();
-            var allParams = ConvertUnmatchedToKeyValue(allTokens);
+            // argParameters captures positional tokens (e.g. "100") while UnmatchedTokens captures
+            // option-like tokens (e.g. "--limit"). When the user writes "--limit 100", System.CommandLine
+            // puts "--limit" in UnmatchedTokens and "100" in argParameters, losing the original order.
+            // Rebuild by interleaving: for each --key in UnmatchedTokens, pair it with the next positional.
+            var positionalExtra = (action.GetValue(argParameters) ?? []).ToList();
+            var unmatchedKeys = action.UnmatchedTokens.Where(t => t.StartsWith("--")).ToList();
+            var reordered = new List<string>();
+            var valIdx = 0;
+            foreach (var key in unmatchedKeys)
+            {
+                reordered.Add(key);
+                if (valIdx < positionalExtra.Count) { reordered.Add(positionalExtra[valIdx++]); }
+            }
+            // Any leftover positional tokens that weren't consumed as values
+            while (valIdx < positionalExtra.Count) { reordered.Add(positionalExtra[valIdx++]); }
+            var allParams = ConvertUnmatchedToKeyValue(reordered);
 
             var (_, ResultText) = await ApiExplorerHelper.ExecuteAsync(c,
                                                                        await GetClassApiRootAsync(c),
@@ -585,7 +616,7 @@ internal class ShellCommands
     /// Converts ["--cf", "AVERAGE", "--timeframe", "day"] to internal key:value format.
     /// Tokens without a following value (e.g. "--flag") become "flag:true".
     /// </summary>
-    private static IEnumerable<string> ConvertUnmatchedToKeyValue(IReadOnlyList<string> tokens)
+    private static List<string> ConvertUnmatchedToKeyValue(List<string> tokens)
     {
         var result = new List<string>();
         for (var i = 0; i < tokens.Count; i++)
@@ -607,7 +638,13 @@ internal class ShellCommands
     }
 
     private static MethodType HttpVerbToMethodType(string verb)
-        => Enum.Parse<MethodType>(verb.ToLower() switch { "put" => "set", "post" => "create", var v => v }, ignoreCase: true);
+        => Enum.Parse<MethodType>(verb.ToLower() switch
+        {
+            "put" => "set",
+            "post" => "create",
+            var v => v
+        },
+        ignoreCase: true);
 
     private static string GetPrevToken(string[] allTokens, string word)
         => word.Length == 0
@@ -623,14 +660,38 @@ internal class ShellCommands
         => token == GRE.ArgGuestLong || token == GRE.ArgGuestShort;
 
     private static string[] SplitArgs(string s)
-        => s.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+    {
+        // Split on spaces but respect single and double quoted strings
+        var result = new List<string>();
+        var current = new System.Text.StringBuilder();
+        char? inQuote = null;
+        foreach (var c in s)
+        {
+            if (inQuote.HasValue)
+            {
+                if (c == inQuote.Value) { inQuote = null; }
+                else { current.Append(c); }
+            }
+            else if (c == '"' || c == '\'') { inQuote = c; }
+            else if (c == ' ')
+            {
+                if (current.Length > 0) { result.Add(current.ToString()); current.Clear(); }
+            }
+            else { current.Append(c); }
+        }
+        if (current.Length > 0) { result.Add(current.ToString()); }
+        return [.. result];
+    }
 
     private static string ExpandTags(string command, string[] tags, string[] values)
     {
         var result = command;
         for (var i = 0; i < Math.Min(tags.Length, values.Length); i++)
         {
-            result = result.Replace($"{{{tags[i]}}}", values[i]);
+            var val = values[i];
+            // Quote values containing spaces so SplitArgs keeps them as a single token
+            if (val.Contains(' ')) { val = $"\"{val}\""; }
+            result = result.Replace($"{{{tags[i]}}}", val);
         }
         return result;
     }
@@ -713,17 +774,36 @@ internal class ShellCommands
             break;
         }
 
+        // Separate positional args (used to fill {tag} placeholders) from --key value pairs.
+        // We must preserve the original order of --key value pairs so that "100" after "--limit"
+        // is not mistakenly treated as a positional tag value.
         var positionalArgs = extraArgs.Where(a => !a.StartsWith('-')).ToArray();
-        var kvArgs = extraArgs.Where(a => a.StartsWith('-')
-                                            && a != ArgVerboseLong
-                                            && a != ArgVerboseShort
-                                            && a != ArgHelpLong
-                                            && a != ArgHelpShort
-                                            && a != ArgHelpAlt).ToArray();
+
+        // Build kvArgs as interleaved --key value tokens in original order
+        var skipFlags = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            { ArgVerboseLong, ArgVerboseShort, ArgHelpLong, ArgHelpShort, ArgHelpAlt };
+        var kvTokens = new List<string>();
+        var positionalValues = new Queue<string>(positionalArgs);
+        for (var i = 0; i < extraArgs.Count; i++)
+        {
+            var t = extraArgs[i];
+            if (!t.StartsWith('-') || skipFlags.Contains(t)) { continue; }
+            kvTokens.Add(t); // the --key
+            // peek next token: if it exists and is not an option, it's the value
+            if (i + 1 < extraArgs.Count && !extraArgs[i + 1].StartsWith('-'))
+            {
+                kvTokens.Add(extraArgs[i + 1]);
+                i++; // skip value
+            }
+        }
 
         var tags = ApiExplorerHelper.GetArgumentTags(expanded);
-        var index = Math.Min(tags.Length, positionalArgs.Length);
-        expanded = ExpandTags(expanded, tags, positionalArgs);
+
+        // Positional args that fill {tag} placeholders are those NOT consumed as --key values
+        var kvValues = new HashSet<string>(kvTokens.Where((_, idx) => idx % 2 == 1));
+        var tagArgs = positionalArgs.Where(a => !kvValues.Contains(a)).ToArray();
+        var index = Math.Min(tags.Length, tagArgs.Length);
+        expanded = ExpandTags(expanded, tags, tagArgs);
 
         if (isHelp) { return (null, 0); }
         if (isVerbose)
@@ -747,8 +827,7 @@ internal class ShellCommands
             return (null, 1);
         }
 
-        if (index < positionalArgs.Length) { expanded += " " + string.Join(' ', positionalArgs.Skip(index)); }
-        if (kvArgs.Length > 0) { expanded += " " + string.Join(' ', kvArgs); }
+        if (kvTokens.Count > 0) { expanded += " " + string.Join(' ', kvTokens); }
 
         return (["api", .. SplitArgs(expanded)], 0);
     }

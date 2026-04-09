@@ -2,6 +2,17 @@
 
 ---
 
+## [2.2.1] — 2026-04-09
+
+### Bug fixes
+
+- Parameters like `--limit 100` were ignored — now passed correctly to the API.
+- Alias arguments with spaces (e.g. `"before update"`) were cut at the first word — now handled correctly.
+- The CLI now authenticates once per session instead of logging in on every command.
+- Commands that return a list of text lines (e.g. `get node journal`) now display correctly instead of crashing.
+
+---
+
 ## [2.2.0] — 2026-03-30
 
 ### Aliases
