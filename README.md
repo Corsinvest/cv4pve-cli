@@ -282,6 +282,12 @@ To force re-registration: `cv4pve-cli completion reset`
 
 ---
 
+## Using with AI coding assistants
+
+Tips for running `cv4pve-cli` inside Claude Code, Codex and similar sandboxed agents (self-signed certs, sandbox permissions, `SKILL.md` template): see [docs/AI-AGENTS.md](docs/AI-AGENTS.md).
+
+---
+
 ## Support
 
 Professional support available through [Corsinvest](https://www.corsinvest.it/cv4pve).
