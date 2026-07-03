@@ -11,6 +11,7 @@ using Microsoft.Extensions.Logging;
 var app = new RootCommand("CLI for Proxmox VE");
 app.AddFullNameLogo();
 app.AddDebugOption();
+app.AddLogLevelOption();
 app.AddDryRunOption();
 
 var loggerFactory = ConsoleHelper.CreateLoggerFactory<Program>(app.GetLogLevelFromDebug());

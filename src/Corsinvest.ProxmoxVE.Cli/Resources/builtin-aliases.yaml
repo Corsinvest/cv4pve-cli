@@ -808,6 +808,46 @@ aliases:
     confirm: true
 
   # =============================================================
+  # CEPH
+  # =============================================================
+
+  - name: get ceph status
+    description: Cluster-wide Ceph status
+    command: get /cluster/ceph/status
+
+  - name: get ceph flags
+    description: List global Ceph flags (noout, norebalance, ...)
+    command: get /cluster/ceph/flags
+
+  - name: get node ceph status
+    description: Ceph status as seen from a specific node
+    command: get /nodes/{node}/ceph/status
+
+  - name: get node ceph osds
+    description: List Ceph OSDs (tree) on a node
+    command: get /nodes/{node}/ceph/osd
+
+  - name: get node ceph mons
+    description: List Ceph monitors on a node
+    command: get /nodes/{node}/ceph/mon
+
+  - name: get node ceph mgrs
+    description: List Ceph managers on a node
+    command: get /nodes/{node}/ceph/mgr
+
+  - name: get node ceph pools
+    description: List Ceph pools on a node
+    command: get /nodes/{node}/ceph/pool
+
+  - name: get node ceph fs
+    description: List CephFS filesystems on a node
+    command: get /nodes/{node}/ceph/fs
+
+  - name: get node ceph config
+    description: Show the Ceph configuration file
+    command: get /nodes/{node}/ceph/cfg/raw
+
+  # =============================================================
   # POOLS
   # =============================================================
 
@@ -1000,6 +1040,16 @@ aliases:
   - name: delete guest backup
     description: Permanently delete a backup file from storage
     command: delete /nodes/{node}/storage/{storage}/content/{volume}
+    confirm: true
+
+  - name: do restore vm
+    description: Restore a VM from a vzdump backup archive (creates/overwrites the target vmid)
+    command: create /nodes/{node}/qemu --vmid {vmid} --archive {volume}
+    confirm: true
+
+  - name: do restore ct
+    description: Restore a container from a vzdump backup archive (creates/overwrites the target vmid)
+    command: create /nodes/{node}/lxc --vmid {vmid} --ostemplate {volume} --restore 1
     confirm: true
 
   # =============================================================

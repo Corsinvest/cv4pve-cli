@@ -155,7 +155,7 @@ Aliases are shortcuts for API commands. Placeholders like `{node}`, `{vmid}` are
 
 ### Built-in aliases
 
-300+ read-only aliases are available out of the box — see the [full list](src/Corsinvest.ProxmoxVE.Cli/Resources/builtin-aliases.yaml) or run `cv4pve-cli alias list`. A few examples:
+300+ read-only aliases are available out of the box — see the **[full alias reference](docs/aliases.md)** or run `cv4pve-cli alias list`. A few examples:
 
 | Alias | Arguments | Description |
 |-------|-----------|-------------|
@@ -279,6 +279,14 @@ To force re-registration: `cv4pve-cli completion reset`
 | `cv4pve-cli api get /nodes/pve1/qemu/100/config <TAB>` | parameter names |
 | `cv4pve-cli show vm pve1 <TAB>` | VM IDs live from API |
 | `cv4pve-cli config use <TAB>` | context names |
+
+---
+
+## Documentation
+
+- **[Command reference](docs/commands.md)** — core commands (`config`, `api`, `alias`, `completion`), global options, guest auto-resolution
+- **[Alias reference](docs/aliases.md)** — the full list of 300+ built-in aliases
+- **[AI coding assistants](docs/AI-AGENTS.md)** — running `cv4pve-cli` inside Claude Code, Codex and similar sandboxed agents
 
 ---
 
