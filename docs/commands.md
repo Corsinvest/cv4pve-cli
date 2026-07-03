@@ -112,6 +112,17 @@ cv4pve-cli vm-net pve1 100
 
 Built-in aliases cannot be modified or removed. User aliases live in `~/.cv4pve/cli/alias`.
 
+### Waiting for async tasks (`--wait`)
+
+Operations that start an async Proxmox task (start, stop, snapshot, backup, migrate, clone, restore, …) return a task id (UPID) immediately. Add **`--wait`** to any alias to block until the task finishes and reflect its result in the exit code:
+
+```bash
+cv4pve-cli do start vm --guest 100 --wait        # returns only when the VM has started
+cv4pve-cli do backup guest --guest 100 --storage local --wait
+```
+
+Without `--wait` the command is fire-and-forget (prints the UPID and returns). The same flag is available on `api create/set/delete`.
+
 ### Guest auto-resolution (`--guest`)
 
 Aliases whose path targets a specific guest accept `--guest <id|name>` and resolve `{node}`, `{vmid}` and `{vmtype}` automatically from `/cluster/resources`.
