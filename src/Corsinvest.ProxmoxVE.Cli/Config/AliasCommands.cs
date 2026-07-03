@@ -101,8 +101,9 @@ internal static class AliasCommands
                                                                             action.GetValue(optDescription) ?? string.Empty,
                                                                             action.GetValue(optCommand)!));
                 Console.WriteLine($"Alias '{name}' added.");
+                return (int)ExitCode.Ok;
             }
-            catch (Exception ex) { Console.WriteLine($"Error: {ex.Message}"); }
+            catch (Exception ex) { return ExitCodeHelper.Fail(ex.Message, ExitCode.Validation); }
         });
     }
 
@@ -119,8 +120,9 @@ internal static class AliasCommands
                 if (PveConfigManager.IsBuiltinAlias(name)) { throw new InvalidOperationException($"'{name}' is a built-in alias and cannot be removed."); }
                 PveConfigManager.RemoveUserAlias(name);
                 Console.WriteLine($"Alias '{name}' removed.");
+                return (int)ExitCode.Ok;
             }
-            catch (Exception ex) { Console.WriteLine($"Error: {ex.Message}"); }
+            catch (Exception ex) { return ExitCodeHelper.Fail(ex.Message, ExitCode.Validation); }
         });
     }
 }
