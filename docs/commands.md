@@ -143,6 +143,28 @@ The three special placeholders:
 
 ---
 
+## task — async task management (UPID)
+
+Follow, wait on, or inspect Proxmox background tasks by their UPID. The node is decoded from the UPID automatically.
+
+```
+cv4pve-cli task list [--node <node>] [-o <format>]   # recent tasks (cluster-wide or per node)
+cv4pve-cli task show <upid>                           # status + exit status of a task
+cv4pve-cli task wait <upid> [--timeout <seconds>]     # block until the task finishes
+cv4pve-cli task log  <upid> [--follow] [--limit <n>] [--interval <s>]  # print the task log; --follow tails it live (polls every 2s by default)
+cv4pve-cli task stop <upid> --yes                     # stop (kill) a running task
+```
+
+```bash
+# start a backup without waiting, then follow its log
+cv4pve-cli do backup guest --guest 100 --storage local        # prints the UPID
+cv4pve-cli task log 'UPID:pve1:...:vzdump:100:root@pam:' --follow
+```
+
+Exit code reflects the task result: `0` if the task finished OK, `5` (task-failed) otherwise.
+
+---
+
 ## completion — shell tab completion
 
 Registered automatically on first run for bash, zsh and PowerShell; queries the live API for node names, VM IDs, parameter names.

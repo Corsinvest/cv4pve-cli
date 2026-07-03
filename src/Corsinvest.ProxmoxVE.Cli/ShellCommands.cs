@@ -57,7 +57,7 @@ internal class ShellCommands
     /// Get PveClient from context file — singleton per process to avoid multiple logins.
     /// </summary>
     private static PveClient? _cachedClient;
-    private static async Task<PveClient> GetClientAsync()
+    internal static async Task<PveClient> GetClientAsync()
     {
         if (_cachedClient != null) { return _cachedClient; }
         var context = PveConfigManager.GetCurrentContext()
