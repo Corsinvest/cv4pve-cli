@@ -59,6 +59,7 @@ cv4pve-cli top
 - **Guest auto-resolution** — use `--guest <name|id>` instead of typing node, vmtype and vmid
 - **Tab completion** — bash, zsh and PowerShell, queries the live API
 - **API schema cached locally** — refreshed automatically on PVE upgrade
+- **Scriptable** — semantic [exit codes](docs/commands.md#exit-codes), errors on stderr
 
 | | [pvesh](https://pve.proxmox.com/pve-docs/pvesh.1.html) | kubectl | cv4pve-cli |
 |---|---|---|---|

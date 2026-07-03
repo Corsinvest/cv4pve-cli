@@ -14,16 +14,22 @@ namespace Corsinvest.ProxmoxVE.Cli.Config;
 /// </summary>
 internal static class ConfigCommands
 {
-    private static async Task ValidateAndPrint(PveContext ctx)
+    /// <summary>
+    /// Try to connect and print the PVE version. Returns true on success.
+    /// On failure prints a warning to stderr and returns false (callers decide the exit code).
+    /// </summary>
+    private static async Task<bool> ValidateAndPrint(PveContext ctx)
     {
         try
         {
             var client = await PveConfigManager.CreateClientAsync(ctx);
             Console.WriteLine($"Connected to {ctx.Host} — PVE version: {(await client.Version.GetAsync()).Version}");
+            return true;
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Warning: could not connect to '{ctx.Host}': {ex.Message}");
+            Console.Error.WriteLine($"Warning: could not connect to '{ctx.Host}': {ex.Message}");
+            return false;
         }
     }
 
@@ -66,8 +72,9 @@ internal static class ConfigCommands
             {
                 PveConfigManager.UseContext(action.GetValue(argName)!);
                 Console.WriteLine($"Switched to context '{action.GetValue(argName)}'.");
+                return (int)ExitCode.Ok;
             }
-            catch (Exception ex) { Console.WriteLine($"Error: {ex.Message}"); }
+            catch (Exception ex) { return ExitCodeHelper.Fail(ex); }
         });
     }
 
@@ -132,8 +139,9 @@ internal static class ConfigCommands
                 PveConfigManager.AddContext(ctx);
                 Console.WriteLine($"Context '{ctx.Name}' saved.");
                 await ValidateAndPrint(ctx);
+                return (int)ExitCode.Ok;
             }
-            catch (Exception ex) { Console.WriteLine($"Error: {ex.Message}"); }
+            catch (Exception ex) { return ExitCodeHelper.Fail(ex); }
         });
     }
 
@@ -176,8 +184,9 @@ internal static class ConfigCommands
                 PveConfigManager.Save(config);
                 Console.WriteLine($"Context '{action.GetValue(argName)}' updated.");
                 await ValidateAndPrint(ctx);
+                return (int)ExitCode.Ok;
             }
-            catch (Exception ex) { Console.WriteLine($"Error: {ex.Message}"); }
+            catch (Exception ex) { return ExitCodeHelper.Fail(ex); }
         });
     }
 
@@ -191,8 +200,9 @@ internal static class ConfigCommands
             {
                 PveConfigManager.DeleteContext(action.GetValue(argName)!);
                 Console.WriteLine($"Context '{action.GetValue(argName)}' deleted.");
+                return (int)ExitCode.Ok;
             }
-            catch (Exception ex) { Console.WriteLine($"Error: {ex.Message}"); }
+            catch (Exception ex) { return ExitCodeHelper.Fail(ex); }
         });
     }
 
@@ -207,8 +217,9 @@ internal static class ConfigCommands
             {
                 PveConfigManager.RenameContext(action.GetValue(argOld)!, action.GetValue(argNew)!);
                 Console.WriteLine($"Context renamed to '{action.GetValue(argNew)}'.");
+                return (int)ExitCode.Ok;
             }
-            catch (Exception ex) { Console.WriteLine($"Error: {ex.Message}"); }
+            catch (Exception ex) { return ExitCodeHelper.Fail(ex); }
         });
     }
 
@@ -236,9 +247,9 @@ internal static class ConfigCommands
                     ctx = config.Contexts.FirstOrDefault(c => c.Name == name)
                             ?? throw new InvalidOperationException($"Context '{name}' not found.");
                 }
-                await ValidateAndPrint(ctx);
+                return await ValidateAndPrint(ctx) ? (int)ExitCode.Ok : (int)ExitCode.Server;
             }
-            catch (Exception ex) { Console.WriteLine($"Error: {ex.Message}"); }
+            catch (Exception ex) { return ExitCodeHelper.Fail(ex); }
         });
     }
 

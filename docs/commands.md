@@ -19,6 +19,32 @@ Available on every command:
 
 ---
 
+## Exit codes
+
+Commands return a semantic exit code so scripts and CI can react to the failure kind. Error messages go to **stderr**; normal output stays on **stdout**.
+
+| Code | Meaning |
+|------|---------|
+| `0` | Success |
+| `1` | Generic / unclassified error |
+| `2` | Authentication or configuration error |
+| `3` | Resource not found |
+| `4` | API / server error (unreachable, HTTP 5xx) |
+| `5` | Async task failed |
+| `6` | Input validation error |
+
+```bash
+cv4pve-cli config verify prod
+case $? in
+  0) echo "ok" ;;
+  2) echo "bad credentials" ;;
+  3) echo "context not found" ;;
+  4) echo "server unreachable" ;;
+esac
+```
+
+---
+
 ## config — connection profiles (contexts)
 
 A context stores host, credentials and port. All configuration lives under `~/.cv4pve/cli/` (`%USERPROFILE%\.cv4pve\cli\` on Windows) in editable YAML.
