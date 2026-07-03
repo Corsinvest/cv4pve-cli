@@ -57,7 +57,7 @@ cv4pve-cli top
 - **Direct API access** — full Proxmox VE REST API via `api get/set/create/delete`
 - **[300+ built-in aliases](#built-in-aliases)** — shortcuts for common operations (start, stop, snapshot, migrate, …)
 - **Guest auto-resolution** — use `--guest <name|id>` instead of typing node, vmtype and vmid
-- **Async task support** — add `--wait` to any command to block until the Proxmox task finishes
+- **Async task support** — add `--wait` to any command, or use `task log --follow` to tail a running task
 - **Tab completion** — bash, zsh and PowerShell, queries the live API
 - **API schema cached locally** — refreshed automatically on PVE upgrade
 - **Scriptable** — semantic [exit codes](docs/commands.md#exit-codes), errors on stderr

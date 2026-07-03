@@ -17,6 +17,7 @@ app.AddDryRunOption();
 var loggerFactory = ConsoleHelper.CreateLoggerFactory<Program>(app.GetLogLevelFromDebug());
 
 ShellCommands.CreateCommands(app, loggerFactory);
+app.AddTaskCommands();
 SpecialCommands.AddCommands(app);
 CompletionHelper.AddCompleteCommand(app);
 CompletionHelper.EnsureRegistered();
