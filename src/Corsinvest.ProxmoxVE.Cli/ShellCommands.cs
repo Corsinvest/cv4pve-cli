@@ -298,6 +298,7 @@ internal class ShellCommands
 
             var optOutput = ApiOutputOption(cmd);
             var optVerbose = cmd.VerboseOption();
+            var optWait = cmd.AddOption<bool>(ArgWait, "Wait for the async task (UPID) to finish");
 
             cmd.TreatUnmatchedTokensAsErrors = false;
             cmd.SetAction(async (action) =>
@@ -317,7 +318,10 @@ internal class ShellCommands
                 // Reconstruct the interleaved key/value list by merging UnmatchedTokens (keys starting
                 // with "--") with the positional values that exceed the tag count (extra values).
                 var extraValues = positional.Skip(tags.Length).ToList();
-                var kvKeys = action.UnmatchedTokens.Where(t => t.StartsWith("--")).ToList();
+                // Exclude control flags (e.g. --wait) so they are not forwarded to the PVE API as parameters.
+                var kvKeys = action.UnmatchedTokens
+                                    .Where(t => t.StartsWith("--") && !string.Equals(t, ArgWait, StringComparison.OrdinalIgnoreCase))
+                                    .ToList();
                 var merged = new List<string>();
                 var valueIdx = 0;
                 foreach (var key in kvKeys)
@@ -333,7 +337,7 @@ internal class ShellCommands
                                                                            tokens[1],
                                                                            HttpVerbToMethodType(tokens[0]),
                                                                            ApiExplorerHelper.CreateParameterResource(extraParams),
-                                                                           false,
+                                                                           action.GetValue(optWait),
                                                                            action.GetValue(optOutput),
                                                                            action.GetValue(optVerbose));
                 Console.Out.Write(resultText);
