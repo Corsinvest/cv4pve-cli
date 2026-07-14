@@ -2,6 +2,33 @@
 
 ---
 
+## [2.3.0] — 2026-07-06
+
+### Commands
+
+- Added a `task` command tree to inspect and follow async Proxmox tasks by UPID: `task list`, `task show`, `task wait`, `task log` (with `--follow` to tail live, polling every 2s) and `task stop`.
+- Every alias now honors `--wait` to block until the async Proxmox task finishes (previously the flag was ignored on aliases — start/backup/migrate were fire-and-forget).
+
+### Aliases
+
+- Added `do restore vm` and `do restore ct` to restore a guest from a vzdump backup archive.
+- Added Ceph read aliases: `get ceph status/flags` and `get node ceph status/osds/mons/mgrs/pools/fs/config`.
+
+### Scripting
+
+- Commands now return **semantic exit codes** (`0` ok, `1` generic, `2` auth/config, `3` not-found, `4` api/server, `5` task-failed, `6` validation) and print errors to **stderr** instead of stdout — previously failures printed to stdout and still returned `0`.
+
+### Bug fixes
+
+- Fixed a startup crash (`ArgumentNullException`) that made every command fail — the `--log-level` option was not registered.
+
+### Documentation
+
+- Added `docs/commands.md` (core command reference) and `docs/aliases.md` (full alias list, regenerable via `alias list --output markdown`), linked from the README.
+- Added tips for running `cv4pve-cli` inside AI coding assistants (`docs/AI-AGENTS.md`).
+
+---
+
 ## [2.2.1] — 2026-04-09
 
 ### Bug fixes
