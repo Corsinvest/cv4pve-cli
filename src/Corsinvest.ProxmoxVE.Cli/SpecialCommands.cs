@@ -67,7 +67,6 @@ IIIIIII[_]IIIII[_]IIIIIL___J__II__|_|__II__L___JIIIII[_]IIIII[_]IIIIIIII[_]
                           /         |         \
 ";
 
-
     public static void AddCommands(RootCommand command)
     {
         var mountains = command.AddCommand("show-mountains", "Display a mountain landscape");

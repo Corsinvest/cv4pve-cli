@@ -2,6 +2,13 @@
 
 ---
 
+## [Unreleased]
+
+### Changed
+- Updated Corsinvest.ProxmoxVE.Api.Console to 9.2.3
+- Product icon (Lucide `square-terminal`) and Windows executable icon
+- Project metadata, symbols (Source Link, `.snupkg`) and code style aligned with the other cv4pve tools
+
 ## [2.3.0] — 2026-07-06
 
 ### Commands
