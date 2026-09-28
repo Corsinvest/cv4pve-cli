@@ -4,7 +4,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageVersion Include="Corsinvest.ProxmoxVE.Api.Console" Version="9.2.1" />
+    <PackageVersion Include="Corsinvest.ProxmoxVE.Api.Console" Version="9.2.3" />
     <PackageVersion Include="YamlDotNet" Version="18.1.0" />
   </ItemGroup>
 </Project>

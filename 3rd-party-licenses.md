@@ -11,3 +11,8 @@ License: MIT
 
 [YamlDotNet](https://github.com/aaubry/YamlDotNet)
 License: MIT
+
+## Artwork
+
+The terminal pictogram in `icon.svg` / `icon.png` comes from [Lucide](https://lucide.dev) (icon `square-terminal`)
+License: ISC
