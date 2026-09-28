@@ -1,4 +1,4 @@
-﻿/*
+/*
  * SPDX-FileCopyrightText: Copyright Corsinvest Srl
  * SPDX-License-Identifier: MIT
  */
@@ -87,7 +87,6 @@ internal class ShellCommands
         var flat = GeneratorClassApi.LoadFlatCache(await File.ReadAllTextAsync(flatFile))!;
         return GeneratorClassApi.BuildClassApiFromFlat(flat);
     }
-
 
     /// <summary>
     /// Raw API commands under 'api' subcommand (for top-level CLI)
