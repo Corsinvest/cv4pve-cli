@@ -3,6 +3,8 @@ title: Contexts
 description: How cv4pve-cli connects to Proxmox VE — saved contexts for one or more clusters, API token or password, certificate validation, and where the credentials are stored.
 ---
 
+import CliResponseFiles from '@corsinvest/cv4pve-docs-theme/components/CliResponseFiles.astro';
+
 The other cv4pve tools take the host and the token on every command line. cv4pve-cli is used
 interactively, many times a day, often against more than one cluster — so, as kubectl does, it saves
 each connection once as a **context** and every command uses the **current** one.
@@ -71,6 +73,31 @@ cv4pve-cli config set lab --validate-certificate false
 
 Without the check, anyone who can intercept the traffic between you and the node can read the token or
 the password. Turn it off only on a network you trust.
+
+## Response files
+
+The options of a context — several nodes, token, timeout — can also go in a file, passed with `@`.
+Useful to create the same context on several workstations, or to keep it next to the scripts that use it.
+The options belong to `config add`, so the file goes after the command.
+
+<CliResponseFiles
+  tool="cv4pve-cli"
+  file="prod.rsp"
+  lines={[
+    '# Nodes of the production cluster',
+    '--host=pve01,pve02,pve03',
+    '',
+    '# API token (recommended)',
+    '--api-token=cli@pve!cli=<uuid>',
+    '',
+    '# The certificate is checked by default in cv4pve-cli: turn it off for self-signed certificates',
+    '# --validate-certificate=false',
+    '',
+    '--timeout=60',
+  ]}
+  run="config add prod"
+  after
+/>
 
 ## Where the credentials are stored
 
