@@ -1,0 +1,159 @@
+---
+title: Aliases
+description: Short commands for everyday Proxmox VE operations — the built-in aliases, guests by name with --guest, and your own aliases.
+---
+
+import AliasCount from '../../components/AliasCount.astro';
+
+An API path such as `/nodes/pve01/qemu/100/status/start` is precise but long, and you have to know on
+which node the VM runs. An **alias** gives an API call a short name — `do start vm` — and turns the
+variable parts of the path into arguments:
+
+```bash
+cv4pve-cli do start vm pve01 100
+# runs: api create /nodes/pve01/qemu/100/status/start
+```
+
+cv4pve-cli ships <AliasCount /> built-in aliases, and you can add your own. They are commands like the
+others: they appear in `--help` and in [tab completion](/cv4pve-cli/completion/).
+
+## How aliases are named
+
+The first word says what the alias does, the others what it works on:
+
+| First word | Does | Built-in |
+|---|---|---|
+| `get` | Reads a list or a status | <AliasCount filter="get" /> |
+| `show` | Reads the details of one object | <AliasCount filter="show" /> |
+| `do` | Runs an action: start, stop, migrate, back up, restore… | <AliasCount filter="do" /> |
+| `create` | Creates: snapshots, users, tokens, firewall rules… | <AliasCount filter="create" /> |
+| `set` | Changes a configuration | <AliasCount filter="set" /> |
+| `delete` | Removes | <AliasCount filter="delete" /> |
+
+`top` lists every resource of the cluster (nodes, guests, storages, pools, SDN zones), like the tree of
+the web interface.
+
+For guests the same operation exists three times: **`vm`** for virtual machines only, **`ct`** for
+containers only, and **`guest`** for both, with the type as an argument:
+
+```bash
+cv4pve-cli create vm snapshot    pve01 100      before-update "Before the update"
+cv4pve-cli create ct snapshot    pve01 200      before-update "Before the update"
+cv4pve-cli create guest snapshot pve01 qemu 100 before-update "Before the update"
+```
+
+Find an alias with `alias list`; the full list, with the API call behind each alias, is in the
+[alias reference](/cv4pve-cli/reference/aliases/).
+
+```bash
+cv4pve-cli alias list                      # every alias, name and description
+cv4pve-cli alias list --search snapshot    # name, description or API call containing "snapshot"
+cv4pve-cli alias list -v                   # also the API call
+```
+
+## Arguments
+
+Each `{placeholder}` of the API call is an argument, given **in order** after the alias name.
+`--help` on an alias shows them:
+
+```text
+$ cv4pve-cli do start vm --help
+Description:
+  Start a VM
+  Tip: use --guest <id|name> to resolve guest info automatically
+
+Usage:
+  cv4pve-cli do start vm [<args>...] [options] [[--] <additional arguments>...]]
+
+Arguments:
+  <<node> <vmid>>  Arguments: <node> <vmid> [--key value ...]
+…
+```
+
+If an argument is missing, cv4pve-cli stops before calling the API and prints the usage. A few
+placeholders list their allowed values, such as `{pam|pve|ldap|ad|openid}` in `create security domain`:
+give one of them as the argument.
+
+**Other API parameters** go after the arguments as `--key value`, exactly as with
+[`api`](/cv4pve-cli/api/):
+
+```bash
+cv4pve-cli do shutdown vm pve01 100 --timeout 120 --forceStop 1
+```
+
+In the current version an argument equal to the value of a parameter is lost:
+`do shutdown vm pve01 100 --timeout 100` stops with `missing arguments: {vmid}`. Use the
+[`api`](/cv4pve-cli/api/) form of the call in that case.
+
+## Guests by name (`--guest`)
+
+`--guest` takes a VM ID or a guest name and fills in the node, the VM ID and the type for you, by
+looking the guest up in the cluster. It moves with the guest: after a migration the same command
+still works.
+
+```bash
+cv4pve-cli do start vm --guest 100
+cv4pve-cli do start vm --guest web01
+cv4pve-cli create guest snapshot --guest web01 before-update "Before the update"
+```
+
+- A number is taken as a VM ID, anything else as a name; names are compared without regard to case.
+  If two guests have the same name, the first one found is used — use the VM ID.
+- `vm` aliases look only among VMs, `ct` aliases only among containers, `guest` aliases among both.
+- The arguments that `--guest` does not fill — the snapshot name above — still follow in order.
+- Aliases whose API path targets one guest say so in their `--help`
+  (`Tip: use --guest <id|name>`), and tab completion after `--guest` offers the IDs and names of the
+  cluster. The [alias reference](/cv4pve-cli/reference/aliases/) marks them.
+
+## Operations that change the cluster
+
+`do`, `create`, `set` and `delete` aliases change the cluster, and run as soon as you press Enter.
+
+:::danger[`--yes` does not stop them yet]
+<AliasCount filter="confirm" /> aliases — deleting guests, snapshots, users, storages; stopping,
+rebooting and shutting down guests and nodes; rolling back and restoring — list `-y, --yes` in their
+`--help` as a confirmation. In the current version **the call is made even without `--yes`**, and
+with `--yes` it fails: the option is passed to Proxmox VE as a parameter, which refuses it
+(`yes : property is not defined in schema`). Run these aliases without `--yes` — they run at once —
+and use a [read-only token](/cv4pve-cli/permissions/) when you only want to look.
+:::
+
+## Options
+
+| Option | What it does |
+|---|---|
+| `--output`, `-o` | Output format, as for [`api`](/cv4pve-cli/api/#output). |
+| `--wait` | Waits for the task the call starts, as for [`api`](/cv4pve-cli/api/#tasks): at most 30 seconds. |
+| `--verbose`, `-v` | Does not run the alias: shows the API call behind it, with every parameter it accepts — like `api usage -v`. |
+| `--guest`, `-g` | See [above](#guests-by-name---guest). |
+
+## Your own aliases
+
+Add an alias for the calls you repeat:
+
+```bash
+cv4pve-cli alias add vm-net \
+    --command "get /nodes/{node}/qemu/{vmid}/config" \
+    --description "VM configuration, to check the network cards"
+
+cv4pve-cli vm-net pve01 100
+cv4pve-cli vm-net --guest web01
+```
+
+- `--command` is an API call as you would write it after `api`: method, path, `--key value`
+  parameters, with `{placeholders}` for the arguments. Quote it.
+- `{node}`, `{vmid}` and `{vmtype}` (`qemu` or `lxc`) are the placeholders `--guest` fills.
+- The name is one word, and cannot be the name of a built-in alias or of a command (`config`,
+  `api`, `task`…).
+- `alias remove vm-net` removes it. Built-in aliases cannot be changed or removed.
+
+Your aliases are saved in `~/.cv4pve/cli/alias` (`%USERPROFILE%\.cv4pve\cli\alias` on Windows), a
+YAML file you can also edit by hand or copy to another machine:
+
+```yaml
+aliases:
+- name: vm-net
+  description: VM configuration, to check the network cards
+  command: get /nodes/{node}/qemu/{vmid}/config
+  confirm: false
+```

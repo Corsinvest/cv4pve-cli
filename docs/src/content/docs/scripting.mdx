@@ -1,0 +1,75 @@
+---
+title: Scripting
+description: Use cv4pve-cli in shell scripts, scheduled jobs and CI — JSON output, exit codes, contexts without a terminal, and waiting for tasks.
+---
+
+cv4pve-cli is a plain command-line program: it never asks a question, prints its results on standard
+output and runs the same from a terminal, a cron job or a CI pipeline.
+
+## Set up the context
+
+A script uses the current context, like a terminal. On a machine of its own — a CI runner, a
+management VM — create the context at the start, with the token taken from the secrets of the job:
+
+```bash
+cv4pve-cli config add ci --host=pve01.example.com,pve02.example.com --api-token="$PVE_TOKEN"
+cv4pve-cli config use ci
+```
+
+The current context is stored in a file and shared by every shell of that user. Two scripts that run at
+the same time as the same user against different clusters switch the context under each other's feet:
+run them as different users, or one after the other. The token is saved in clear text in the
+configuration file — see [Where the credentials are stored](/cv4pve-cli/contexts/#where-the-credentials-are-stored).
+
+## Read the output
+
+`-o json` prints the rows of the answer as a JSON array on one line, for `jq` or any JSON parser:
+
+```bash
+# names of the running VMs and containers
+cv4pve-cli api get /cluster/resources --type vm -o json \
+  | jq -r '.[] | select(.status == "running") | .name'
+```
+
+A list comes out as one object per item; an object as `key` / `value` pairs; a single value — a UPID,
+the next free VM ID — as it is, with no JSON around it. Values are those of the API: sizes in bytes,
+times in seconds or Unix time. `-v` prints the raw answer of Proxmox VE, `{"data": …}`. See
+[Output](/cv4pve-cli/api/#output).
+
+Once a day cv4pve-cli checks GitHub for a newer release and, if there is one, prints a notice at the end
+of the output — only when the output goes to a terminal, never into a pipe or a file.
+
+## Exit codes
+
+| Code | Meaning |
+|---|---|
+| `0` | Success |
+| `1` | Generic error, including a connection that fails and an alias called without all its arguments |
+| `2` | Authentication error — for example `task` commands with a wrong token |
+| `3` | Not found — for example a context that does not exist |
+| `4` | Server error or unreachable — also `config verify` for any failed connection, wrong credentials included |
+| `5` | A task ended with an error, or `task wait` timed out |
+| `6` | Wrong input — for example `task stop` without `--yes`, an alias name that is not allowed, `alias remove` of an alias that does not exist |
+
+Error messages of `config`, `alias add`, `alias remove` and `task` start with `Error:` and go to standard error; the message of an alias called without all its arguments goes to standard output. With `api` and aliases, an error
+that stops the call before it reaches Proxmox VE — no context, no node reachable, wrong credentials — is
+printed as `ERROR: …` on standard output, with code `1`. An alias called with `--guest` behaves
+differently: if cv4pve-cli cannot connect it prints `Error: no context configured.` whatever the cause,
+with code `1`, and a guest that does not exist ends the program with an unhandled exception.
+
+:::caution[API errors exit with 0]
+When Proxmox VE refuses a call made with `api` or an alias — a missing privilege, a path that does not
+exist — cv4pve-cli prints the message on standard output and exits with `0`. Until this changes, do not
+rely on the exit code of `api` and aliases: check the result, for example with `-o json` and `jq`.
+:::
+
+## Wait for tasks
+
+A call that starts a task returns at once with its UPID. `--wait` waits at most 30 seconds and does not
+look at the result; for a script, capture the UPID and use [`task wait`](/cv4pve-cli/tasks/#wait) or
+[`task log --follow`](/cv4pve-cli/tasks/#log), which exit with `5` when the task fails:
+
+```bash
+upid=$(cv4pve-cli api create /nodes/pve01/qemu/100/snapshot --snapname "nightly-$(date +%F)")
+cv4pve-cli task wait "$upid" --timeout 900 || echo "snapshot failed" >&2
+```

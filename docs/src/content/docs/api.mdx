@@ -1,0 +1,145 @@
+---
+title: API calls
+description: Call any path of the Proxmox VE API with api get, set, create and delete, find what a path accepts with ls and usage, and choose the output format.
+---
+
+import TerminalTable from '@corsinvest/cv4pve-docs-theme/components/TerminalTable.astro';
+
+Everything the Proxmox VE web interface does goes through its REST API. `cv4pve-cli api` calls that
+API directly, on any path, with the account of the current [context](/cv4pve-cli/contexts/). The
+paths and parameters are those of the
+[Proxmox VE API viewer](https://pve.proxmox.com/pve-docs/api-viewer/) — and cv4pve-cli can show them
+itself, see [below](#find-your-way-in-the-api).
+
+## Call a path
+
+```bash
+cv4pve-cli api <method> <path> [--key value ...]
+```
+
+| Command | HTTP | Use it to |
+|---|---|---|
+| `api get` | GET | Read |
+| `api set` | PUT | Change a configuration |
+| `api create` | POST | Create something, or run an action (start, snapshot, migrate…) |
+| `api delete` | DELETE | Remove something |
+
+```bash
+cv4pve-cli api get /cluster/resources --type vm
+cv4pve-cli api set /nodes/pve01/qemu/100/config --memory 4096 --cores 2
+cv4pve-cli api create /nodes/pve01/qemu/100/snapshot --snapname before-update
+cv4pve-cli api create /nodes/pve01/qemu/100/status/start
+cv4pve-cli api delete /nodes/pve01/qemu/100/snapshot/before-update
+```
+
+**Parameters** are written `--key value`, with the names of the API — not `--key=value`, which is sent as
+a parameter named `key=value` and refused by Proxmox VE. Give every parameter a value (`--force 1`):
+keys and values are paired in the order they appear, so a `--key` without a value in the middle shifts
+the values of the keys after it. Only a `--key` at the very end, with nothing after it, is sent as `true`. Each key can appear once. Quote values with spaces:
+`--description "Before the update"`.
+
+:::danger[There is no confirmation and no dry run]
+`api set`, `create` and `delete` run as soon as you press Enter. A hidden `--dry-run` option is accepted
+but does **not** stop the call. Before trying a change on a production cluster, use a context with a
+read-only token, or read what the path does with `api usage`.
+:::
+
+## Find your way in the API
+
+`api ls` lists what is under a path: `D` marks a path with children, `c` a path that accepts `create`.
+Paths that stand for objects — nodes, VMs, storages — are read from the cluster.
+
+```text
+$ cv4pve-cli api ls /nodes/pve01
+Dr---        apt
+-r---        config
+Dr---        disks
+Dr--c        lxc
+Dr--c        qemu
+-r--c        status
+Dr---        storage
+Dr---        tasks
+…
+```
+
+`api usage` shows what a path accepts. Write the path with placeholders (`{node}`, `{vmid}`) or with
+real values; add a method to see only that one, `-v` for the description of every parameter, `--returns`
+for the fields of the answer:
+
+```text
+$ cv4pve-cli api usage /nodes/{node}/qemu/{vmid}/snapshot
+USAGE: get /nodes/{node}/qemu/{vmid}/snapshot
+USAGE: create /nodes/{node}/qemu/{vmid}/snapshot --snapname <string> [OPTIONS]
+```
+
+<TerminalTable
+  command="cv4pve-cli api usage /nodes/{node}/qemu/{vmid}/snapshot create -v"
+  columns={[{ label: 'param', style: 'code' }, { label: 'type', style: 'muted' }, { label: 'description', style: 'wrap' }]}
+  rows={[
+    ['description', '<string>', 'A textual description or comment.'],
+    ['snapname', '<string>', 'The name of the snapshot.'],
+    ['vmstate', '<boolean>', 'Save the vmstate'],
+  ]}
+  note="Printed after <code>USAGE: create … --snapname &lt;string&gt; [OPTIONS]</code> and the description of the call, <code>Snapshot a VM.</code>"
+/>
+
+[Tab completion](/cv4pve-cli/completion/) does the same while you type: paths, node names, VM IDs,
+parameter names and their allowed values.
+
+## Output
+
+Answers are printed as a table. An object becomes a `key` / `value` table sorted by key; a list
+becomes one row per item, sorted by the first column; a single value is printed as it is. Values are
+printed as the API returns them — sizes in bytes, times in seconds or Unix time — and nested values as
+JSON.
+
+`--output` (`-o`) chooses the format:
+
+| Format | What you get |
+|---|---|
+| `text` | Table with borders, the default |
+| `json` | The same rows as a JSON array, on one line |
+| `jsonpretty` | The same, indented |
+| `markdown` | Markdown table, to paste in a ticket or a wiki |
+| `html` | HTML table |
+
+:::caution[Numbered keys are missing from the table]
+In `text`, `json` and the other formats, an object shows only the keys the API schema names exactly.
+Numbered keys — `net0`, `scsi0`, `ide2`, `usb0`, `unused0`… — and keys the schema does not list are
+**left out**: `api get /nodes/pve01/qemu/100/config`, and the `show vm` alias, show neither disks nor
+network cards. Add `-v` to an `api` command to see every key, as below; on an alias `-v` shows its
+parameters instead, so write the call with `api`.
+:::
+
+`json` and `jsonpretty` keep the shape of the table: an object comes out as `key` / `value` pairs.
+
+```text
+$ cv4pve-cli api get /version -o json
+[{"key":"release","value":"8.4"},{"key":"repoid","value":"2606ac850d46da29"},{"key":"version","value":"8.4.21"}]
+```
+
+For the answer exactly as Proxmox VE sends it, add `-v` (`--verbose`) instead:
+
+```text
+$ cv4pve-cli api get /version -v
+{
+  "data": {
+    "version": "8.4.21",
+    "repoid": "2606ac850d46da29",
+    "release": "8.4"
+  }
+}
+```
+
+## Tasks
+
+Calls that start a long operation — start, shutdown, backup, migrate, clone, snapshot — do not wait
+for it: Proxmox VE starts a **task** and answers at once with its ID, the UPID. With `--wait`,
+cv4pve-cli then waits for the task to end, checking every second, for at most 30 seconds.
+
+```bash
+cv4pve-cli api create /nodes/pve01/qemu/100/status/start --wait
+```
+
+`--wait` does not tell you whether the task succeeded, and gives up after 30 seconds. To follow a
+longer task, or to check its result, use the [`task`](/cv4pve-cli/tasks/) commands with the UPID.

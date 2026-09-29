@@ -1,0 +1,159 @@
+---
+title: cv4pve-cli
+description: The whole Proxmox VE API from the command line, like kubectl for Kubernetes — saved contexts for several clusters, more than 300 built-in aliases and tab completion that reads the live cluster.
+template: splash
+hero:
+  title: The whole <span class="accent-mark">Proxmox VE</span> API, from your terminal
+  tagline: Runs outside the nodes, API only — what kubectl is to Kubernetes. Saved contexts for every cluster you manage, short aliases for everyday operations and tab completion that reads node names and VM IDs from the live cluster.
+  actions:
+    - text: Get started
+      link: /cv4pve-cli/getting-started/
+      icon: right-arrow
+    - text: Coming from pvesh?
+      link: /cv4pve-cli/coming-from-pvesh/
+      icon: right-arrow
+      variant: secondary
+    - text: Browse the aliases
+      link: /cv4pve-cli/reference/aliases/
+      variant: minimal
+---
+
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+import FeatureGrid from '@corsinvest/cv4pve-docs-theme/components/FeatureGrid.astro';
+import TerminalTable from '@corsinvest/cv4pve-docs-theme/components/TerminalTable.astro';
+import CtaBand from '@corsinvest/cv4pve-docs-theme/components/CtaBand.astro';
+import AliasCount from '../../components/AliasCount.astro';
+import proxmoxLogo from '../../assets/proxmox-logo.svg';
+
+export const features = [
+  { title: "Every API call", text: "get, set, create and delete on any path of the Proxmox VE REST API, with parameters as --key value. ls and usage show what a path contains and what it accepts.", href: 'api/' },
+  { title: "Several clusters", text: "Each cluster is a saved context — host, port, token or password. Switch with config use, as kubectl does with Kubernetes clusters.", href: 'contexts/' },
+  { title: "Aliases for everyday work", text: "do start vm, create guest snapshot, get cluster ha resources: short commands for common operations, plus your own.", href: 'aliases/' },
+  { title: "Guests by name", text: "--guest web01 finds the node, the type and the VM ID for you, so you never look up where a guest runs.", href: 'aliases/#guests-by-name---guest' },
+  { title: "Tab completion from the cluster", text: "bash, zsh and PowerShell complete API paths, node names, VM IDs, parameters and their allowed values.", href: 'completion/' },
+  { title: "Made for scripts", text: "Output as text, JSON, HTML or Markdown; --wait for asynchronous tasks; task log --follow to watch one run.", href: 'scripting/' },
+];
+
+```bash
+cv4pve-cli config add pve01 --host=pve01.example.com --api-token='cli@pve!cli=…'
+cv4pve-cli get nodes
+```
+
+The first line saves the cluster once; from then on every command runs against it:
+
+<Tabs>
+  <TabItem label="get nodes">
+
+<TerminalTable
+  command="cv4pve-cli get nodes"
+  columns={[
+    { label: 'node', style: 'code' },
+    { label: 'status' },
+    { label: 'cpu' },
+    { label: 'level' },
+    { label: 'maxcpu' },
+    { label: 'maxmem' },
+    { label: 'mem' },
+    { label: 'ssl_fingerprint', style: 'muted' },
+    { label: 'uptime' },
+  ]}
+  rows={[
+    ['pve01', 'online', '0.0551737049022492', 'c', '40', '270057619456', '201251405824', '5A:8A:DE:…:1C:05:7A', '7805388'],
+    ['pve02', 'online', '0.0232613845048306', 'c', '40', '134766219264', '84975058944', 'F3:12:C6:…:2A:71:10', '7805413'],
+  ]}
+  note="Values as the API returns them: memory in bytes, uptime in seconds. Add <code>-o json</code> for a script."
+/>
+
+  </TabItem>
+  <TabItem label="get vm status">
+
+<TerminalTable
+  command="cv4pve-cli get vm status --guest mailstore"
+  columns={[{ label: 'key', style: 'code' }, { label: 'value' }]}
+  rows={[
+    ['agent', '1'],
+    ['cpus', '2'],
+    ['maxmem', '4294967296'],
+    ['mem', '2030592000'],
+    ['name', 'mailstore'],
+    ['qmpstatus', 'running'],
+    ['running-qemu', '9.2.0'],
+    ['status', 'running'],
+    ['uptime', '7803584'],
+    ['vmid', '1012'],
+  ]}
+  note="Some of the rows. <code>--guest</code> found the node and the VM ID from the name."
+/>
+
+  </TabItem>
+  <TabItem label="alias list">
+
+<TerminalTable
+  command="cv4pve-cli alias list --search snapshot"
+  columns={[{ label: 'name', style: 'code' }, { label: 'description', style: 'wrap' }]}
+  rows={[
+    ['create guest snapshot', 'Create a new snapshot for a guest (VM or CT)'],
+    ['delete guest snapshot', 'Delete a specific guest snapshot'],
+    ['do rollback guest', 'Rollback guest state to a specific snapshot (VM or CT)'],
+    ['get guest snapshots', 'List snapshots for a guest (VM or CT)'],
+    ['set guest snapshot', 'Update guest snapshot description'],
+    ['show guest snapshot', 'Show configuration of a specific guest snapshot'],
+  ]}
+  note="Some of the rows: each operation also exists for VMs only (<code>vm</code>) and containers only (<code>ct</code>)."
+/>
+
+  </TabItem>
+</Tabs>
+
+## Why
+
+The Proxmox VE web interface is made for clicking, one object at a time. The API behind it can do
+everything the interface does, but calling it by hand means a login, a ticket, a CSRF token and a
+`curl` line for each call. [`pvesh`](https://pve.proxmox.com/pve-docs/pvesh.1.html) is simpler, but it
+runs only on a node, as root, and knows only the cluster that node belongs to.
+
+cv4pve-cli puts the whole API in a command you run from your own workstation. You save each cluster
+once, switch between them by name, and type `do start vm --guest web01` instead of looking up which
+node the guest runs on. Every API call the web interface makes, you can make from a shell script, a
+scheduled job or an AI coding assistant — against as many clusters as you manage.
+
+## Outside the nodes, API only
+
+cv4pve-cli runs outside the cluster — on Windows, Linux or macOS — and talks only to the Proxmox VE REST
+API on port 8006. Nothing is installed on the nodes and no SSH is needed. It can do exactly what its
+account is allowed to do, so give it a dedicated API token with the privileges you want it to have —
+see [Permissions](/cv4pve-cli/permissions/).
+
+| | **cv4pve-cli** | [pvesh](https://pve.proxmox.com/pve-docs/pvesh.1.html) |
+|---|---|---|
+| **Runs on** | Your workstation, a management VM, a CI runner | A Proxmox VE node |
+| **Account** | Any user or API token, with its own privileges | root on the node |
+| **Clusters** | Any number, as saved contexts | The one the node belongs to |
+| **API calls** | `api get/set/create/delete/ls/usage` | `get/set/create/delete/ls/usage` |
+| **Shortcuts** | <AliasCount /> built-in aliases, plus your own | — |
+
+The [Coming from pvesh](/cv4pve-cli/coming-from-pvesh/) page maps each pvesh command to cv4pve-cli.
+
+## Where it fits
+
+The cv4pve suite follows the Unix philosophy: each tool does one thing and does it well. cv4pve-cli is
+the general-purpose one — any API call, by hand or in a script. The others answer one question each and
+run on their own:
+
+| Tool | Use it for |
+|---|---|
+| **cv4pve-cli** | Any API call from a shell: read, change, automate |
+| [cv4pve-api-powershell](https://corsinvest.github.io/cv4pve-api-powershell/) | The same API as PowerShell cmdlets, with objects instead of text — the choice if your scripts are PowerShell |
+| [cv4pve-report](https://corsinvest.github.io/cv4pve-report/) | The full inventory of a cluster, in Excel, HTML or JSON |
+| [cv4pve-diag](https://corsinvest.github.io/cv4pve-diag/) | What is wrong in a cluster: a list of problems, each with a severity |
+| [cv4pve-admin](https://corsinvest.github.io/cv4pve-admin/) | A web platform for several clusters, when a command line is not what you want |
+
+## What it does for you
+
+<FeatureGrid items={features} />
+
+<CtaBand
+  title="Run your first command"
+  text="Install the binary, save your cluster as a context, type get nodes."
+  proxmoxLogo={proxmoxLogo}
+/>

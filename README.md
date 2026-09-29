@@ -1,11 +1,11 @@
-# cv4pve-cli
+# <img src="icon.png" alt="" height="36" align="top"> cv4pve-cli
 
 ```
-   ______                _                      __
-  / ____/___  __________(_)___ _   _____  _____/ /_
- / /   / __ \/ ___/ ___/ / __ \ | / / _ \/ ___/ __/
-/ /___/ /_/ / /  (__  ) / / / / |/ /  __(__  ) /_
-\____/\____/_/  /____/_/_/ /_/|___/\___/____/\__/
+     ______                _                      __
+    / ____/___  __________(_)___ _   _____  _____/ /_
+   / /   / __ \/ ___/ ___/ / __ \ | / / _ \/ ___/ __/
+  / /___/ /_/ / /  (__  ) / / / / |/ /  __(__  ) /_
+  \____/\____/_/  /____/_/_/ /_/|___/\___/____/\__/
 
 Command Line Interface for Proxmox VE (Made in Italy)
 ```
@@ -16,291 +16,108 @@ Command Line Interface for Proxmox VE (Made in Italy)
 [![WinGet](https://img.shields.io/winget/v/Corsinvest.cv4pve.cli?style=flat-square&logo=windows)](https://winstall.app/apps/Corsinvest.cv4pve.cli)
 [![AUR](https://img.shields.io/aur/version/cv4pve-cli?style=flat-square&logo=archlinux)](https://aur.archlinux.org/packages/cv4pve-cli)
 
-> cv4pve-cli is to Proxmox VE what `kubectl` is to Kubernetes — a remote-first CLI with context switching, direct API access, and aliases for common operations. Think of it as [`pvesh`](https://pve.proxmox.com/pve-docs/pvesh.1.html), but running from your workstation, supporting multiple clusters, and with tab completion that queries the live API.
+> **The whole Proxmox VE API from the command line** — what `kubectl` is to Kubernetes: saved contexts for several clusters, more than 300 built-in aliases and tab completion that reads the live cluster.
+>
+> **[Documentation](https://corsinvest.github.io/cv4pve-cli/)**
 
 ---
 
-## Quick Start
+## Why
 
-```bash
-# 1. Add a context (connection profile)
-cv4pve-cli config add homelab --host 192.168.1.100 --username root@pam --password secret
+The Proxmox VE web interface is made for clicking, one object at a time. The API behind it does the same work, but calling it by hand means a login, a ticket and a `curl` line for each call. [`pvesh`](https://pve.proxmox.com/pve-docs/pvesh.1.html) is simpler, but it runs only on a node, as root, and knows only the cluster that node belongs to.
 
-# 2. Use it
-cv4pve-cli config use homelab
+cv4pve-cli puts the whole API in a command you run from your own workstation. You save each cluster once, switch between them by name, and type `do start vm --guest web01` instead of looking up which node the guest runs on. Coming from pvesh? See [each command mapped](https://corsinvest.github.io/cv4pve-cli/coming-from-pvesh/).
 
-# 3. Run commands
-cv4pve-cli api get /nodes
-cv4pve-cli top
+It **runs outside the nodes and uses only the Proxmox VE API**: nothing to install on the cluster, no SSH. It can do exactly what the API token of its context is allowed to do.
+
+---
+
+## What it looks like
+
+```
+$ cv4pve-cli get vm status --guest mailstore
++--------------+------------+
+| key          | value      |
++--------------+------------+
+| agent        | 1          |
+| cpus         | 2          |
+| maxmem       | 4294967296 |
+| mem          | 2030592000 |
+| name         | mailstore  |
+| qmpstatus    | running    |
+| running-qemu | 9.2.0      |
+| status       | running    |
+| uptime       | 7803584    |
+| vmid         | 1012       |
++--------------+------------+
 ```
 
----
-
-## Installation
-
-| Platform | Command |
-|----------|---------|
-| **Windows** | `winget install Corsinvest.cv4pve.cli` |
-| **Arch Linux** | `yay -S cv4pve-cli` |
-| **Debian/Ubuntu** | `sudo dpkg -i cv4pve-cli-VERSION-ARCH.deb` |
-| **RHEL/Fedora** | `sudo rpm -i cv4pve-cli-VERSION-ARCH.rpm` |
-| **macOS** | `brew tap Corsinvest/homebrew-tap && brew install cv4pve-cli` |
-| **Linux / manual** | Download zip from [Releases](https://github.com/Corsinvest/cv4pve-cli/releases/latest), `chmod +x cv4pve-cli`, `sudo mv cv4pve-cli /usr/local/bin/` |
+Some of the rows. `--guest` found the node and the VM ID from the name; `-o json` gives the same data to a script.
 
 ---
 
 ## Features
 
-- **Self-contained binary** — no runtime to install, copy and run
-- **Cross-platform** — Windows, Linux, macOS
-- **Multiple clusters** — save and switch between connection profiles (contexts)
-- **Direct API access** — full Proxmox VE REST API via `api get/set/create/delete`
-- **[300+ built-in aliases](#built-in-aliases)** — shortcuts for common operations (start, stop, snapshot, migrate, …)
-- **Guest auto-resolution** — use `--guest <name|id>` instead of typing node, vmtype and vmid
-- **Async task support** — add `--wait` to any command, or use `task log --follow` to tail a running task
-- **Tab completion** — bash, zsh and PowerShell, queries the live API
-- **API schema cached locally** — refreshed automatically on PVE upgrade
-- **Scriptable** — semantic [exit codes](docs/commands.md#exit-codes), errors on stderr
-
-| | [pvesh](https://pve.proxmox.com/pve-docs/pvesh.1.html) | kubectl | cv4pve-cli |
-|---|---|---|---|
-| Direct API access | yes | yes | yes |
-| Runs remotely (off-node) | no | yes | yes |
-| Multiple clusters / contexts | no | yes | yes |
-| Tab completion (live) | yes (local only) | yes | yes |
-| Aliases / shortcuts | no | yes | yes |
+- **Every API call** — `api get/set/create/delete` on any path, `api ls` and `api usage` to find what a path accepts.
+- **Several clusters** — each one a saved context; switch with `config use`.
+- **Aliases** — more than 300 built-in short commands (`get nodes`, `do migrate vm`, `create guest snapshot`…) plus your own.
+- **Guests by name** — `--guest <name|id>` fills in node, type and VM ID.
+- **Tab completion** — bash, zsh and PowerShell complete API paths, node names, VM IDs, parameters and their allowed values from the live cluster.
+- **Tasks** — `task list/show/wait/log --follow/stop` to follow backups, migrations and other long operations.
+- **Made for scripts** — output as text, JSON, Markdown or HTML; exit codes for `config` and `task`.
+- **Self-contained binary** for Windows, Linux and macOS — no runtime to install.
 
 ---
 
-## Configuration
-
-All configuration is managed through the `config` subcommand. Contexts are connection profiles — each stores a host, credentials, and port.
-
-### File locations
-
-| Platform | Base path |
-|----------|-----------|
-| Linux / macOS | `~/.cv4pve/cli/` |
-| Windows | `%USERPROFILE%\.cv4pve\cli\` |
-
-Files are in YAML format and can be edited directly.
-
-| File | Content |
-|------|---------|
-| `config` | Contexts (connection profiles) |
-| `alias` | User-defined aliases |
-| `cache/<version>.json` | API schema cache (auto-generated) |
-
-<details>
-<summary><strong>Context commands</strong></summary>
+## Quick start
 
 ```bash
-# Add
-cv4pve-cli config add homelab --host 192.168.1.100 --username root@pam --password secret
-cv4pve-cli config add prod --host pve.company.com --api-token root@pam!mytoken=uuid-here
-cv4pve-cli config add dev --host 10.0.0.1 --port 8007 --username root@pam --password secret --validate-certificate false
-cv4pve-cli config add slow --host 10.0.0.1 --username root@pam --password secret --timeout 60
+# Windows
+winget install Corsinvest.cv4pve.cli
 
-# Switch / inspect
-cv4pve-cli config use prod
-cv4pve-cli config current
-cv4pve-cli config list                  # * = active
-cv4pve-cli config view                  # full dump (passwords hidden)
+# Linux (other platforms and packages: see the documentation)
+wget https://github.com/Corsinvest/cv4pve-cli/releases/latest/download/cv4pve-cli-linux-x64.zip
+unzip cv4pve-cli-linux-x64.zip && chmod +x cv4pve-cli
 
-# Update (only specified fields change)
-cv4pve-cli config set homelab --password newpass
-cv4pve-cli config set homelab --host 192.168.1.200
-
-# Rename / delete / verify
-cv4pve-cli config rename homelab lab
-cv4pve-cli config delete lab
-cv4pve-cli config verify
-cv4pve-cli config verify homelab
+# Save the cluster once, with an API token, then run commands against it
+./cv4pve-cli config add pve01 --host=pve01.local --api-token='cli@pve!cli=UUID'
+./cv4pve-cli get nodes
+./cv4pve-cli api get /cluster/resources --type vm -o json
 ```
 
-</details>
-
----
-
-## API Commands
-
-```
-cv4pve-cli api get    <resource> [--key value ...]
-cv4pve-cli api set    <resource> [--key value ...]
-cv4pve-cli api create <resource> [--key value ...]
-cv4pve-cli api delete <resource>
-cv4pve-cli api ls     <resource>
-cv4pve-cli api usage  <resource> [method] [--returns] [--output <format>]
-```
-
-```bash
-cv4pve-cli api get /cluster/resources --type vm
-cv4pve-cli api set /nodes/pve1/qemu/100/config --memory 4096 --cores 2
-cv4pve-cli api create /nodes/pve1/qemu/100/snapshot --snapname before-update
-cv4pve-cli api delete /nodes/pve1/qemu/100/snapshot/before-update
-```
-
-### Output formats
-
-`--output` / `-o`: `text` (default), `json`, `jsonpretty`, `html`, `markdown`
-
-```bash
-cv4pve-cli api get /nodes --output json
-cv4pve-cli api usage /nodes/{node}/qemu/{vmid}/config get --returns --output json
-```
-
----
-
-## Aliases
-
-Aliases are shortcuts for API commands. Placeholders like `{node}`, `{vmid}` are filled positionally at runtime.
-
-### Built-in aliases
-
-300+ read-only aliases are available out of the box — see the **[full alias reference](docs/aliases.md)** or run `cv4pve-cli alias list`. A few examples:
-
-| Alias | Arguments | Description |
-|-------|-----------|-------------|
-| `top` | — | Cluster resource overview |
-| `get vms` | — | List all VMs (cluster-wide) |
-| `show vm` | `<node> <vmid>` | Show VM config |
-| `do start vm` | `<node> <vmid>` | Start a VM |
-| `create vm snapshot` | `<node> <vmid> <snapname> <descr>` | Create a VM snapshot |
-| `get cluster not-backed-up` | — | List guests with no backup job |
-
-Aliases prefixed with `guest` work for both VMs and containers — `{vmtype}` is resolved automatically:
-
-| Alias | Arguments | Description |
-|-------|-----------|-------------|
-| `get guests` | — | List all VMs and containers |
-| `show guest` | `<node> <vmtype> <vmid>` | Show guest config |
-| `do start guest` | `<node> <vmtype> <vmid>` | Start a guest |
-| `do stop guest` | `<node> <vmtype> <vmid>` | Stop a guest |
-| `create guest snapshot` | `<node> <vmtype> <vmid> <snapname> <descr>` | Create a snapshot |
-| `do rollback guest` | `<node> <vmtype> <vmid> <snapname>` | Rollback to a snapshot |
-| `delete guest` | `<node> <vmtype> <vmid>` | Destroy a guest (permanent!) |
-
-The same operation is available at three levels — `guest` (both VM and CT), `vm` (qemu only), `ct` (lxc only):
-
-```bash
-cv4pve-cli create guest snapshot --guest myvm  snap1 "before update"  # VM or CT — by name
-cv4pve-cli create guest snapshot --guest 100   snap1 "before update"  # VM or CT — by id
-cv4pve-cli create vm snapshot pve1 100 snap1 "before update"           # VM only
-cv4pve-cli create ct snapshot pve1 200 snap1 "before update"           # CT only
-```
-
-```bash
-cv4pve-cli alias list
-cv4pve-cli alias list --verbose        # includes command and placeholder args
-cv4pve-cli alias list --search snap    # filter by keyword
-```
-
-### Guest auto-resolution (`--guest`)
-
-Aliases whose path targets a specific guest accept `--guest <id|name>`. The CLI resolves node, vmid and vmtype automatically from the cluster.
-
-```bash
-# Without --guest (explicit)
-cv4pve-cli do start vm pve1 100
-
-# With --guest (auto-resolve)
-cv4pve-cli do start vm --guest 100
-cv4pve-cli do start vm --guest myvm
-cv4pve-cli get ct status --guest myct
-cv4pve-cli create guest snapshot --guest myvm snap1 "before update"
-```
-
-Tab completion on `--guest <TAB>` shows all VM and container names and IDs live from the cluster.
-
-To check if an alias supports `--guest`, run it with `--help` — the description will contain:
-```
-Tip: use --guest <id|name> to resolve guest info automatically
-```
-
-### User aliases
-
-```bash
-# Add
-cv4pve-cli alias add vm-net \
-    --command "get /nodes/{node}/qemu/{vmid}/config" \
-    --description "Show VM network config"
-
-# Use
-cv4pve-cli vm-net pve1 100
-
-# Remove
-cv4pve-cli alias remove vm-net
-```
-
-Built-in aliases cannot be modified or removed.
-
-<details>
-<summary><strong>Special placeholders</strong></summary>
-
-Most placeholders (e.g. `{snapname}`, `{storage}`) are filled positionally at runtime.
-
-Three have special meaning and enable `--guest` auto-resolution:
-
-| Placeholder | Filled with | Example |
-|-------------|-------------|---------|
-| `{node}` | Node where the guest runs | `pve1` |
-| `{vmid}` | Numeric guest ID | `100` |
-| `{vmtype}` | Guest type | `qemu` or `lxc` |
-
-```bash
-cv4pve-cli alias add guest-status \
-    --command "get /nodes/{node}/{vmtype}/{vmid}/status/current" \
-    --description "VM or container status"
-
-cv4pve-cli guest-status --guest myct
-```
-
-</details>
-
----
-
-## Tab Completion
-
-Tab completion is registered automatically on first run. Open a new terminal to activate it, or reload your profile:
-
-| Shell | Command |
-|-------|---------|
-| PowerShell | `. $PROFILE` |
-| Bash | `source ~/.bashrc` |
-| Zsh | `source ~/.zshrc` |
-
-To force re-registration: `cv4pve-cli completion reset`
-
-### What completes
-
-| Typing | TAB suggests |
-|--------|-------------|
-| `cv4pve-cli <TAB>` | `api`, `config`, `alias`, `top`, `get`, `do`, ... |
-| `cv4pve-cli api get /nodes/<TAB>` | node names live from API |
-| `cv4pve-cli api get /nodes/pve1/qemu/<TAB>` | VM IDs live from API |
-| `cv4pve-cli api get /nodes/pve1/qemu/100/config <TAB>` | parameter names |
-| `cv4pve-cli show vm pve1 <TAB>` | VM IDs live from API |
-| `cv4pve-cli config use <TAB>` | context names |
+The token and the password are saved in clear text in `~/.cv4pve/cli/config`: use a dedicated API token with only the privileges you want cv4pve-cli to have — see [Permissions](https://corsinvest.github.io/cv4pve-cli/permissions/).
 
 ---
 
 ## Documentation
 
-- **[Command reference](docs/commands.md)** — core commands (`config`, `api`, `alias`, `completion`), global options, guest auto-resolution
-- **[Alias reference](docs/aliases.md)** — the full list of 300+ built-in aliases
-- **[AI coding assistants](docs/AI-AGENTS.md)** — running `cv4pve-cli` inside Claude Code, Codex and similar sandboxed agents
+| | |
+|---|---|
+| [Getting started](https://corsinvest.github.io/cv4pve-cli/getting-started/) | Install, first context, first commands |
+| [Contexts](https://corsinvest.github.io/cv4pve-cli/contexts/) | Several clusters, token or password, certificate, where credentials are stored |
+| [Permissions](https://corsinvest.github.io/cv4pve-cli/permissions/) | The user, the API token and the role to give it |
+| [Coming from pvesh](https://corsinvest.github.io/cv4pve-cli/coming-from-pvesh/) | Each pvesh command and option in cv4pve-cli |
+| [API calls](https://corsinvest.github.io/cv4pve-cli/api/) | `get`, `set`, `create`, `delete`, `ls`, `usage`, output formats |
+| [Aliases](https://corsinvest.github.io/cv4pve-cli/aliases/) | Built-in aliases, `--guest`, your own aliases |
+| [Tasks](https://corsinvest.github.io/cv4pve-cli/tasks/) | Following tasks by UPID |
+| [Tab completion](https://corsinvest.github.io/cv4pve-cli/completion/) | bash, zsh, PowerShell |
+| [Scripting](https://corsinvest.github.io/cv4pve-cli/scripting/) | JSON output, exit codes, CI |
+| [AI coding assistants](https://corsinvest.github.io/cv4pve-cli/ai-agents/) | Claude Code, Codex, a `SKILL.md` template |
+| [Reference](https://corsinvest.github.io/cv4pve-cli/reference/commands/) | Every command, every alias, every file |
 
 ---
 
-## Using with AI coding assistants
+## Related tools
 
-Tips for running `cv4pve-cli` inside Claude Code, Codex and similar sandboxed agents (self-signed certs, sandbox permissions, `SKILL.md` template): see [docs/AI-AGENTS.md](docs/AI-AGENTS.md).
+Prefer PowerShell objects to text? [cv4pve-api-powershell](https://github.com/Corsinvest/cv4pve-api-powershell) gives the same API as cmdlets. For an inventory of the cluster use [cv4pve-report](https://github.com/Corsinvest/cv4pve-report), to find what is wrong [cv4pve-diag](https://github.com/Corsinvest/cv4pve-diag). The whole suite: [corsinvest.it/cv4pve](https://www.corsinvest.it/en/cv4pve/).
 
 ---
 
 ## Support
 
-Professional support available through [Corsinvest](https://www.corsinvest.it/cv4pve).
+Professional support and consulting available through [Corsinvest](https://www.corsinvest.it/en/cv4pve/).
+
+---
 
 Part of [cv4pve](https://www.corsinvest.it/cv4pve) suite | Made with ❤️ in Italy by [Corsinvest](https://www.corsinvest.it)
 
