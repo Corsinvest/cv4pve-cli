@@ -19,15 +19,57 @@ privileges** it needs — root has them all, a dedicated token only those you ga
 
 ## Commands
 
-| pvesh | cv4pve-cli | With an alias |
-|---|---|---|
-| `pvesh get /nodes` | `cv4pve-cli api get /nodes` | `cv4pve-cli get nodes` |
-| `pvesh set /nodes/pve01/qemu/100/config --memory 4096` | `cv4pve-cli api set /nodes/pve01/qemu/100/config --memory 4096` | `cv4pve-cli set vm config pve01 100 --memory 4096` |
-| `pvesh create /nodes/pve01/qemu/100/snapshot --snapname before-update` | `cv4pve-cli api create /nodes/pve01/qemu/100/snapshot --snapname before-update` | `cv4pve-cli create vm snapshot pve01 100 before-update "Before the update"` |
-| `pvesh delete /nodes/pve01/qemu/100/snapshot/before-update` | `cv4pve-cli api delete /nodes/pve01/qemu/100/snapshot/before-update` | `cv4pve-cli delete vm snapshot pve01 100 before-update --yes` |
-| `pvesh ls /nodes/pve01` | `cv4pve-cli api ls /nodes/pve01` | — |
-| `pvesh usage /nodes/{node}/qemu --command create --verbose` | `cv4pve-cli api usage /nodes/{node}/qemu create --verbose` | — |
-| `pvesh usage … --returns` | `cv4pve-cli api usage … --returns` | — |
+The same call three ways: with pvesh on a node, with `cv4pve-cli api`, and — highlighted, marked `# alias` — with a
+cv4pve-cli alias, where one exists.
+
+**Read**
+
+```bash {3}
+pvesh get /nodes
+cv4pve-cli api get /nodes
+cv4pve-cli get nodes   # alias
+```
+
+**Change a configuration**
+
+```bash {3}
+pvesh set /nodes/pve01/qemu/100/config --memory 4096
+cv4pve-cli api set /nodes/pve01/qemu/100/config --memory 4096
+cv4pve-cli set vm config pve01 100 --memory 4096   # alias
+```
+
+**Create**
+
+```bash {3}
+pvesh create /nodes/pve01/qemu/100/snapshot --snapname before-update
+cv4pve-cli api create /nodes/pve01/qemu/100/snapshot --snapname before-update
+cv4pve-cli create vm snapshot pve01 100 before-update "Before the update"   # alias
+```
+
+**Delete**
+
+```bash {3}
+pvesh delete /nodes/pve01/qemu/100/snapshot/before-update
+cv4pve-cli api delete /nodes/pve01/qemu/100/snapshot/before-update
+cv4pve-cli delete vm snapshot pve01 100 before-update --yes   # alias
+```
+
+**List what is under a path**
+
+```bash
+pvesh ls /nodes/pve01
+cv4pve-cli api ls /nodes/pve01
+```
+
+**Show what a path accepts**
+
+```bash
+pvesh usage /nodes/{node}/qemu --command create --verbose
+cv4pve-cli api usage /nodes/{node}/qemu create --verbose
+
+pvesh usage /nodes/{node}/qemu --returns
+cv4pve-cli api usage /nodes/{node}/qemu --returns
+```
 
 An [alias](/cv4pve-cli/aliases/) is a short name for an API call: its arguments fill the path in order,
 and further parameters follow as `--key value`. With `--guest` you give the guest name or ID instead of
