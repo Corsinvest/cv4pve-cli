@@ -24,7 +24,7 @@ privileges** it needs — root has them all, a dedicated token only those you ga
 | `pvesh get /nodes` | `cv4pve-cli api get /nodes` | `cv4pve-cli get nodes` |
 | `pvesh set /nodes/pve01/qemu/100/config --memory 4096` | `cv4pve-cli api set /nodes/pve01/qemu/100/config --memory 4096` | `cv4pve-cli set vm config pve01 100 --memory 4096` |
 | `pvesh create /nodes/pve01/qemu/100/snapshot --snapname before-update` | `cv4pve-cli api create /nodes/pve01/qemu/100/snapshot --snapname before-update` | `cv4pve-cli create vm snapshot pve01 100 before-update "Before the update"` |
-| `pvesh delete /nodes/pve01/qemu/100/snapshot/before-update` | `cv4pve-cli api delete /nodes/pve01/qemu/100/snapshot/before-update` | `cv4pve-cli delete vm snapshot pve01 100 before-update` |
+| `pvesh delete /nodes/pve01/qemu/100/snapshot/before-update` | `cv4pve-cli api delete /nodes/pve01/qemu/100/snapshot/before-update` | `cv4pve-cli delete vm snapshot pve01 100 before-update --yes` |
 | `pvesh ls /nodes/pve01` | `cv4pve-cli api ls /nodes/pve01` | — |
 | `pvesh usage /nodes/{node}/qemu --command create --verbose` | `cv4pve-cli api usage /nodes/{node}/qemu create --verbose` | — |
 | `pvesh usage … --returns` | `cv4pve-cli api usage … --returns` | — |

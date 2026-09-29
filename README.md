@@ -64,7 +64,7 @@ Some of the rows. `--guest` found the node and the VM ID from the name; `-o json
 - **Guests by name** — `--guest <name|id>` fills in node, type and VM ID.
 - **Tab completion** — bash, zsh and PowerShell complete API paths, node names, VM IDs, parameters and their allowed values from the live cluster.
 - **Tasks** — `task list/show/wait/log --follow/stop` to follow backups, migrations and other long operations.
-- **Made for scripts** — output as text, JSON, Markdown or HTML; exit codes for `config` and `task`.
+- **Made for scripts** — output as text, JSON, Markdown or HTML; errors on stderr with an exit code for each kind of failure; `--dry-run` to see a call before sending it.
 - **Self-contained binary** for Windows, Linux and macOS — no runtime to install.
 
 ---

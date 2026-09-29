@@ -44,24 +44,22 @@ of the output — only when the output goes to a terminal, never into a pipe or 
 | Code | Meaning |
 |---|---|
 | `0` | Success |
-| `1` | Generic error, including a connection that fails and an alias called without all its arguments |
-| `2` | Authentication error — for example `task` commands with a wrong token |
-| `3` | Not found — for example a context that does not exist |
-| `4` | Server error or unreachable — also `config verify` for any failed connection, wrong credentials included |
+| `1` | Any other error |
+| `2` | Authentication or configuration: wrong token or password, no current context, a privilege missing (HTTP 401, 403) |
+| `3` | Not found: a path, a guest, a context or an alias that does not exist (HTTP 404, 501) |
+| `4` | Node unreachable or server error (HTTP 5xx) — also `config verify` for any failed connection, wrong credentials included |
 | `5` | A task ended with an error, or `task wait` timed out |
-| `6` | Wrong input — for example `task stop` without `--yes`, an alias name that is not allowed, `alias remove` of an alias that does not exist |
+| `6` | Wrong input: a parameter Proxmox VE rejects (HTTP 400), an alias argument missing or in excess, an alias that needs `--yes`, `task stop` without `--yes` |
 
-Error messages of `config`, `alias add`, `alias remove` and `task` start with `Error:` and go to standard error; the message of an alias called without all its arguments goes to standard output. With `api` and aliases, an error
-that stops the call before it reaches Proxmox VE — no context, no node reachable, wrong credentials — is
-printed as `ERROR: …` on standard output, with code `1`. An alias called with `--guest` behaves
-differently: if cv4pve-cli cannot connect it prints `Error: no context configured.` whatever the cause,
-with code `1`, and a guest that does not exist ends the program with an unhandled exception.
+Errors start with `Error:` and go to standard error, so standard output holds only results. When
+Proxmox VE refuses a call, the message also shows the call that was sent — see
+[Troubleshooting](/cv4pve-cli/troubleshooting/#api-calls).
 
-:::caution[API errors exit with 0]
-When Proxmox VE refuses a call made with `api` or an alias — a missing privilege, a path that does not
-exist — cv4pve-cli prints the message on standard output and exits with `0`. Until this changes, do not
-rely on the exit code of `api` and aliases: check the result, for example with `-o json` and `jq`.
-:::
+```bash
+if ! out=$(cv4pve-cli api get /nodes/pve01/status -o json); then
+  echo "failed with code $?" >&2
+fi
+```
 
 ## Wait for tasks
 

@@ -33,6 +33,15 @@ internal enum ExitCode
 }
 
 /// <summary>
+/// Error raised by cv4pve-cli itself, with the exit code it maps to.
+/// </summary>
+internal sealed class CliException(string message, ExitCode code) : Exception(message)
+{
+    /// <summary>Exit code of the error.</summary>
+    public ExitCode Code { get; } = code;
+}
+
+/// <summary>
 /// Helpers to report errors consistently: message to stderr, semantic exit code returned.
 /// </summary>
 internal static class ExitCodeHelper
@@ -49,13 +58,51 @@ internal static class ExitCodeHelper
     /// <summary>
     /// Print an exception to stderr and return an exit code inferred from the exception.
     /// </summary>
-    public static int Fail(Exception ex) => Fail(ex.Message, Classify(ex));
+    public static int Fail(Exception ex)
+    {
+        var code = Fail(ex.Message, Classify(ex));
+        if (IsDebug) { Console.Error.WriteLine(ex); }
+        return code;
+    }
+
+    /// <summary>
+    /// Print the error answered by the Proxmox VE API to stderr and return the exit code of its HTTP status.
+    /// </summary>
+    /// <param name="statusCode">HTTP status of the answer.</param>
+    /// <param name="errorText">Error returned by Proxmox VE, used to choose the exit code.</param>
+    /// <param name="message">Full message to print.</param>
+    public static int FailHttp(int statusCode, string errorText, string message)
+    {
+        Console.Error.Write($"Error: {message}");
+        return (int)FromHttpStatus(statusCode, errorText);
+    }
+
+    /// <summary>
+    /// Exit code of an HTTP status returned by the Proxmox VE API.
+    /// </summary>
+    public static ExitCode FromHttpStatus(int statusCode, string message)
+        => statusCode switch
+        {
+            400 => ExitCode.Validation,
+            401 or 403 => ExitCode.Auth,
+            404 or 501 => ExitCode.NotFound,
+            _ => Classify(new Exception(message)) is var code && code != ExitCode.Generic
+                    ? code
+                    : ExitCode.Server,
+        };
+
+    /// <summary>
+    /// True when --debug or --log-level Debug/Trace is on the command line: exceptions are printed in full.
+    /// </summary>
+    public static bool IsDebug { get; set; }
 
     /// <summary>
     /// Best-effort mapping of an exception to a semantic exit code.
     /// </summary>
     public static ExitCode Classify(Exception ex)
     {
+        if (ex is CliException cli) { return cli.Code; }
+
         var msg = ex.Message.ToLowerInvariant();
 
         if (ex is UnauthorizedAccessException
@@ -82,7 +129,7 @@ internal static class ExitCodeHelper
             || msg.Contains("503")
             || msg.Contains("connection")
             || msg.Contains("timeout")
-            || msg.Contains("unreachable")) { return ExitCode.Server; }
+            || msg.Contains("reachable")) { return ExitCode.Server; }
 
         return ExitCode.Generic;
     }

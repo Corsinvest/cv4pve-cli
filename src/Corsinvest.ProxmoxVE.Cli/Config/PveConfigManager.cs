@@ -60,7 +60,7 @@ internal static class PveConfigManager
     public static async Task<PveClient> CreateClientAsync(PveContext ctx, ILoggerFactory? loggerFactory = null)
     {
         var timeoutMs = (ctx.Timeout ?? 30) * 1000;
-        var client = await ClientHelper.GetClientAndTryLoginAsync($"{ctx.Host}:{ctx.Port}",
+        var client = await ClientHelper.GetClientAndTryLoginAsync(BuildHostList(ctx.Host, ctx.Port),
                                                                   string.IsNullOrWhiteSpace(ctx.ApiToken) ? ctx.Username ?? string.Empty : string.Empty,
                                                                   string.IsNullOrWhiteSpace(ctx.ApiToken) ? ctx.Password ?? string.Empty : string.Empty,
                                                                   ctx.ApiToken ?? string.Empty,
@@ -69,6 +69,28 @@ internal static class PveConfigManager
                                                                   timeoutMs);
         client.Timeout = TimeSpan.FromMilliseconds(timeoutMs);
         return client;
+    }
+
+    /// <summary>
+    /// Host list for the API client: each comma-separated entry gets <paramref name="port"/> unless it has
+    /// its own port, and a bare IPv6 address is put in brackets.
+    /// </summary>
+    /// <example>"pve1,pve2:8007" with port 8006 → "pve1:8006,pve2:8007"; "fd00::1" → "[fd00::1]:8006".</example>
+    public static string BuildHostList(string hosts, int port)
+        => string.Join(",", hosts.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                                 .Select(host => host.StartsWith('[')
+                                                    ? host.Contains("]:") ? host : $"{host}:{port}"
+                                                    : host.Count(c => c == ':') > 1
+                                                        ? $"[{host}]:{port}"
+                                                        : host.Contains(':') ? host : $"{host}:{port}"));
+
+    /// <summary>
+    /// API token with its secret hidden, e.g. "cli@pve!cli=****", for display.
+    /// </summary>
+    public static string MaskApiToken(string apiToken)
+    {
+        var eq = apiToken.IndexOf('=');
+        return eq < 0 ? "****" : $"{apiToken[..eq]}=****";
     }
 
     public static PveContext? GetCurrentContext()

@@ -32,16 +32,28 @@ cv4pve-cli api create /nodes/pve01/qemu/100/status/start
 cv4pve-cli api delete /nodes/pve01/qemu/100/snapshot/before-update
 ```
 
-**Parameters** are written `--key value`, with the names of the API — not `--key=value`, which is sent as
-a parameter named `key=value` and refused by Proxmox VE. Give every parameter a value (`--force 1`):
-keys and values are paired in the order they appear, so a `--key` without a value in the middle shifts
-the values of the keys after it. Only a `--key` at the very end, with nothing after it, is sent as `true`. Each key can appear once. Quote values with spaces:
-`--description "Before the update"`.
+**Parameters** use the names of the API, in the order you like:
 
-:::danger[There is no confirmation and no dry run]
-`api set`, `create` and `delete` run as soon as you press Enter. A hidden `--dry-run` option is accepted
-but does **not** stop the call. Before trying a change on a production cluster, use a context with a
-read-only token, or read what the path does with `api usage`.
+- `--key value` or `--key=value`;
+- `--key` followed by another `--key`, or last, is sent as `true` (`--force`);
+- quote values with spaces: `--description "Before the update"`.
+
+A parameter given twice, or a value without a `--key` before it, stops the command with exit code `6`
+before anything is sent.
+
+`--dry-run` shows the call instead of sending it:
+
+```text
+$ cv4pve-cli api set /nodes/pve01/qemu/100/config --memory 4096 --delete --dry-run
+Dry run, nothing sent to Proxmox VE:
+PUT /nodes/pve01/qemu/100/config
+  memory: 4096
+  delete: true
+```
+
+:::danger[`api` asks no confirmation]
+`api set`, `create` and `delete` run as soon as you press Enter. Check the call with `--dry-run` first,
+or use a context with a read-only token.
 :::
 
 ## Find your way in the API
