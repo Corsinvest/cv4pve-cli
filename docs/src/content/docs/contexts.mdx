@@ -20,14 +20,13 @@ cv4pve-cli config add lab --host=10.0.0.11 --username=admin@pve --password='…'
 | Option | What it does |
 |---|---|
 | `<name>` | Name of the context, used by `config use` and the other `config` commands. Adding a name that exists replaces that context. |
-| `--host` | *Required.* A node of the cluster: host name, IPv4 address, or IPv6 address in brackets (`[fd00::11]`). Several nodes, comma-separated (`pve01,pve02`), are tried in order at each command, and the first that answers is used — so the context keeps working while a node is down. A node that does not answer delays the command until the connection attempt fails (the operating system decides how long, not `--timeout`); if the login fails on the node that answered, the others are not tried. |
-| `--port` | API port. Default `8006`. With several nodes in `--host` it applies to the **last** one only; the others use `8006`. |
+| `--host` | *Required.* A node of the cluster: host name, IPv4 or IPv6 address, with its own port if it differs (`pve01:8007`, `[fd00::11]:8007`). Several nodes, comma-separated (`pve01,pve02`), are tried in order at each command, and the first that answers is used — so the context keeps working while a node is down. A node that does not answer delays the command until the connection attempt fails (the operating system decides how long, not `--timeout`); if the login fails on the node that answered, the others are not tried. |
+| `--port` | API port of the nodes written without one. Default `8006`. |
 | `--api-token` | `USER@REALM!TOKENID=UUID`. When a token is set, it is used and the username and password are ignored. |
 | `--username` / `--password` | Alternative to the token. Without a realm (`root`), `pam` is used. Accounts with two-factor authentication cannot log in this way: use a token. |
 | `--validate-certificate` | `true` or `false`. Default `true` — see [Certificate](#certificate). |
 | `--timeout` | Seconds to wait for each API call. Default `30`. |
 
-Write the port with `--port`, not in `--host`: a host written as `pve01:8007` does not work.
 
 After saving, cv4pve-cli connects once and prints the Proxmox VE version, or a `Warning:` with the
 reason it could not connect. The context is saved either way, so you can fix it with `config set`.
@@ -55,7 +54,7 @@ you change it. There is no option to pick a context for a single command: switch
 |---|---|
 | `config set <name> [options]` | Changes only the options given — the same options as `config add` — then tries to connect. |
 | `config verify [<name>]` | Connects to the context (the current one when no name is given) and prints the Proxmox VE version. Exit code `4` if it cannot connect, `3` if the context does not exist. |
-| `config view` | Prints every context. The password is shown as `****`, the token cut after 20 characters. |
+| `config view` | Prints every context. The password and the secret of the token are shown as `****`. |
 | `config rename <name> <new-name>` | Renames a context. |
 | `config delete <name>` | Removes a context. If it was the current one, the first remaining context becomes current. |
 

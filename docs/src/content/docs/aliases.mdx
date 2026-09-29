@@ -21,14 +21,14 @@ others: they appear in `--help` and in [tab completion](/cv4pve-cli/completion/)
 
 The first word says what the alias does, the others what it works on:
 
-| First word | Does | Built-in |
-|---|---|---|
-| `get` | Reads a list or a status | <AliasCount filter="get" /> |
-| `show` | Reads the details of one object | <AliasCount filter="show" /> |
-| `do` | Runs an action: start, stop, migrate, back up, restore… | <AliasCount filter="do" /> |
-| `create` | Creates: snapshots, users, tokens, firewall rules… | <AliasCount filter="create" /> |
-| `set` | Changes a configuration | <AliasCount filter="set" /> |
-| `delete` | Removes | <AliasCount filter="delete" /> |
+| First word | Does |
+|---|---|
+| `get` | Reads a list or a status |
+| `show` | Reads the details of one object |
+| `do` | Runs an action: start, stop, migrate, back up, restore… |
+| `create` | Creates: snapshots, users, tokens, firewall rules… |
+| `set` | Changes a configuration |
+| `delete` | Removes |
 
 `top` lists every resource of the cluster (nodes, guests, storages, pools, SDN zones), like the tree of
 the web interface.
@@ -70,7 +70,8 @@ Arguments:
 …
 ```
 
-If an argument is missing, cv4pve-cli stops before calling the API and prints the usage. A few
+If an argument is missing or there is one too many, cv4pve-cli stops before calling the API, prints the
+usage and exits with code `6`. A few
 placeholders list their allowed values, such as `{pam|pve|ldap|ad|openid}` in `create security domain`:
 give one of them as the argument.
 
@@ -80,10 +81,6 @@ give one of them as the argument.
 ```bash
 cv4pve-cli do shutdown vm pve01 100 --timeout 120 --forceStop 1
 ```
-
-In the current version an argument equal to the value of a parameter is lost:
-`do shutdown vm pve01 100 --timeout 100` stops with `missing arguments: {vmid}`. Use the
-[`api`](/cv4pve-cli/api/) form of the call in that case.
 
 ## Guests by name (`--guest`)
 
@@ -107,16 +104,28 @@ cv4pve-cli create guest snapshot --guest web01 before-update "Before the update"
 
 ## Operations that change the cluster
 
-`do`, `create`, `set` and `delete` aliases change the cluster, and run as soon as you press Enter.
+`do`, `create`, `set` and `delete` aliases change the cluster.
 
-:::danger[`--yes` does not stop them yet]
-<AliasCount filter="confirm" /> aliases — deleting guests, snapshots, users, storages; stopping,
-rebooting and shutting down guests and nodes; rolling back and restoring — list `-y, --yes` in their
-`--help` as a confirmation. In the current version **the call is made even without `--yes`**, and
-with `--yes` it fails: the option is passed to Proxmox VE as a parameter, which refuses it
-(`yes : property is not defined in schema`). Run these aliases without `--yes` — they run at once —
-and use a [read-only token](/cv4pve-cli/permissions/) when you only want to look.
-:::
+Those that cannot be undone or interrupt a service — deleting guests,
+snapshots, disks, users, storages; stopping, rebooting and shutting down guests and nodes; rolling back,
+restoring, converting to a template, freezing guest filesystems, applying SDN changes — run only with **`--yes`** (`-y`); without it they stop with
+exit code `6` and send nothing:
+
+```text
+$ cv4pve-cli delete vm snapshot pve01 100 before-update
+Error: 'delete vm snapshot' changes the cluster: add --yes to confirm.
+```
+
+`--dry-run` shows the call without sending it, and needs no `--yes`:
+
+```text
+$ cv4pve-cli delete vm snapshot pve01 100 before-update --dry-run
+Dry run, nothing sent to Proxmox VE:
+DELETE /nodes/pve01/qemu/100/snapshot/before-update
+```
+
+The other aliases that change the cluster — start, migrate, snapshot, set — run as soon as you press
+Enter. Use a [read-only token](/cv4pve-cli/permissions/) when you only want to look.
 
 ## Options
 
@@ -126,6 +135,8 @@ and use a [read-only token](/cv4pve-cli/permissions/) when you only want to look
 | `--wait` | Waits for the task the call starts, as for [`api`](/cv4pve-cli/api/#tasks): at most 30 seconds. |
 | `--verbose`, `-v` | Does not run the alias: shows the API call behind it, with every parameter it accepts — like `api usage -v`. |
 | `--guest`, `-g` | See [above](#guests-by-name---guest). |
+| `--yes`, `-y` | Confirms the aliases that ask for it — see [above](#operations-that-change-the-cluster). |
+| `--dry-run` | Shows the API call without sending it. |
 
 ## Your own aliases
 

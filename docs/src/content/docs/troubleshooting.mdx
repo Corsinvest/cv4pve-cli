@@ -13,17 +13,21 @@ version, or the reason it could not.
 | Message | Meaning |
 |---|---|
 | `The SSL connection could not be established` | The certificate of the node is not trusted — usually the self-signed one of a new node. See [Certificate](/cv4pve-cli/contexts/#certificate). |
-| `No reachable hosts found` | No node in `--host` answered on the port within the timeout: wrong name or address, a firewall, or the port in `--host` instead of `--port`. |
+| `No reachable hosts found` | No node in `--host` answered on its port: wrong name, address or port, or a firewall. |
 | `Authentication failed` | Wrong token or password, or a realm missing from the username (`admin` is looked up in `pam`, not `pve`). |
 | `Missing Two Factor Authentication (TFA)` | The account has two-factor authentication: use an API token. |
-| `No context configured. Run 'config add-context' first.` | There is no current context: add one with `config add` — see [Contexts](/cv4pve-cli/contexts/). |
+| `No context configured. Run 'config add' first.` | There is no current context: add one with `config add` — see [Contexts](/cv4pve-cli/contexts/). |
 
 ## Git Bash on Windows
 
 Git Bash (MSYS) rewrites arguments that start with `/` into Windows paths before cv4pve-cli sees them:
-`/version` arrives as `C:/Program Files/Git/version`. Proxmox VE then answers with text instead
-of JSON, and cv4pve-cli prints a `JsonReaderException` stack trace. Turn the rewriting off for the
-command, or for the whole session:
+`/version` arrives as `C:/Program Files/Git/version`. cv4pve-cli recognises it and stops:
+
+```text
+Error: 'C:/Program Files/Git/version' is not an API path: Git Bash turned it into a Windows path. Run the command with MSYS_NO_PATHCONV=1.
+```
+
+Turn the rewriting off for the command, or for the whole session:
 
 ```bash
 MSYS_NO_PATHCONV=1 cv4pve-cli api get /version
@@ -34,7 +38,22 @@ PowerShell, `cmd`, WSL, Linux and macOS are not affected.
 
 ## API calls
 
-When Proxmox VE refuses a call, cv4pve-cli prints its message as it is:
+When Proxmox VE refuses a call, cv4pve-cli prints its message, the call it sent and, for an alias, what
+the alias runs. If the parameter refused is written in the alias itself, the message says so: the alias
+is wrong, not your command.
+
+```text
+$ cv4pve-cli get vm status pve01 100 --foo 1
+Error: Proxmox VE refused the call (HTTP 400):
+  Parameter verification failed.
+  foo : property is not defined in schema and the schema does not allow additional properties
+
+Call:  GET /nodes/pve01/qemu/100/status/current --foo 1
+Alias: 'get vm status' runs 'get /nodes/{node}/qemu/{vmid}/status/current'
+Parameters it accepts: cv4pve-cli api usage /nodes/pve01/qemu/100/status/current get -v
+```
+
+The first lines are those of Proxmox VE:
 
 | Message | Meaning |
 |---|---|
@@ -42,22 +61,24 @@ When Proxmox VE refuses a call, cv4pve-cli prints its message as it is:
 | `Method 'GET /nodex' not implemented` | The path does not exist, or does not accept that method. `api ls` and `api usage` show what it does accept — see [API calls](/cv4pve-cli/api/#find-your-way-in-the-api). |
 | `hostname lookup 'pve99' failed` | The node name in the path is not a node of the cluster. |
 | `Configuration file 'nodes/pve01/qemu-server/100.conf' does not exist` | No VM with that ID on that node. `--guest` finds the node for you — see [Aliases](/cv4pve-cli/aliases/#guests-by-name---guest). |
+| `Parameter verification failed.` | A parameter is unknown, missing or has a wrong value; the next lines name it. `api usage … -v` lists what the call accepts. |
 | `Error: missing arguments: {node}, {vmid}` | An alias was called without all its arguments; the next line shows its usage. |
+| `Error: '…' changes the cluster: add --yes to confirm.` | The alias needs `--yes` — see [Aliases](/cv4pve-cli/aliases/#operations-that-change-the-cluster). |
 
 :::caution[An empty answer is not always an error]
 Proxmox VE leaves out of a list what the account may not see, and answers normally. If `top` or
 `get vms` shows fewer guests than you expect, check the privileges of the token.
 :::
 
-An API error message is printed on standard output and the command exits with code `0`: a script
-cannot tell it from a result by the exit code yet — see [Scripting](/cv4pve-cli/scripting/#exit-codes).
+Every error goes to standard error with an exit code other than `0` — see
+[Scripting](/cv4pve-cli/scripting/#exit-codes).
 
 ## Debug output
 
 <CliTroubleshooting />
 
-For an error answered by Proxmox VE, cv4pve-cli prints its message and no `ERROR:` line, so `--debug`
-adds the log of the calls but no stack trace. When the call fails before an answer — a node that drops
-the connection, an answer that is not JSON — the error is logged as `fail:` with its stack trace, even
-without `--debug`. Put `--debug` and `--log-level` **after** the command. To see the full JSON answer of a call that succeeds, add `-v`
-to the `api` command.
+cv4pve-cli prints errors as `Error: …`; with `--debug` an error that is not an answer of Proxmox VE —
+a node unreachable, wrong credentials — is followed by its stack trace. When a call fails before an
+answer — a node that drops the connection, an answer that is not JSON — the error is logged as `fail:`
+with its stack trace, even without `--debug`. To see the full JSON answer of a call that succeeds, add
+`-v` to the `api` command.

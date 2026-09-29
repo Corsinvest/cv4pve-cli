@@ -14,43 +14,43 @@ descriptions and API calls in the terminal, together with your own aliases.
 
 - **Arguments** are given in order after the alias name. *or `--guest`* marks the aliases that take
   `--guest <id|name>` in place of the node, the type and the VM ID.
-- **`--yes`** under the name marks the aliases that list it as a confirmation — which the current
-  version [does not enforce, and refuses](/cv4pve-cli/aliases/#operations-that-change-the-cluster).
+- **`--yes`** under the name marks the aliases that run only
+  [with `--yes`](/cv4pve-cli/aliases/#operations-that-change-the-cluster).
 - **API call** is what the alias runs, as you would write it after `cv4pve-cli api`.
 
 ## get
 
-Reads a list or a status — <AliasCount filter="get" /> aliases, plus `top`.
+Reads a list or a status, plus `top`.
 
 <AliasTable verb="other" />
 <AliasTable verb="get" />
 
 ## show
 
-Reads the details of one object — <AliasCount filter="show" /> aliases.
+Reads the details of one object.
 
 <AliasTable verb="show" />
 
 ## do
 
-Runs an action — <AliasCount filter="do" /> aliases.
+Runs an action.
 
 <AliasTable verb="do" />
 
 ## create
 
-Creates — <AliasCount filter="create" /> aliases.
+Creates.
 
 <AliasTable verb="create" />
 
 ## set
 
-Changes a configuration — <AliasCount filter="set" /> aliases.
+Changes a configuration.
 
 <AliasTable verb="set" />
 
 ## delete
 
-Removes — <AliasCount filter="delete" /> aliases.
+Removes.
 
 <AliasTable verb="delete" />

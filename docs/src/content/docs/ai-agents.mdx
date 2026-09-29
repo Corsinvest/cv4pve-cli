@@ -16,9 +16,10 @@ Create a context for the assistant with a dedicated API token:
   anything else, whatever command it runs. See [Permissions](/cv4pve-cli/permissions/).
 - A wider role only for the operations you want it to run, on the pool or the guests concerned.
 
-Do not rely on the assistant, or on cv4pve-cli, to stop a destructive command: `do`, `create`, `set`
-and `delete` aliases and `api` calls run at once, and `--yes` does not stop them in the current version
-— see [Operations that change the cluster](/cv4pve-cli/aliases/#operations-that-change-the-cluster).
+Do not rely on the assistant to stop a destructive command. cv4pve-cli asks `--yes` only for the
+aliases that cannot be undone; `api` calls and the other aliases run at once — see
+[Operations that change the cluster](/cv4pve-cli/aliases/#operations-that-change-the-cluster). A
+read-only token is the only real limit.
 
 ## Sandboxes
 
@@ -98,7 +99,8 @@ A context named `lab` is configured and current. Do not add, change or switch co
 - Use `--guest <name|id>` instead of looking up node and VM ID.
 - Use `-o json` to read lists; for configurations use `api get … -v` (`-o json` leaves out net0, scsi0…).
 - Never run `do`, `create`, `set`, `delete` or `api set/create/delete` without asking first.
-- Check results, not exit codes: API errors exit with 0.
+- An exit code other than 0 means the command failed; the reason is on standard error.
+- `--dry-run` shows a call without sending it.
 ```
 
 Adapt the context section to the token you gave it.

@@ -12,7 +12,7 @@ Saved connections — see [Contexts](/cv4pve-cli/contexts/).
 
 | Command | Arguments and options |
 |---|---|
-| `config add <name>` | `--host` *(required)*, `--port` (default `8006`), `--api-token`, `--username`, `--password`, `--validate-certificate` (default `true`), `--timeout` (seconds, default `30`) |
+| `config add <name>` | `--host` *(required, nodes comma-separated, each with an optional port)*, `--port` (default `8006`), `--api-token`, `--username`, `--password`, `--validate-certificate` (default `true`), `--timeout` (seconds, default `30`) |
 | `config set <name>` | The same options as `config add`; only those given are changed |
 | `config use <name>` | |
 | `config current` | |
@@ -49,7 +49,7 @@ The aliases — see [Aliases](/cv4pve-cli/aliases/).
 
 Each alias accepts its arguments, `--key value` API parameters, `--output`/`-o`, `--verbose`/`-v`,
 `--wait` and, when the path targets a guest, `--guest`/`-g`. The aliases that change the cluster the
-most also list `--yes`/`-y` — see [Operations that change the cluster](/cv4pve-cli/aliases/#operations-that-change-the-cluster).
+most need `--yes`/`-y` — see [Operations that change the cluster](/cv4pve-cli/aliases/#operations-that-change-the-cluster).
 
 ## task
 
@@ -71,12 +71,11 @@ Proxmox VE tasks by UPID — see [Tasks](/cv4pve-cli/tasks/).
 
 ## Hidden options
 
-Not listed in `--help`. Write them **after** the command: before an alias they change how it runs
-(`--guest` is then not resolved).
+Not listed in `--help`, accepted before or after any command:
 
 | Option | What it does |
 |---|---|
 | `--debug`, `--log-level` | Log of the API calls — see [Troubleshooting](/cv4pve-cli/troubleshooting/#debug-output) |
-| `--dry-run` | Accepted, but has **no effect**: the command runs normally |
+| `--dry-run` | `api` commands and aliases print the call and send nothing |
 
 `top` is an alias of `api get /cluster/resources`. `complete` is used by the completion scripts.
