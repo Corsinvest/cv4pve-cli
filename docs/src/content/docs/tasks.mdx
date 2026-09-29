@@ -1,0 +1,113 @@
+---
+title: Tasks
+description: Follow the Proxmox VE tasks started by cv4pve-cli — list, status, wait, log with --follow, and stop — by their UPID.
+---
+
+import TerminalTable from '@corsinvest/cv4pve-docs-theme/components/TerminalTable.astro';
+
+Starting a VM, taking a backup, migrating, cloning: Proxmox VE runs these as **tasks** in the
+background, the same ones you see in the task list at the bottom of the web interface. The API call
+that starts a task answers at once with its ID, the **UPID** — `UPID:pve01:0011D941:…:qmsnapshot:100:root@pam:` —
+and the task goes on without you.
+
+`cv4pve-cli task` works on those tasks by UPID. The node is read from the UPID, so you do not give it.
+
+## List
+
+```bash
+cv4pve-cli task list                  # recent tasks of the whole cluster
+cv4pve-cli task list --node pve01     # tasks of one node
+```
+
+<TerminalTable
+  command="cv4pve-cli task list"
+  columns={[
+    { label: 'upid', style: 'code' },
+    { label: 'type' },
+    { label: 'id' },
+    { label: 'status' },
+    { label: 'node', style: 'muted' },
+    { label: 'user', style: 'muted' },
+  ]}
+  rows={[
+    ['UPID:pve01:0011D941:2E861852:6ABB7E1A:qmsnapshot:1006:root@pam:', 'qmsnapshot', '1006', '', 'pve01', 'root@pam'],
+    ['UPID:pve01:0011D931:2E86181A:6ABB7E19:qmdelsnapshot:1000:root@pam:', 'qmdelsnapshot', '1000', 'OK', 'pve01', 'root@pam'],
+    ['UPID:pve01:0011D8E4:2E8616AB:6ABB7E16:qmsnapshot:1000:root@pam:', 'qmsnapshot', '1000', 'OK', 'pve01', 'root@pam'],
+  ]}
+  note="The first task is still running: its status is empty until it ends."
+/>
+
+`-o` sets the [output format](/cv4pve-cli/api/#output) — `-o json` to pick a UPID from a script.
+
+## Status and result
+
+```bash
+cv4pve-cli task show 'UPID:pve01:…'
+```
+
+```text
+UPID:       UPID:pve02:00175E61:2E7B37B9:6ABB622E:qmsnapshot:1012:root@pam:
+Node:       pve02
+Type:       qmsnapshot
+Id:         1012
+User:       root@pam
+Status:     stopped
+ExitStatus: OK
+```
+
+`ExitStatus` is `OK` (sometimes `OK` followed by a note) when the task succeeded; anything else is the
+error. `task show` exits with code `5` when the task ended with an error, `0` when it succeeded or is
+still running.
+
+## Wait
+
+```bash
+cv4pve-cli task wait 'UPID:pve01:…' --timeout 600
+```
+
+Checks the task every 2 seconds until it ends, then prints its exit status. `--timeout` is in seconds,
+default `300`. Exit code `0` if the task succeeded, `5` if it failed or the timeout expired.
+
+Unlike `--wait` on [`api`](/cv4pve-cli/api/#tasks) and aliases, which gives up after 30 seconds and
+ignores the result, `task wait` is made for scripts: use it after a long backup or migration.
+
+## Log
+
+```bash
+cv4pve-cli task log 'UPID:pve01:…'            # the log as it is now
+cv4pve-cli task log 'UPID:pve01:…' --follow   # new lines as they are written, until the task ends
+```
+
+```text
+snapshotting 'drive-scsi0' (datapool:vm-1012-disk-0)
+snapshotting 'drive-scsi1' (datapool:vm-1012-disk-1)
+TASK OK
+```
+
+| Option | What it does |
+|---|---|
+| `--follow`, `-f` | Keeps reading until the task ends, like `tail -f`. |
+| `--limit` | Lines read at each check, default `500`. Without `--follow` only the first `--limit` lines are printed: raise it for a long log. |
+| `--interval` | Seconds between checks with `--follow`, default `2`, minimum `1`. |
+
+The exit code is `5` if the task ended with an error, `0` otherwise — so `task log --follow` both shows
+and checks a task.
+
+## Stop
+
+```bash
+cv4pve-cli task stop 'UPID:pve01:…' --yes
+```
+
+Stops a running task, like the Stop button of the task viewer in the web interface. Without `--yes` it
+refuses, with exit code `6`.
+
+## Example
+
+```bash
+# start a backup, then follow it to the end
+upid=$(cv4pve-cli api create /nodes/pve01/vzdump --vmid 100 --storage backup01)
+cv4pve-cli task log "$upid" --follow && echo "backup OK"
+```
+
+A call that starts a task prints only the UPID, with no table, so it can be captured as it is.

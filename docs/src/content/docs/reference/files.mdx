@@ -1,0 +1,28 @@
+---
+title: Files
+description: The files cv4pve-cli keeps in your home folder — contexts, aliases, the API schema cache and the completion scripts — and the lines it adds to your shell profile.
+---
+
+cv4pve-cli installs nothing on the nodes. On your machine it keeps its files in one folder of your
+home: `~/.cv4pve/cli/` on Linux and macOS, `%USERPROFILE%\.cv4pve\cli\` on Windows.
+
+| File | Content | Written by |
+|---|---|---|
+| `config` | Your [contexts](/cv4pve-cli/contexts/), with **token and password in clear text**. YAML. On Linux and macOS, permissions `600`. | `config add`, `set`, `use`, `rename`, `delete` |
+| `alias` | Your [aliases](/cv4pve-cli/aliases/#your-own-aliases). YAML. | `alias add`, `alias remove` |
+| `cache/<version>-flat.json` | The API schema of a Proxmox VE version, for `api`, aliases and tab completion. | The first `api` command or alias on a cluster of that version |
+| `completion.bash`, `completion.zsh` | Completion scripts, Linux and macOS. | The first run, `completion reset` |
+| `completion.ps1` | Completion script, Windows. | The first run, `completion reset` |
+
+Both YAML files can be edited by hand, and copied to another machine.
+
+The files in `cache/` can be deleted at any time: the next `api` command or alias downloads the schema
+again. Files of Proxmox VE versions you no longer use are not removed automatically.
+
+## Outside the folder
+
+| File | Content |
+|---|---|
+| `~/.cv4pve/update-check.json` | Date of the last check for a new release and the latest version found, shared by the cv4pve tools. Checked at most once a day. |
+| `~/.bashrc`, `~/.zshrc` (Linux, macOS) | Two lines added on the first run to load the completion scripts, under `# cv4pve-cli completion`. |
+| PowerShell 7 profile (Windows) | The same, for `completion.ps1`. |

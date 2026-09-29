@@ -1,0 +1,44 @@
+---
+/*
+ * SPDX-FileCopyrightText: Copyright Corsinvest Srl
+ * SPDX-License-Identifier: MIT
+ *
+ * Table of the built-in aliases, read from the catalog in the code at build time (see aliases.ts).
+ * Plain HTML, so Starlight's content styles apply.
+ */
+import { loadAliases } from './aliases';
+
+interface Props {
+  /** First word of the alias names to list, e.g. `get`; `other` lists the names that start with none of the verbs. */
+  verb: string;
+}
+
+const VERBS = ['get', 'show', 'do', 'create', 'set', 'delete'];
+const { verb } = Astro.props;
+const first = (name: string) => name.split(' ')[0];
+const aliases = loadAliases().filter((a) => (verb === 'other' ? !VERBS.includes(first(a.name)) : first(a.name) === verb));
+---
+
+<table>
+  <thead>
+    <tr><th>Alias</th><th>Arguments</th><th>Description</th><th>API call</th></tr>
+  </thead>
+  <tbody>
+    {
+      aliases.map((a) => (
+        <tr>
+          <td>
+            <code>{a.name}</code>
+            {a.confirm && <><br /><code>--yes</code></>}
+          </td>
+          <td>
+            {a.args.map((arg, i) => <>{i > 0 && ' '}<code>{`<${arg}>`}</code></>)}
+            {a.guest && <><br />or <code>--guest</code></>}
+          </td>
+          <td>{a.description}</td>
+          <td><code>{a.command}</code></td>
+        </tr>
+      ))
+    }
+  </tbody>
+</table>

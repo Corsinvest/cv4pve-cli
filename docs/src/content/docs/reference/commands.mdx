@@ -1,0 +1,82 @@
+---
+title: Commands
+description: Every cv4pve-cli command with its arguments, options and defaults.
+---
+
+Every command accepts `--help` (`-h`, `-?`). `cv4pve-cli --version` prints the version. The aliases
+are commands too — see the [alias reference](/cv4pve-cli/reference/aliases/).
+
+## config
+
+Saved connections — see [Contexts](/cv4pve-cli/contexts/).
+
+| Command | Arguments and options |
+|---|---|
+| `config add <name>` | `--host` *(required)*, `--port` (default `8006`), `--api-token`, `--username`, `--password`, `--validate-certificate` (default `true`), `--timeout` (seconds, default `30`) |
+| `config set <name>` | The same options as `config add`; only those given are changed |
+| `config use <name>` | |
+| `config current` | |
+| `config list` | |
+| `config view` | |
+| `config verify [<name>]` | Default: the current context |
+| `config rename <name> <new-name>` | |
+| `config delete <name>` | |
+
+## api
+
+Calls on any API path — see [API calls](/cv4pve-cli/api/).
+
+| Command | Arguments and options |
+|---|---|
+| `api get <path> [--key value …]` | `--output`/`-o`, `--verbose`/`-v`, `--wait` |
+| `api set <path> [--key value …]` | The same |
+| `api create <path> [--key value …]` | The same |
+| `api delete <path> [--key value …]` | The same |
+| `api ls <path>` | |
+| `api usage <path> [get\|set\|create\|delete]` | `--verbose`/`-v`, `--returns`/`-r`, `--output`/`-o` |
+
+`--output`: `text` (default), `json`, `jsonpretty`, `markdown`, `html`.
+
+## alias
+
+The aliases — see [Aliases](/cv4pve-cli/aliases/).
+
+| Command | Arguments and options |
+|---|---|
+| `alias list` | `--search`/`-s <text>`, `--verbose`/`-v`, `--output`/`-o` |
+| `alias add <name>` | `--command`/`-c` *(required)*, `--description`/`-d` |
+| `alias remove <name>` | Your aliases only |
+
+Each alias accepts its arguments, `--key value` API parameters, `--output`/`-o`, `--verbose`/`-v`,
+`--wait` and, when the path targets a guest, `--guest`/`-g`. The aliases that change the cluster the
+most also list `--yes`/`-y` — see [Operations that change the cluster](/cv4pve-cli/aliases/#operations-that-change-the-cluster).
+
+## task
+
+Proxmox VE tasks by UPID — see [Tasks](/cv4pve-cli/tasks/).
+
+| Command | Arguments and options |
+|---|---|
+| `task list` | `--node <node>` (default: the whole cluster), `--output`/`-o` |
+| `task show <upid>` | |
+| `task wait <upid>` | `--timeout` (seconds, default `300`) |
+| `task log <upid>` | `--follow`/`-f`, `--limit` (default `500`), `--interval` (seconds, default `2`, minimum `1`) |
+| `task stop <upid>` | `--yes`/`-y` *(required to stop)* |
+
+## completion
+
+| Command | What it does |
+|---|---|
+| `completion reset` | Writes the completion scripts again — see [Tab completion](/cv4pve-cli/completion/) |
+
+## Hidden options
+
+Not listed in `--help`. Write them **after** the command: before an alias they change how it runs
+(`--guest` is then not resolved).
+
+| Option | What it does |
+|---|---|
+| `--debug`, `--log-level` | Log of the API calls — see [Troubleshooting](/cv4pve-cli/troubleshooting/#debug-output) |
+| `--dry-run` | Accepted, but has **no effect**: the command runs normally |
+
+`top` is an alias of `api get /cluster/resources`. `complete` is used by the completion scripts.

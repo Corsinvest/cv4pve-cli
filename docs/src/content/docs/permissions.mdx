@@ -1,0 +1,48 @@
+---
+title: Permissions
+description: The Proxmox VE user and API token to give cv4pve-cli — read-only with PVEAuditor, or the privileges of the operations you want it to run.
+---
+
+cv4pve-cli adds no permission model of its own: every command is an API call made with the account of
+the current [context](/cv4pve-cli/contexts/), and Proxmox VE allows or refuses it. What cv4pve-cli can do
+is exactly what that account is allowed to do — so choose the account for what you want it to do, not
+for convenience. Use a dedicated user with an API token rather than `root@pam`.
+
+## User and token
+
+Create a [user](https://pve.proxmox.com/pve-docs/chapter-pveum.html#pveum_users) and an
+[API token](https://pve.proxmox.com/pve-docs/chapter-pveum.html#pveum_tokens), then
+[assign](https://pve.proxmox.com/pve-docs/chapter-pveum.html#pveum_permission_management) a role on the
+path the token needs — `/` for the whole cluster, or a narrower path such as `/pool/lab` or `/vms/100`.
+
+:::caution[Tokens with privilege separation]
+A token with privilege separation (the default in the web UI) does **not** inherit the user's
+permissions: grant the role to the token too, or cv4pve-cli sees an empty cluster.
+:::
+
+## Which role
+
+| You want to | Role | On |
+|---|---|---|
+| Read configuration and status, change nothing | `PVEAuditor` (`Sys.Audit`, `VM.Audit`, `Datastore.Audit`, `Pool.Audit`, `SDN.Audit`, `Mapping.Audit`) | `/` |
+| Start, stop and back up guests | `PVEVMUser`, plus `PVEDatastoreUser` on the backup storage | `/vms` or a pool; `/storage/<id>` |
+| Also snapshots, clones, migrations and configuration changes | `PVEVMAdmin` | `/vms` or a pool |
+| Everything | `Administrator` | `/` |
+
+These are built-in roles of Proxmox VE. cv4pve-cli prints the privileges of each:
+`cv4pve-cli api get /access/roles/PVEVMUser`. For a precise set, create a custom role — the error message of a refused call names the
+privilege that was missing.
+
+A read-only token is the safe choice for exploring a cluster, for monitoring scripts and for
+[AI coding assistants](/cv4pve-cli/ai-agents/): every [alias](/cv4pve-cli/aliases/) and API call that
+changes something is then refused by Proxmox VE, whatever is typed.
+
+## How a missing privilege shows
+
+Proxmox VE handles a missing privilege in two ways:
+
+- **The call is refused**: cv4pve-cli prints the Proxmox VE message, e.g.
+  `Permission check failed (/vms/100, VM.PowerMgmt)`, with the path and the privilege.
+- **The answer is filtered**: list calls such as `get /cluster/resources` leave out what the account
+  cannot see, and answer normally. A guest the token has no `VM.Audit` on is simply missing from
+  `top` or `get vms` — if a list looks too short, check the privileges before anything else.

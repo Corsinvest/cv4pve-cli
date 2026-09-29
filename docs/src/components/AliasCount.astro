@@ -1,0 +1,21 @@
+---
+/*
+ * SPDX-FileCopyrightText: Copyright Corsinvest Srl
+ * SPDX-License-Identifier: MIT
+ *
+ * Number of built-in aliases, counted from the catalog in the code at build time (see aliases.ts).
+ */
+import { loadAliases } from './aliases';
+
+interface Props {
+  /** Count only the aliases whose name starts with this word, or only those that need `--yes` (`confirm`). */
+  filter?: string;
+}
+
+const { filter } = Astro.props;
+const aliases = loadAliases().filter((a) =>
+  !filter ? true : filter === 'confirm' ? a.confirm : a.name.split(' ')[0] === filter,
+);
+---
+
+{aliases.length}

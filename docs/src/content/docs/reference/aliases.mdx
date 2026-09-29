@@ -1,0 +1,56 @@
+---
+title: Alias reference
+description: Every built-in alias of cv4pve-cli with its arguments and the Proxmox VE API call it runs.
+tableOfContents:
+  maxHeadingLevel: 2
+---
+
+import AliasCount from '../../../components/AliasCount.astro';
+import AliasTable from '../../../components/AliasTable.astro';
+
+The <AliasCount /> built-in aliases, read from the catalog in the code this site was built from. How to
+use them is on the [Aliases](/cv4pve-cli/aliases/) page; `cv4pve-cli alias list -v` prints the names,
+descriptions and API calls in the terminal, together with your own aliases.
+
+- **Arguments** are given in order after the alias name. *or `--guest`* marks the aliases that take
+  `--guest <id|name>` in place of the node, the type and the VM ID.
+- **`--yes`** under the name marks the aliases that list it as a confirmation — which the current
+  version [does not enforce, and refuses](/cv4pve-cli/aliases/#operations-that-change-the-cluster).
+- **API call** is what the alias runs, as you would write it after `cv4pve-cli api`.
+
+## get
+
+Reads a list or a status — <AliasCount filter="get" /> aliases, plus `top`.
+
+<AliasTable verb="other" />
+<AliasTable verb="get" />
+
+## show
+
+Reads the details of one object — <AliasCount filter="show" /> aliases.
+
+<AliasTable verb="show" />
+
+## do
+
+Runs an action — <AliasCount filter="do" /> aliases.
+
+<AliasTable verb="do" />
+
+## create
+
+Creates — <AliasCount filter="create" /> aliases.
+
+<AliasTable verb="create" />
+
+## set
+
+Changes a configuration — <AliasCount filter="set" /> aliases.
+
+<AliasTable verb="set" />
+
+## delete
+
+Removes — <AliasCount filter="delete" /> aliases.
+
+<AliasTable verb="delete" />

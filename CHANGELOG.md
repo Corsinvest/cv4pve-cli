@@ -4,6 +4,10 @@
 
 ## [Unreleased]
 
+### Documentation
+- Documentation site at https://corsinvest.github.io/cv4pve-cli/, built from `docs/` and published by the shared cv4pve workflow: contexts, permissions, API calls, aliases, tasks, tab completion, scripting, AI coding assistants, and a reference of every command, alias and file. The alias reference is generated from the built-in catalog at build time.
+- `docs/aliases.md`, `docs/commands.md` and `docs/AI-AGENTS.md` moved to the site; README shortened to point to it
+
 ### Changed
 - Updated Corsinvest.ProxmoxVE.Api.Console to 9.2.3
 - Product icon (Lucide `square-terminal`) and Windows executable icon
