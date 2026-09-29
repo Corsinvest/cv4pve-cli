@@ -37,6 +37,12 @@ internal class ShellCommands
     internal const string ArgOutputShort = "-o";
     internal const string ArgWait = "--wait";
 
+    /// <summary>The command line being run, after alias expansion: API parameters are read from it in order.</summary>
+    internal static string[] CommandLine { get; set; } = [];
+
+    /// <summary>The alias the command line was rewritten from, to explain an API error.</summary>
+    internal static PveConfigManager.PveAlias? ResolvedAlias { get; set; }
+
     /// <summary>
     /// Initialize commands
     /// </summary>
@@ -61,7 +67,7 @@ internal class ShellCommands
     {
         if (_cachedClient != null) { return _cachedClient; }
         var context = PveConfigManager.GetCurrentContext()
-                        ?? throw new InvalidOperationException("No context configured. Run 'config add-context' first.");
+                        ?? throw new CliException("No context configured. Run 'config add' first.", ExitCode.Auth);
         _cachedClient = await PveConfigManager.CreateClientAsync(context, _loggerFactory);
         return _cachedClient;
     }
@@ -291,55 +297,21 @@ internal class ShellCommands
                 catch { return []; }
             });
 
-            var optYes = alias.Confirm
-                            ? cmd.AddOption<bool>("--yes|-y", "Confirm execution of dangerous operation")
-                            : null;
-
-            var optOutput = ApiOutputOption(cmd);
-            var optVerbose = cmd.VerboseOption();
-            var optWait = cmd.AddOption<bool>(ArgWait, "Wait for the async task (UPID) to finish");
+            // Declared for --help and tab completion. The alias itself runs through ResolveAliasArgs,
+            // called by Program before parsing, which rewrites it into an "api" command.
+            if (alias.Confirm) { cmd.AddOption<bool>("--yes|-y", "Confirm: this alias changes the cluster"); }
+            ApiOutputOption(cmd);
+            cmd.VerboseOption();
+            cmd.AddOption<bool>(ArgWait, "Wait for the async task (UPID) to finish");
 
             cmd.TreatUnmatchedTokensAsErrors = false;
             cmd.SetAction(async (action) =>
             {
-                if (alias.Confirm && optYes != null && !action.GetValue(optYes))
-                {
-                    Console.Error.WriteLine($"Error: '{alias.Name}' is a dangerous operation. Use --yes / -y to confirm.");
-                    return;
-                }
-
-                var positional = (action.GetValue(argAll) ?? []).ToArray();
-
-                var tokens = SplitArgs(ExpandTags(alias.Command, tags, positional)).ToList();
-
-                // System.CommandLine splits "--limit 100" across UnmatchedTokens (["--limit"])
-                // and positional argAll (["cc01", "100"]) because argAll only captures non-option tokens.
-                // Reconstruct the interleaved key/value list by merging UnmatchedTokens (keys starting
-                // with "--") with the positional values that exceed the tag count (extra values).
-                var extraValues = positional.Skip(tags.Length).ToList();
-                // Exclude control flags (e.g. --wait) so they are not forwarded to the PVE API as parameters.
-                var kvKeys = action.UnmatchedTokens
-                                    .Where(t => t.StartsWith("--") && !string.Equals(t, ArgWait, StringComparison.OrdinalIgnoreCase))
-                                    .ToList();
-                var merged = new List<string>();
-                var valueIdx = 0;
-                foreach (var key in kvKeys)
-                {
-                    merged.Add(key);
-                    if (valueIdx < extraValues.Count) { merged.Add(extraValues[valueIdx++]); }
-                }
-                // Also include any inline --key:value or --key value pairs already in tokens.Skip(2)
-                var extraParams = ConvertUnmatchedToKeyValue(tokens.Skip(2).Concat(merged).ToList());
-                var client = await GetClientAsync();
-                var (_, resultText) = await ApiExplorerHelper.ExecuteAsync(client,
-                                                                           await GetClassApiRootAsync(client),
-                                                                           tokens[1],
-                                                                           HttpVerbToMethodType(tokens[0]),
-                                                                           ApiExplorerHelper.CreateParameterResource(extraParams),
-                                                                           action.GetValue(optWait),
-                                                                           action.GetValue(optOutput),
-                                                                           action.GetValue(optVerbose));
-                Console.Out.Write(resultText);
+                // Reached only when the command line was not recognised as this alias before parsing.
+                var (effectiveArgs, exitCode) = ResolveAliasArgs([.. action.Tokens.Select(t => t.Value)]);
+                if (effectiveArgs == null) { return exitCode; }
+                CommandLine = effectiveArgs;
+                return await root.Parse(effectiveArgs).InvokeAsync();
             });
         }
     }
@@ -497,7 +469,10 @@ internal class ShellCommands
     private static Dictionary<string, FlatResourceInfo>? LoadFlatCacheFromDisk()
     {
         if (!Directory.Exists(CacheDir)) { return null; }
-        var flatFile = Directory.GetFiles(CacheDir, "*-flat.json").LastOrDefault();
+        // Newest Proxmox VE version first: file names sort "8.4.9" after "8.4.21".
+        var flatFile = Directory.GetFiles(CacheDir, "*-flat.json")
+                                .OrderByDescending(f => Version.TryParse(Path.GetFileName(f).Split('-')[0], out var v) ? v : new Version())
+                                .FirstOrDefault();
         if (flatFile == null) { return null; }
         return GeneratorClassApi.LoadFlatCache(File.ReadAllText(flatFile));
     }
@@ -583,61 +558,153 @@ internal class ShellCommands
 
         cmd.SetAction(async (action) =>
         {
-            var c = client ?? await GetClientAsync();
-
-            // argParameters captures positional tokens (e.g. "100") while UnmatchedTokens captures
-            // option-like tokens (e.g. "--limit"). When the user writes "--limit 100", System.CommandLine
-            // puts "--limit" in UnmatchedTokens and "100" in argParameters, losing the original order.
-            // Rebuild by interleaving: for each --key in UnmatchedTokens, pair it with the next positional.
-            var positionalExtra = (action.GetValue(argParameters) ?? []).ToList();
-            var unmatchedKeys = action.UnmatchedTokens.Where(t => t.StartsWith("--")).ToList();
-            var reordered = new List<string>();
-            var valIdx = 0;
-            foreach (var key in unmatchedKeys)
+            try
             {
-                reordered.Add(key);
-                if (valIdx < positionalExtra.Count) { reordered.Add(positionalExtra[valIdx++]); }
+                var resource = action.GetValue(argResource)!;
+                CheckResource(resource);
+                var parameters = ReadApiParameters(CommandLine, cmd.Name, resource);
+
+                if (action.GetValue<bool>($"--{CommandOptionExtension.DryRunOptionName}"))
+                {
+                    Console.Out.Write(FormatDryRun(methodType, resource, parameters));
+                    return (int)ExitCode.Ok;
+                }
+
+                var c = client ?? await GetClientAsync();
+                var (statusCode, resultText) = await ApiExplorerHelper.ExecuteAsync(c,
+                                                                                    await GetClassApiRootAsync(c),
+                                                                                    resource,
+                                                                                    methodType,
+                                                                                    ApiExplorerHelper.CreateParameterResource(ApiParameters.ToKeyValue(parameters)),
+                                                                                    action.GetValue(optWait),
+                                                                                    action.GetValue(optOutput),
+                                                                                    action.GetValue(optVerbose));
+
+                if (statusCode is < 200 or > 299)
+                {
+                    return ExitCodeHelper.FailHttp(statusCode,
+                                                   resultText,
+                                                   FormatApiError(statusCode, resultText, methodType, resource, parameters, ResolvedAlias));
+                }
+
+                Console.Out.Write(resultText);
+                return (int)ExitCode.Ok;
             }
-            // Any leftover positional tokens that weren't consumed as values
-            while (valIdx < positionalExtra.Count) { reordered.Add(positionalExtra[valIdx++]); }
-            var allParams = ConvertUnmatchedToKeyValue(reordered);
-
-            var (_, ResultText) = await ApiExplorerHelper.ExecuteAsync(c,
-                                                                       await GetClassApiRootAsync(c),
-                                                                       action.GetValue(argResource),
-                                                                       methodType,
-                                                                       ApiExplorerHelper.CreateParameterResource(allParams),
-                                                                       action.GetValue(optWait),
-                                                                       action.GetValue(optOutput),
-                                                                       action.GetValue(optVerbose));
-
-            Console.Out.Write(ResultText);
+            catch (Exception ex) { return ExitCodeHelper.Fail(ex); }
         });
     }
 
+    private static readonly string[] ApiFlags = [ArgWait, ArgVerboseLong, ArgVerboseShort, "--debug", "--dry-run"];
+    private static readonly string[] ApiOptionsWithValue = [ArgOutputLong, ArgOutputShort, "--log-level"];
+
     /// <summary>
-    /// Converts ["--cf", "AVERAGE", "--timeframe", "day"] to internal key:value format.
-    /// Tokens without a following value (e.g. "--flag") become "flag:true".
+    /// Reads the API parameters from the command line, in the order they were written: the tokens after
+    /// <c>api &lt;method&gt;</c>, without the resource and the options cv4pve-cli handles itself.
     /// </summary>
-    private static List<string> ConvertUnmatchedToKeyValue(List<string> tokens)
+    /// <exception cref="ArgumentException">A value without a <c>--key</c>, or a repeated parameter.</exception>
+    internal static List<KeyValuePair<string, string>> ReadApiParameters(string[] commandLine, string method, string resource)
     {
-        var result = new List<string>();
-        for (var i = 0; i < tokens.Count; i++)
+        var start = -1;
+        for (var i = 0; i + 1 < commandLine.Length; i++)
         {
-            var token = tokens[i];
-            if (!token.StartsWith("--") || token.Length <= 2) { continue; }
-            var key = token[2..];
-            if (i + 1 < tokens.Count && !tokens[i + 1].StartsWith("--"))
+            if (commandLine[i] == "api" && string.Equals(commandLine[i + 1], method, StringComparison.OrdinalIgnoreCase))
             {
-                result.Add($"{key}:{tokens[i + 1]}");
-                i++; // skip value token
-            }
-            else
-            {
-                result.Add($"{key}:true");
+                start = i + 2;
+                break;
             }
         }
-        return result;
+        if (start < 0) { return []; }
+
+        var tokens = ApiParameters.RemoveOptions(commandLine[start..], ApiFlags, ApiOptionsWithValue);
+        var idx = tokens.IndexOf(resource);
+        if (idx >= 0) { tokens.RemoveAt(idx); }
+
+        var (parameters, positional) = ApiParameters.Parse(tokens);
+        return positional.Count > 0
+                ? throw new ArgumentException($"Unexpected argument '{positional[0]}': write API parameters as --key value.")
+                : parameters;
+    }
+
+    /// <summary>
+    /// Error refused by Proxmox VE, with the call that was sent and, for an alias, what the alias runs:
+    /// a parameter written in the alias itself is an error of the alias, not of the user.
+    /// </summary>
+    internal static string FormatApiError(int statusCode,
+                                          string errorText,
+                                          MethodType methodType,
+                                          string resource,
+                                          IEnumerable<KeyValuePair<string, string>> parameters,
+                                          PveConfigManager.PveAlias? alias)
+    {
+        var ret = new System.Text.StringBuilder();
+        ret.AppendLine($"Proxmox VE refused the call (HTTP {statusCode}):");
+        foreach (var line in errorText.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            ret.AppendLine($"  {line}");
+        }
+
+        ret.AppendLine();
+        ret.AppendLine($"Call:  {ToMethodName(methodType)} {resource}{string.Concat(parameters.Select(a => $" --{a.Key} {a.Value}"))}");
+
+        if (alias != null)
+        {
+            ret.AppendLine($"Alias: '{alias.Name}' runs '{alias.Command}'");
+
+            // Parameters named in the error ("name : message") that the alias writes itself.
+            var refused = errorText.Split('\n')
+                                   .Select(a => a.Split(" : ")[0].Trim())
+                                   .Where(a => a.Length > 0 && !a.Contains(' '))
+                                   .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var fromAlias = SplitArgs(alias.Command).Where(a => a.StartsWith("--") && refused.Contains(a[2..])).ToArray();
+            if (fromAlias.Length > 0)
+            {
+                ret.AppendLine($"       {string.Join(", ", fromAlias)} is written in the alias, not by you: the alias is wrong.");
+                ret.AppendLine(alias.IsBuiltin
+                                ? "       Please report it: https://github.com/Corsinvest/cv4pve-cli/issues"
+                                : "       Fix it with 'alias remove' and 'alias add'.");
+            }
+        }
+
+        if (statusCode == 400)
+        {
+            ret.AppendLine($"Parameters it accepts: cv4pve-cli api usage {resource} {methodType.ToString().ToLower()} -v");
+        }
+        return ret.ToString();
+    }
+
+    /// <summary>
+    /// What --dry-run prints instead of calling the API.
+    /// </summary>
+    internal static string FormatDryRun(MethodType methodType, string resource, IEnumerable<KeyValuePair<string, string>> parameters)
+    {
+        var ret = new System.Text.StringBuilder();
+        ret.AppendLine("Dry run, nothing sent to Proxmox VE:");
+        ret.AppendLine($"{ToMethodName(methodType)} {resource}");
+        foreach (var item in parameters) { ret.AppendLine($"  {item.Key}: {item.Value}"); }
+        return ret.ToString();
+    }
+
+    /// <summary>
+    /// Stops a path the API schema does not know, e.g. a typo: not found.
+    /// </summary>
+    private static void CheckResourceInSchema(ClassApi classApiRoot, string resource)
+    {
+        if (ClassApi.GetFromResource(classApiRoot, resource) == null)
+        {
+            throw new CliException($"no such resource '{resource}'", ExitCode.NotFound);
+        }
+    }
+
+    /// <summary>
+    /// Stops a resource that is not an API path because Git Bash (MSYS) turned it into a Windows path.
+    /// </summary>
+    internal static void CheckResource(string resource)
+    {
+        if (resource.Length >= 3 && char.IsAsciiLetter(resource[0]) && resource[1] == ':' && resource[2] is '/' or '\\')
+        {
+            throw new CliException($"'{resource}' is not an API path: Git Bash turned it into a Windows path. Run the command with MSYS_NO_PATHCONV=1.",
+                                   ExitCode.Validation);
+        }
     }
 
     private static MethodType HttpVerbToMethodType(string verb)
@@ -713,14 +780,24 @@ internal class ShellCommands
         var optReturns = cmd.AddOption<bool>("--returns|-r", "Including schema for returned data.");
         var optOutput = ApiOutputOption(cmd);
 
-        cmd.SetAction(async (action)
-            => Console.Out.Write(ApiExplorerHelper.Usage(classApiRoot ?? await GetClassApiRootAsync(await GetClientAsync()),
-                                                         action.GetValue(argResource),
-                                                         action.GetValue(optOutput),
-                                                         action.GetValue(optReturns),
-                                                         action.GetValue(argMethod)?.ToString()?.ToLower(),
-                                                         action.GetValue(optVerbose),
-                                                         optionStyle: true)));
+        cmd.SetAction(async (action) =>
+        {
+            try
+            {
+                CheckResource(action.GetValue(argResource)!);
+                var root = classApiRoot ?? await GetClassApiRootAsync(await GetClientAsync());
+                CheckResourceInSchema(root, action.GetValue(argResource)!);
+                Console.Out.Write(ApiExplorerHelper.Usage(root,
+                                                          action.GetValue(argResource),
+                                                          action.GetValue(optOutput),
+                                                          action.GetValue(optReturns),
+                                                          action.GetValue(argMethod)?.ToString()?.ToLower(),
+                                                          action.GetValue(optVerbose),
+                                                          optionStyle: true));
+                return (int)ExitCode.Ok;
+            }
+            catch (Exception ex) { return ExitCodeHelper.Fail(ex); }
+        });
     }
 
     private static void List(Command parent, PveClient? client = null, ClassApi? classApiRoot = null)
@@ -729,109 +806,96 @@ internal class ShellCommands
         var argResource = CreateResourceArgument(cmd);
         cmd.SetAction(async (action) =>
         {
-            var c = client ?? await GetClientAsync();
-            Console.Out.Write(await ApiExplorerHelper.ListAsync(c,
-                                                                classApiRoot ?? await GetClassApiRootAsync(c),
-                                                                action.GetValue(argResource)));
+            try
+            {
+                CheckResource(action.GetValue(argResource)!);
+                var c = client ?? await GetClientAsync();
+                var root = classApiRoot ?? await GetClassApiRootAsync(c);
+                CheckResourceInSchema(root, action.GetValue(argResource)!);
+                Console.Out.Write(await ApiExplorerHelper.ListAsync(c, root, action.GetValue(argResource)));
+                return (int)ExitCode.Ok;
+            }
+            catch (Exception ex) { return ExitCodeHelper.Fail(ex); }
         });
     }
 
     /// <summary>
-    /// Resolves alias arguments: expands placeholders, handles --help/--verbose, validates required args.
-    /// Returns null if no alias matched, or the effective args to pass to ExecuteAppAsync.
-    /// On missing required args writes to Console and returns an error sentinel.
+    /// Finds the alias the command line starts with (after any --debug, --log-level, --dry-run) and rewrites
+    /// it into the equivalent "api" command: placeholders filled with the positional arguments or --guest,
+    /// then the API parameters, then the options for the api command.
+    /// Returns (null, 0) when the command line is not an alias or asks for its help; (null, code) on error.
     /// </summary>
     public static (string[]? effectiveArgs, int exitCode) ResolveAliasArgs(string[] args)
     {
-        if (args.Length == 0 || args[0].StartsWith('-')) { return (null, 0); }
+        var (leading, rest) = AliasArguments.SplitLeadingGlobalOptions(args);
+        if (rest.Length == 0 || rest[0].StartsWith('-')) { return (null, 0); }
 
-        var alias = PveConfigManager.LoadAliases()
-                                    .OrderByDescending(a => a.Name.Split(' ').Length)
-                                    .FirstOrDefault(a =>
-                                    {
-                                        var parts = SplitArgs(a.Name);
-                                        return parts.Length <= args.Length
-                                                && parts.Zip(args)
-                                                        .All(x => string.Equals(x.First, x.Second, StringComparison.OrdinalIgnoreCase));
-                                    });
-
+        var alias = FindAlias(rest);
         if (alias == null) { return (null, 0); }
 
-        var nameParts = SplitArgs(alias.Name);
-        var extraArgs = args.Skip(nameParts.Length).ToList();
-        var isVerbose = extraArgs.Contains(ArgVerboseLong) || extraArgs.Contains(ArgVerboseShort);
-        var isHelp = extraArgs.Contains(ArgHelpLong) || extraArgs.Contains(ArgHelpShort) || extraArgs.Contains(ArgHelpAlt);
-
-        var expanded = alias.Command;
-
-        // --guest/-g → resolve {node}, {vmid}, {vmtype} via GRE (must run before positional split)
-        var (guestResolution, _) = GRE.Detect(alias.Command);
-        for (var i = 0; i < extraArgs.Count - 1; i++)
+        try
         {
-            if (!IsGuestToken(extraArgs[i])) { continue; }
-            var guestValue = extraArgs[i + 1];
-            extraArgs.RemoveRange(i, 2);
-            var client = GetLiveClient();
-            if (client == null) { Console.WriteLine("Error: no context configured."); return (null, 1); }
-            expanded = GRE.ExpandAsync(expanded, client, guestValue, guestResolution).GetAwaiter().GetResult();
-            break;
-        }
+            var arguments = AliasArguments.Parse([.. rest.Skip(SplitArgs(alias.Name).Length)]);
+            if (arguments.Help) { return (null, 0); }
 
-        // Separate positional args (used to fill {tag} placeholders) from --key value pairs.
-        // We must preserve the original order of --key value pairs so that "100" after "--limit"
-        // is not mistakenly treated as a positional tag value.
-        var positionalArgs = extraArgs.Where(a => !a.StartsWith('-')).ToArray();
-
-        // Build kvArgs as interleaved --key value tokens in original order
-        var skipFlags = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-            { ArgVerboseLong, ArgVerboseShort, ArgHelpLong, ArgHelpShort, ArgHelpAlt };
-        var kvTokens = new List<string>();
-        var positionalValues = new Queue<string>(positionalArgs);
-        for (var i = 0; i < extraArgs.Count; i++)
-        {
-            var t = extraArgs[i];
-            if (!t.StartsWith('-') || skipFlags.Contains(t)) { continue; }
-            kvTokens.Add(t); // the --key
-            // peek next token: if it exists and is not an option, it's the value
-            if (i + 1 < extraArgs.Count && !extraArgs[i + 1].StartsWith('-'))
+            var dryRun = arguments.DryRun || leading.Contains("--dry-run");
+            if (alias.Confirm && !arguments.Yes && !arguments.Verbose && !dryRun)
             {
-                kvTokens.Add(extraArgs[i + 1]);
-                i++; // skip value
+                throw new CliException($"'{alias.Name}' changes the cluster: add --yes to confirm.", ExitCode.Validation);
             }
-        }
 
-        var tags = ApiExplorerHelper.GetArgumentTags(expanded);
+            var expanded = alias.Command;
+            if (arguments.Guest != null)
+            {
+                var (guestResolution, _) = GRE.Detect(alias.Command);
+                expanded = GRE.ExpandAsync(expanded, GetClientAsync().GetAwaiter().GetResult(), arguments.Guest, guestResolution)
+                              .GetAwaiter()
+                              .GetResult();
+            }
 
-        // Positional args that fill {tag} placeholders are those NOT consumed as --key values
-        var kvValues = new HashSet<string>(kvTokens.Where((_, idx) => idx % 2 == 1));
-        var tagArgs = positionalArgs.Where(a => !kvValues.Contains(a)).ToArray();
-        var index = Math.Min(tags.Length, tagArgs.Length);
-        expanded = ExpandTags(expanded, tags, tagArgs);
+            var tags = ApiExplorerHelper.GetArgumentTags(expanded);
+            if (arguments.Positional.Count > tags.Length)
+            {
+                throw new ArgumentException($"Unexpected argument '{arguments.Positional[tags.Length]}': write API parameters as --key value.");
+            }
+            expanded = ExpandTags(expanded, tags, [.. arguments.Positional]);
 
-        if (isHelp) { return (null, 0); }
-        if (isVerbose)
-        {
             var tokens = SplitArgs(expanded);
-            var method = HttpVerbToMethodType(tokens[0]).ToString().ToLower();
-            var resource = tokens[1];
-            return (["api", "usage", resource, method, ArgVerboseLong], 0);
-        }
-
-        var missing = tags.Skip(index).ToArray();
-        if (missing.Length > 0)
-        {
-            Console.WriteLine($"Error: missing arguments: {string.Join(", ", missing.Select(t => $"{{{t}}}"))}");
-            Console.WriteLine($"Usage: {alias.Name} {string.Join(" ", tags.Select(t => $"<{t}>"))}");
-            if (guestResolution != GRE.GuestResolution.None)
+            if (arguments.Verbose)
             {
-                Console.WriteLine($"Tip: use {GRE.ArgGuestLong} <id|name> to resolve guest info automatically");
+                return (["api", "usage", tokens[1], HttpVerbToMethodType(tokens[0]).ToString().ToLower(), ArgVerboseLong, .. leading], 0);
             }
 
-            return (null, 1);
+            var missing = tags.Skip(arguments.Positional.Count).ToArray();
+            if (missing.Length > 0)
+            {
+                var message = $"missing arguments: {string.Join(", ", missing.Select(t => $"{{{t}}}"))}"
+                              + $"\nUsage: {alias.Name} {string.Join(" ", ApiExplorerHelper.GetArgumentTags(alias.Command).Select(t => $"<{t}>"))}";
+                if (GRE.Detect(alias.Command).Resolution != GRE.GuestResolution.None)
+                {
+                    message += $"\nTip: use {GRE.ArgGuestLong} <id|name> to resolve guest info automatically";
+                }
+                throw new CliException(message, ExitCode.Validation);
+            }
+
+            ResolvedAlias = alias;
+            return (["api",
+                     HttpVerbToMethodType(tokens[0]).ToString().ToLower(),
+                     .. tokens.Skip(1),
+                     .. arguments.Parameters.SelectMany(p => new[] { $"--{p.Key}", p.Value }),
+                     .. arguments.PassThrough,
+                     .. leading], 0);
         }
-
-        if (kvTokens.Count > 0) { expanded += " " + string.Join(' ', kvTokens); }
-
-        return (["api", .. SplitArgs(expanded)], 0);
+        catch (Exception ex) { return (null, ExitCodeHelper.Fail(ex)); }
     }
+
+    private static PveConfigManager.PveAlias? FindAlias(string[] args)
+        => PveConfigManager.LoadAliases()
+                           .OrderByDescending(a => SplitArgs(a.Name).Length)
+                           .FirstOrDefault(a =>
+                           {
+                               var parts = SplitArgs(a.Name);
+                               return parts.Length <= args.Length
+                                       && parts.Zip(args).All(x => string.Equals(x.First, x.Second, StringComparison.OrdinalIgnoreCase));
+                           });
 }

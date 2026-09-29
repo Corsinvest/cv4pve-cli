@@ -21,6 +21,14 @@ aliases:
     description: Show health and quorum status of the cluster
     command: get /cluster/status
 
+  - name: get cluster corosync nodes
+    description: List the nodes in the corosync configuration
+    command: get /cluster/config/nodes
+
+  - name: get cluster qdevice
+    description: Show the status of the corosync QDevice
+    command: get /cluster/config/qdevice
+
   - name: get cluster options
     description: Show cluster-wide options
     command: get /cluster/options
@@ -84,6 +92,49 @@ aliases:
     description: Show cluster firewall options
     command: get /cluster/firewall/options
 
+  - name: get cluster firewall groups
+    description: List the firewall security groups
+    command: get /cluster/firewall/groups
+
+  - name: get cluster firewall ipsets
+    description: List the cluster firewall IPSets
+    command: get /cluster/firewall/ipset
+
+  - name: show cluster firewall ipset
+    description: List the addresses of a cluster firewall IPSet
+    command: get /cluster/firewall/ipset/{name}
+
+  - name: create cluster firewall ipset
+    description: Create a cluster firewall IPSet
+    command: create /cluster/firewall/ipset --name {name}
+
+  - name: delete cluster firewall ipset
+    description: Delete a cluster firewall IPSet (it must be empty)
+    command: delete /cluster/firewall/ipset/{name}
+    confirm: true
+
+  - name: create cluster firewall ipset-entry
+    description: Add an address or network to a cluster firewall IPSet
+    command: create /cluster/firewall/ipset/{name} --cidr {cidr}
+
+  - name: delete cluster firewall ipset-entry
+    description: Remove an address or network from a cluster firewall IPSet
+    command: delete /cluster/firewall/ipset/{name}/{cidr}
+    confirm: true
+
+  - name: get cluster firewall aliases
+    description: List the cluster firewall aliases (named addresses)
+    command: get /cluster/firewall/aliases
+
+  - name: create cluster firewall alias
+    description: Create a cluster firewall alias for an address or network
+    command: create /cluster/firewall/aliases --name {name} --cidr {cidr}
+
+  - name: delete cluster firewall alias
+    description: Delete a cluster firewall alias
+    command: delete /cluster/firewall/aliases/{name}
+    confirm: true
+
   - name: set cluster firewall options
     description: Update cluster firewall options
     command: set /cluster/firewall/options
@@ -93,7 +144,7 @@ aliases:
     command: get /cluster/firewall/rules/{pos}
 
   - name: create cluster firewall-rule
-    description: Add a new firewall rule to the cluster
+    description: "Add a new firewall rule to the cluster (also needs --action and --type)"
     command: create /cluster/firewall/rules
 
   - name: set cluster firewall-rule
@@ -166,25 +217,12 @@ aliases:
 
   # replication
   - name: get cluster replications
-    description: List all replication jobs on a node
+    description: List the replication jobs of a node
     command: get /nodes/{node}/replication
 
   - name: show cluster replication
     description: Show status of a specific replication job
     command: get /nodes/{node}/replication/{id}
-
-  - name: create cluster replication
-    description: Create a new ZFS replication job
-    command: create /nodes/{node}/replication --id {id} --vmid {vmid} --target {target_node} --schedule {interval}
-
-  - name: set cluster replication
-    description: Update a replication job
-    command: set /nodes/{node}/replication/{id}
-
-  - name: delete cluster replication
-    description: Remove a replication job
-    command: delete /nodes/{node}/replication/{id}
-    confirm: true
 
   - name: do sync cluster replication
     description: Force an immediate replication sync
@@ -196,7 +234,7 @@ aliases:
 
   - name: create cluster replication job
     description: Create a new replication job (cluster-level)
-    command: create /cluster/replication --id {id} --target {target} --type {local}
+    command: create /cluster/replication --id {id} --target {target} --type local
 
   - name: set cluster replication job
     description: Update a cluster replication job
@@ -228,6 +266,11 @@ aliases:
     description: List all SDN controllers
     command: get /cluster/sdn/controllers
 
+  - name: do apply cluster sdn
+    description: Apply the pending SDN changes and reload the network on every node
+    command: set /cluster/sdn
+    confirm: true
+
   # metrics
   - name: get cluster metrics-servers
     description: List all configured metric server targets
@@ -238,11 +281,11 @@ aliases:
     command: get /cluster/metrics/server/{id}
 
   - name: create cluster metrics-server
-    description: Add a new metric server target (InfluxDB/Graphite)
+    description: "Add a new metric server target (InfluxDB/Graphite) (also needs --port)"
     command: "create /cluster/metrics/server/{id} --type {influxdb|graphite} --server {server}"
 
   - name: set cluster metrics-server
-    description: Update a metric server configuration
+    description: "Update a metric server configuration (also needs --port and --server)"
     command: set /cluster/metrics/server/{id}
 
   - name: delete cluster metrics-server
@@ -277,7 +320,7 @@ aliases:
     command: get /cluster/mapping/pci/{id}
 
   - name: create cluster mapping pci
-    description: Create a new PCI hardware mapping
+    description: "Create a new PCI hardware mapping (also needs --map)"
     command: create /cluster/mapping/pci --id {id}
 
   - name: set cluster mapping pci
@@ -298,11 +341,11 @@ aliases:
     command: get /cluster/mapping/usb/{id}
 
   - name: create cluster mapping usb
-    description: Create a new USB hardware mapping
+    description: "Create a new USB hardware mapping (also needs --map)"
     command: create /cluster/mapping/usb --id {id}
 
   - name: set cluster mapping usb
-    description: Update a USB hardware mapping
+    description: "Update a USB hardware mapping (also needs --map)"
     command: set /cluster/mapping/usb/{id}
 
   - name: delete cluster mapping usb
@@ -408,7 +451,7 @@ aliases:
 
   - name: create security token
     description: Generate a new API token for a user
-    command: "create /access/users/{userid}/token --tokenid {tokenid} --privsep {0|1}"
+    command: "create /access/users/{userid}/token/{tokenid} --privsep {0|1}"
 
   - name: delete security token
     description: Remove an API token
@@ -490,7 +533,11 @@ aliases:
 
   - name: get node rrddata
     description: Show node performance data (RRD)
-    command: get /nodes/{node}/rrddata
+    command: "get /nodes/{node}/rrddata --timeframe {hour|day|week|month|year}"
+
+  - name: get node storage rrddata
+    description: Show storage usage history (RRD)
+    command: "get /nodes/{node}/storage/{storage}/rrddata --timeframe {hour|day|week|month|year}"
 
   - name: get node subscription
     description: Show subscription status of a node
@@ -546,6 +593,7 @@ aliases:
   - name: do stop node task
     description: Stop/Kill a running task
     command: delete /nodes/{node}/tasks/{upid}
+    confirm: true
 
   # network
   - name: get node network
@@ -570,7 +618,7 @@ aliases:
 
   - name: set node hosts
     description: Write /etc/hosts content of a node
-    command: set /nodes/{node}/hosts --data {data}
+    command: create /nodes/{node}/hosts --data {data}
 
   # time
   - name: get node time
@@ -658,6 +706,14 @@ aliases:
     description: Restart a service on a node
     command: create /nodes/{node}/services/{service}/restart
 
+  - name: do reload node service
+    description: Reload a service on a node (restart if it cannot reload)
+    command: create /nodes/{node}/services/{service}/reload
+
+  - name: show node service
+    description: Show the state of a service on a node
+    command: get /nodes/{node}/services/{service}/state
+
   # firewall
   - name: get node firewall
     description: List firewall rules for a node
@@ -680,7 +736,7 @@ aliases:
     command: get /nodes/{node}/firewall/rules/{pos}
 
   - name: create node firewall-rule
-    description: Add a new firewall rule to a node
+    description: "Add a new firewall rule to a node (also needs --action and --type)"
     command: create /nodes/{node}/firewall/rules
 
   - name: set node firewall-rule
@@ -700,6 +756,10 @@ aliases:
   - name: get node certificates
     description: List certificates on a node
     command: get /nodes/{node}/certificates/info
+
+  - name: do renew node certificate
+    description: Renew the ACME certificate of a node
+    command: set /nodes/{node}/certificates/acme/certificate
 
   # hardware
   - name: get node hardware pci
@@ -722,7 +782,11 @@ aliases:
   # apt / package management
   - name: get node packages
     description: List available package updates on a node
-    command: get /nodes/{node}/apt/updates
+    command: get /nodes/{node}/apt/update
+
+  - name: get node versions
+    description: Show the versions of the Proxmox VE packages (like pveversion -v)
+    command: get /nodes/{node}/apt/versions
 
   - name: do update node packages
     description: Trigger an apt update (refresh package cache) on a node
@@ -746,7 +810,7 @@ aliases:
     command: get /nodes/{node}/scan/cifs --server {server}
 
   - name: get node scan pbs
-    description: Scan a Proxmox Backup Server accessible from a node
+    description: "Scan a Proxmox Backup Server accessible from a node (also needs --password)"
     command: get /nodes/{node}/scan/pbs --server {server} --username {username}
 
   - name: get node scan iscsi
@@ -888,6 +952,10 @@ aliases:
     description: Show guest runtime status (VM or CT)
     command: get /nodes/{node}/{vmtype}/{vmid}/status/current
 
+  - name: get guest rrddata
+    description: Show performance history of a guest (RRD, VM or CT)
+    command: "get /nodes/{node}/{vmtype}/{vmid}/rrddata --timeframe {hour|day|week|month|year}"
+
   - name: set guest config
     description: Update guest configuration (VM or CT)
     command: set /nodes/{node}/{vmtype}/{vmid}/config
@@ -901,10 +969,6 @@ aliases:
     command: get /nodes/{node}/{vmtype}/{vmid}/feature --feature {feature}
 
   # guest tags
-  - name: get guest tags
-    description: Get current tags for a guest (VM or CT)
-    command: get /nodes/{node}/{vmtype}/{vmid}/config --property tags
-
   - name: set guest tags
     description: Set or overwrite tags for a guest (VM or CT)
     command: set /nodes/{node}/{vmtype}/{vmid}/config --tags {tags}
@@ -917,6 +981,7 @@ aliases:
   - name: delete guest unused-disk
     description: Remove an unattached disk from a guest (VM or CT)
     command: set /nodes/{node}/{vmtype}/{vmid}/config --delete {unusedDisk}
+    confirm: true
 
   - name: do resize guest disk
     description: Expand a guest disk (VM or CT)
@@ -953,6 +1018,7 @@ aliases:
   - name: create guest template
     description: Convert a guest into a template (VM or CT)
     command: create /nodes/{node}/{vmtype}/{vmid}/template
+    confirm: true
 
   - name: delete guest
     description: Destroy a guest VM or CT (Permanent!)
@@ -995,6 +1061,10 @@ aliases:
     description: Show firewall options for a guest (VM or CT)
     command: get /nodes/{node}/{vmtype}/{vmid}/firewall/options
 
+  - name: get guest firewall log
+    description: Show the firewall log of a guest (VM or CT)
+    command: get /nodes/{node}/{vmtype}/{vmid}/firewall/log
+
   - name: set guest firewall
     description: Enable/Disable guest firewall (VM or CT)
     command: set /nodes/{node}/{vmtype}/{vmid}/firewall/options
@@ -1008,7 +1078,7 @@ aliases:
     command: get /nodes/{node}/{vmtype}/{vmid}/firewall/rules/{pos}
 
   - name: create guest firewall-rule
-    description: Add a new firewall rule to a guest (VM or CT)
+    description: "Add a new firewall rule to a guest (VM or CT) (also needs --action and --type)"
     command: create /nodes/{node}/{vmtype}/{vmid}/firewall/rules
 
   - name: set guest firewall-rule
@@ -1057,7 +1127,7 @@ aliases:
   # =============================================================
 
   - name: get vms
-    description: List all VMs (cluster-wide)
+    description: List all VMs and containers (cluster-wide), same as get guests
     command: get /cluster/resources --type vm
 
   - name: show vm
@@ -1068,6 +1138,10 @@ aliases:
     description: Show VM runtime status
     command: get /nodes/{node}/qemu/{vmid}/status/current
 
+  - name: get vm rrddata
+    description: Show performance history of a VM (RRD)
+    command: "get /nodes/{node}/qemu/{vmid}/rrddata --timeframe {hour|day|week|month|year}"
+
   - name: set vm config
     description: Update VM configuration (RAM, Cores, etc.)
     command: set /nodes/{node}/qemu/{vmid}/config
@@ -1077,10 +1151,6 @@ aliases:
     command: get /nodes/{node}/qemu/{vmid}/pending
 
   # vm tags
-  - name: get vm tags
-    description: Get current tags for a VM
-    command: get /nodes/{node}/qemu/{vmid}/config --property tags
-
   - name: set vm tags
     description: Set or overwrite tags for a VM
     command: set /nodes/{node}/qemu/{vmid}/config --tags {tags}
@@ -1093,6 +1163,7 @@ aliases:
   - name: delete vm unused-disk
     description: Remove an unattached disk from a VM
     command: set /nodes/{node}/qemu/{vmid}/config --delete {unusedDisk}
+    confirm: true
 
   - name: do resize vm disk
     description: Expand a VM disk
@@ -1139,6 +1210,10 @@ aliases:
     description: Live migrate a VM to another node
     command: create /nodes/{node}/qemu/{vmid}/migrate --target {target_node}
 
+  - name: get vm migrate-check
+    description: "Check whether a VM can migrate: local disks and resources, allowed nodes"
+    command: get /nodes/{node}/qemu/{vmid}/migrate
+
   - name: do clone vm
     description: Clone a VM
     command: create /nodes/{node}/qemu/{vmid}/clone --newid {newid} --name {name}
@@ -1146,6 +1221,7 @@ aliases:
   - name: create vm template
     description: Convert the VM into a read-only template
     command: create /nodes/{node}/qemu/{vmid}/template
+    confirm: true
 
   - name: delete vm
     description: Destroy a VM (Permanent!)
@@ -1188,6 +1264,10 @@ aliases:
     description: Show firewall options for a VM
     command: get /nodes/{node}/qemu/{vmid}/firewall/options
 
+  - name: get vm firewall log
+    description: Show the firewall log of a VM
+    command: get /nodes/{node}/qemu/{vmid}/firewall/log
+
   - name: set vm firewall
     description: Enable/Disable VM firewall
     command: set /nodes/{node}/qemu/{vmid}/firewall/options
@@ -1201,7 +1281,7 @@ aliases:
     command: get /nodes/{node}/qemu/{vmid}/firewall/rules/{pos}
 
   - name: create vm firewall-rule
-    description: Add a new firewall rule to a VM
+    description: "Add a new firewall rule to a VM (also needs --action and --type)"
     command: create /nodes/{node}/qemu/{vmid}/firewall/rules
 
   - name: set vm firewall-rule
@@ -1275,6 +1355,19 @@ aliases:
     description: Run fstrim inside the guest via QEMU guest agent
     command: create /nodes/{node}/qemu/{vmid}/agent/fstrim
 
+  - name: do vm agent fsfreeze
+    description: Freeze the guest filesystems (thaw them with do vm agent fsthaw)
+    command: create /nodes/{node}/qemu/{vmid}/agent/fsfreeze-freeze
+    confirm: true
+
+  - name: do vm agent fsthaw
+    description: Thaw the guest filesystems
+    command: create /nodes/{node}/qemu/{vmid}/agent/fsfreeze-thaw
+
+  - name: do vm agent fsfreeze-status
+    description: Show whether the guest filesystems are frozen
+    command: create /nodes/{node}/qemu/{vmid}/agent/fsfreeze-status
+
   - name: do monitor vm
     description: Execute a QEMU monitor (HMP) command on a VM
     command: create /nodes/{node}/qemu/{vmid}/monitor --command {command}
@@ -1283,10 +1376,6 @@ aliases:
   # CT (lxc-specific)
   # =============================================================
 
-  - name: get cts
-    description: List all containers (cluster-wide)
-    command: get /cluster/resources --type vm --guest lxc
-
   - name: show ct
     description: Show container config
     command: get /nodes/{node}/lxc/{vmid}/config
@@ -1294,6 +1383,10 @@ aliases:
   - name: get ct status
     description: Show container runtime status
     command: get /nodes/{node}/lxc/{vmid}/status/current
+
+  - name: get ct rrddata
+    description: Show performance history of a container (RRD)
+    command: "get /nodes/{node}/lxc/{vmid}/rrddata --timeframe {hour|day|week|month|year}"
 
   - name: set ct config
     description: Update CT configuration (RAM, Cores, etc.)
@@ -1304,10 +1397,6 @@ aliases:
     command: get /nodes/{node}/lxc/{vmid}/pending
 
   # ct tags
-  - name: get ct tags
-    description: Get current tags for a container
-    command: get /nodes/{node}/lxc/{vmid}/config --property tags
-
   - name: set ct tags
     description: Set or overwrite tags for a container
     command: set /nodes/{node}/lxc/{vmid}/config --tags {tags}
@@ -1317,10 +1406,6 @@ aliases:
     command: set /nodes/{node}/lxc/{vmid}/config --delete tags
 
   # ct network
-  - name: get ct network
-    description: Show CT network interfaces
-    command: get /nodes/{node}/lxc/{vmid}/config --property net0
-
   - name: get ct interfaces
     description: Show runtime network interfaces of a running container (via guest agent)
     command: get /nodes/{node}/lxc/{vmid}/interfaces
@@ -1329,6 +1414,7 @@ aliases:
   - name: delete ct unused-disk
     description: Remove an unattached disk from a CT
     command: set /nodes/{node}/lxc/{vmid}/config --delete {unusedDisk}
+    confirm: true
 
   - name: do resize ct disk
     description: Expand a CT disk
@@ -1373,6 +1459,7 @@ aliases:
   - name: create ct template
     description: Convert the container into a template
     command: create /nodes/{node}/lxc/{vmid}/template
+    confirm: true
 
   - name: delete ct
     description: Destroy a container (Permanent!)
@@ -1415,6 +1502,10 @@ aliases:
     description: Show firewall options for a container
     command: get /nodes/{node}/lxc/{vmid}/firewall/options
 
+  - name: get ct firewall log
+    description: Show the firewall log of a container
+    command: get /nodes/{node}/lxc/{vmid}/firewall/log
+
   - name: set ct firewall
     description: Enable/Disable container firewall
     command: set /nodes/{node}/lxc/{vmid}/firewall/options
@@ -1428,7 +1519,7 @@ aliases:
     command: get /nodes/{node}/lxc/{vmid}/firewall/rules/{pos}
 
   - name: create ct firewall-rule
-    description: Add a new firewall rule to a container
+    description: "Add a new firewall rule to a container (also needs --action and --type)"
     command: create /nodes/{node}/lxc/{vmid}/firewall/rules
 
   - name: set ct firewall-rule

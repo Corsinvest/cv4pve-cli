@@ -23,7 +23,7 @@ internal static class ConfigCommands
         try
         {
             var client = await PveConfigManager.CreateClientAsync(ctx);
-            Console.WriteLine($"Connected to {ctx.Host} — PVE version: {(await client.Version.GetAsync()).Version}");
+            Console.WriteLine($"Connected to {PveConfigManager.BuildHostList(ctx.Host, ctx.Port)} — PVE version: {(await client.Version.GetAsync()).Version}");
             return true;
         }
         catch (Exception ex)
@@ -101,7 +101,7 @@ internal static class ConfigCommands
             foreach (var ctx in config.Contexts)
             {
                 var current = ctx.Name == config.CurrentContext ? "* " : "  ";
-                Console.WriteLine($"{current}{ctx.Name,-20} {ctx.Host}:{ctx.Port}  {ctx.Username}{(string.IsNullOrWhiteSpace(ctx.ApiToken) ? "" : " (api-token)")}");
+                Console.WriteLine($"{current}{ctx.Name,-20} {PveConfigManager.BuildHostList(ctx.Host, ctx.Port)}  {ctx.Username}{(string.IsNullOrWhiteSpace(ctx.ApiToken) ? "" : " (api-token)")}");
             }
         });
     }
@@ -110,8 +110,8 @@ internal static class ConfigCommands
     {
         var cmd = parent.AddCommand("add", "Add or update a context");
         var argName = cmd.AddArgument<string>("name", "Context name");
-        var optHost = cmd.AddOption<string>("--host", "Host[:port]");
-        var optPort = cmd.AddOption<int>("--port", "Port");
+        var optHost = cmd.AddOption<string>("--host", "Nodes, comma-separated: host, host:port, [IPv6] or [IPv6]:port");
+        var optPort = cmd.AddOption<int>("--port", "Port of the nodes written without one (default: 8006)");
         var optUsername = cmd.AddOption<string>("--username", "Username (user@realm)");
         var optPassword = cmd.AddOption<string>("--password", "Password");
         var optApiToken = cmd.AddOption<string>("--api-token", "API token (USER@REALM!TOKENID=UUID)");
@@ -278,7 +278,7 @@ internal static class ConfigCommands
 
                 if (!string.IsNullOrWhiteSpace(ctx.ApiToken))
                 {
-                    Console.WriteLine($"    api-token:            {ctx.ApiToken[..Math.Min(20, ctx.ApiToken.Length)]}...");
+                    Console.WriteLine($"    api-token:            {PveConfigManager.MaskApiToken(ctx.ApiToken)}");
                 }
 
                 Console.WriteLine($"    validate-certificate: {ctx.ValidateCertificate}");

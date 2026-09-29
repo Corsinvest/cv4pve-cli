@@ -14,7 +14,9 @@ app.AddDebugOption();
 app.AddLogLevelOption();
 app.AddDryRunOption();
 
-var loggerFactory = ConsoleHelper.CreateLoggerFactory<Program>(app.GetLogLevelFromDebug());
+var logLevel = app.GetLogLevelFromDebug();
+ExitCodeHelper.IsDebug = logLevel <= LogLevel.Debug;
+var loggerFactory = ConsoleHelper.CreateLoggerFactory<Program>(logLevel);
 
 ShellCommands.CreateCommands(app, loggerFactory);
 app.AddTaskCommands();
@@ -26,4 +28,5 @@ app.SetAction(ctx => app.Parse(ShellCommands.ArgHelpLong).Invoke());
 var (effectiveArgs, exitCode) = ShellCommands.ResolveAliasArgs(args);
 if (effectiveArgs == null && exitCode != 0) { return exitCode; }
 
-return await app.ExecuteAppAsync(effectiveArgs ?? args, loggerFactory.CreateLogger<Program>());
+ShellCommands.CommandLine = effectiveArgs ?? args;
+return await app.ExecuteAppAsync(ShellCommands.CommandLine, loggerFactory.CreateLogger<Program>());

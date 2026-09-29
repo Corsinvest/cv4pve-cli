@@ -4,6 +4,42 @@
 
 ## [Unreleased]
 
+### Fixes
+- **`--yes` is enforced.** Aliases that change the cluster the most (delete, stop, reboot, rollback, restore…) ran without `--yes`, and failed with it because `--yes` was sent to Proxmox VE as a parameter. They now stop with exit code 6 without `--yes`, and `--yes` is no longer sent.
+- **`--dry-run` works**: `api set/create/delete/get` and aliases print the method, the path and the parameters, and send nothing. Aliases that need `--yes` do not need it with `--dry-run`.
+- **API errors exit with a non-zero code** and print on stderr: 6 for a rejected parameter (HTTP 400), 2 for a missing privilege (401/403), 3 for a path or object that does not exist, 4 for other server errors. They used to exit with 0 on stdout.
+- **API errors say what went wrong**: the call that was sent, what the alias runs, whether the refused parameter is written in the alias itself (a bug to report) or by the user, and, for a rejected parameter, the `api usage` command that lists the accepted ones.
+- `api ls` and `api usage` on a path the API does not have print `no such resource` on stderr with exit code 3, instead of exit 0.
+- **Parameters are read in the order written.** A `--key` without a value in the middle no longer shifts the values of the keys after it, `--key=value` is accepted, a repeated parameter or a value without `--key` is an error (exit 6).
+- An alias argument equal to the value of a parameter (`get vm status pve01 100 --timeout 100`) is no longer lost.
+- `--debug`, `--log-level` and `--dry-run` before an alias no longer change how it runs (`--guest` was not resolved).
+- `--guest` with a guest that does not exist prints `Error: Guest '…' not found.` (exit 3) instead of crashing; connection errors are reported as they are instead of "no context configured".
+- An alias called without all its arguments prints the error on stderr with exit code 6.
+- `--host` accepts a port per node (`pve1:8007`) and IPv6 addresses without brackets; `--port` applies to every node written without a port, not only the last one.
+- `config view` no longer shows part of the API token secret.
+- The "no context" error suggested `config add-context`, which does not exist: now `config add`.
+- A path turned into a Windows path by Git Bash (`C:/Program Files/Git/version`) is refused with a hint about `MSYS_NO_PATHCONV=1`, instead of a stack trace.
+- Tab completion uses the API schema of the newest Proxmox VE version in the cache (the file names sorted `8.4.9` after `8.4.21`).
+- `get vms` description: it lists VMs and containers, like `get guests`.
+
+### Aliases
+- Fixed aliases that always failed: `get node packages` (wrong path), `get node rrddata` (now takes the timeframe: `get node rrddata <node> <hour|day|week|month|year>`), `create security token` (token ID is part of the path), `set node hosts` (POST, not PUT), `create cluster replication job` (`--type local` is fixed, no longer an argument).
+- Removed aliases that never worked and have no API call to point to: `get vm tags`, `get ct tags`, `get guest tags`, `get ct network`, `get cts`, and `create/set/delete cluster replication` (use `create/set/delete cluster replication job`).
+- `delete vm/ct/guest unused-disk` (deletes the disk), `create vm/ct/guest template` (cannot be undone) and `do stop node task` now need `--yes`.
+- New aliases:
+  - performance history: `get vm/ct/guest rrddata`, `get node storage rrddata` (timeframe as argument);
+  - `get node versions` (like `pveversion -v`), `show node service`, `do reload node service`, `do renew node certificate`;
+  - `get vm migrate-check` (can the VM migrate, and where), `get vm/ct/guest firewall log`;
+  - `get cluster corosync nodes`, `get cluster qdevice`, `get cluster firewall groups`;
+  - cluster firewall IPSets and aliases: `get/show/create/delete cluster firewall ipset(s)`, `create/delete cluster firewall ipset-entry`, `get/create/delete cluster firewall alias(es)`;
+  - `do apply cluster sdn` (needs `--yes`), `do vm agent fsfreeze` (needs `--yes`), `do vm agent fsthaw`, `do vm agent fsfreeze-status`.
+- Aliases whose API call needs a parameter they do not fill say so in their description (firewall rules: `--action` and `--type`; metrics server, hardware mappings, PBS scan).
+
+### Tests
+- New test project `Corsinvest.ProxmoxVE.Cli.Tests`: parameter parsing, alias rewriting, host list, exit codes.
+- Every built-in alias is checked against the API of the latest Proxmox VE release (schema of the official API viewer, downloaded by the test): path, method and parameters.
+- `test-completion.ps1` reads nodes and guests from the cluster instead of holding their names.
+
 ### Documentation
 - Documentation site at https://corsinvest.github.io/cv4pve-cli/, built from `docs/` and published by the shared cv4pve workflow: contexts, permissions, API calls, aliases, tasks, tab completion, scripting, AI coding assistants, and a reference of every command, alias and file. The alias reference is generated from the built-in catalog at build time.
 - `docs/aliases.md`, `docs/commands.md` and `docs/AI-AGENTS.md` moved to the site; README shortened to point to it
