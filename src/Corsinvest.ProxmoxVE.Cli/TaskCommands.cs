@@ -50,10 +50,9 @@ internal static class TaskCommands
                                 ? await client.Cluster.Tasks.Tasks()
                                 : await client.Nodes[node].Tasks.NodeTasks();
 
-                var rows = result.ToEnumerable()
-                                 .Select(t => ListColumns.Select(c => Field((object)t, c)).ToArray())
-                                 .ToArray();
-                Console.Out.WriteLine(TableGenerator.To(ListColumns, rows, action.GetValue(optOutput)));
+                Console.Out.WriteLine(TableGenerator.From(result.ToEnumerable())
+                                                    .Columns(ListColumns)
+                                                    .To(action.GetValue(optOutput)));
                 return (int)ExitCode.Ok;
             }
             catch (Exception ex) { return ExitCodeHelper.Fail(ex); }
@@ -186,10 +185,4 @@ internal static class TaskCommands
     private static bool IsOk(string? exitStatus)
         => !string.IsNullOrWhiteSpace(exitStatus)
            && exitStatus.StartsWith("OK", StringComparison.OrdinalIgnoreCase);
-
-    // Read a property from a dynamic task row (ExpandoObject), empty string if absent.
-    private static object Field(object row, string name)
-        => row is IDictionary<string, object> dict && dict.TryGetValue(name, out var v) && v != null
-                ? v
-                : string.Empty;
 }

@@ -1,12 +1,12 @@
 ---
 title: Contexts
-description: How cv4pve-cli connects to Proxmox VE — saved contexts for one or more clusters, API token or password, certificate validation, and where the credentials are stored.
+description: "How cv4pve-cli connects to Proxmox VE: saved contexts for one or more clusters, API token or password, certificate validation, and where the credentials are stored."
 ---
 
 import CliResponseFiles from '@corsinvest/cv4pve-docs-theme/components/CliResponseFiles.astro';
 
 The other cv4pve tools take the host and the token on every command line. cv4pve-cli is used
-interactively, many times a day, often against more than one cluster — so, as kubectl does, it saves
+interactively, many times a day, often against more than one cluster, so, as kubectl does, it saves
 each connection once as a **context** and every command uses the **current** one.
 
 ## Add a context
@@ -22,11 +22,11 @@ cv4pve-cli config add lab --host=10.0.0.11 --username=admin@pve --password='…'
 | Option | What it does |
 |---|---|
 | `<name>` | Name of the context, used by `config use` and the other `config` commands. Adding a name that exists replaces that context. |
-| `--host` | *Required.* A node of the cluster: host name, IPv4 or IPv6 address, with its own port if it differs (`pve01:8007`, `[fd00::11]:8007`). Several nodes, comma-separated (`pve01,pve02`), are tried in order at each command, and the first that answers is used — so the context keeps working while a node is down. A node that does not answer delays the command until the connection attempt fails (the operating system decides how long, not `--timeout`); if the login fails on the node that answered, the others are not tried. |
+| `--host` | *Required.* A node of the cluster: host name, IPv4 or IPv6 address, with its own port if it differs (`pve01:8007`, `[fd00::11]:8007`). Several nodes, comma-separated (`pve01,pve02`), are tried in order at each command, and the first that answers is used, so the context keeps working while a node is down. A node that does not answer delays the command until the connection attempt fails (the operating system decides how long, not `--timeout`); if the login fails on the node that answered, the others are not tried. |
 | `--port` | API port of the nodes written without one. Default `8006`. |
 | `--api-token` | `USER@REALM!TOKENID=UUID`. When a token is set, it is used and the username and password are ignored. |
 | `--username` / `--password` | Alternative to the token. Without a realm (`root`), `pam` is used. Accounts with two-factor authentication cannot log in this way: use a token. |
-| `--validate-certificate` | `true` or `false`. Default `true` — see [Certificate](#certificate). |
+| `--validate-certificate` | `true` or `false`. Default `true`, see [Certificate](#certificate). |
 | `--timeout` | Seconds to wait for each API call. Default `30`. |
 
 
@@ -54,7 +54,7 @@ you change it. There is no option to pick a context for a single command: switch
 
 | Command | What it does |
 |---|---|
-| `config set <name> [options]` | Changes only the options given — the same options as `config add` — then tries to connect. |
+| `config set <name> [options]` | Changes only the options given (the same options as `config add`), then tries to connect. |
 | `config verify [<name>]` | Connects to the context (the current one when no name is given) and prints the Proxmox VE version. Exit code `4` if it cannot connect, `3` if the context does not exist. |
 | `config view` | Prints every context. The password and the secret of the token are shown as `****`. |
 | `config rename <name> <new-name>` | Renames a context. |
@@ -64,8 +64,8 @@ you change it. There is no option to pick a context for a single command: switch
 
 Unlike the other cv4pve tools, cv4pve-cli **validates the certificate** of the nodes by default. A new
 Proxmox VE node has a self-signed certificate, so the connection fails until you either give the nodes a
-trusted certificate — the [ACME](https://pve.proxmox.com/pve-docs/chapter-sysadmin.html#sysadmin_certificate_management)
-support of Proxmox VE can get one from Let's Encrypt — or turn the check off for that context:
+trusted certificate (the [ACME](https://pve.proxmox.com/pve-docs/chapter-sysadmin.html#sysadmin_certificate_management)
+support of Proxmox VE can get one from Let's Encrypt), or turn the check off for that context:
 
 ```bash
 cv4pve-cli config set lab --validate-certificate false
@@ -76,7 +76,7 @@ the password. Turn it off only on a network you trust.
 
 ## Options in a file
 
-The options of a context — several nodes, token, timeout — can also go in a file, passed with `@`.
+The options of a context (several nodes, token, timeout) can also go in a file, passed with `@`.
 Useful to create the same context on several workstations, or to keep it next to the scripts that use it.
 The options belong to `config add`, so the file goes after the command.
 
@@ -116,7 +116,7 @@ it. On Windows it leaves the permissions the file inherits from your profile fol
 Anyone who can read the file can use the cluster with the privileges of that account. So:
 
 - prefer an **API token** to a password: it can be revoked on its own and limited to the privileges
-  cv4pve-cli needs — see [Permissions](/cv4pve-cli/permissions/);
+  cv4pve-cli needs (see [Permissions](/cv4pve-cli/permissions/));
 - never use `root@pam` for a saved context;
 - keep the file out of backups, dotfile repositories and shared folders.
 :::

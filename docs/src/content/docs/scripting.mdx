@@ -1,6 +1,6 @@
 ---
 title: Scripting
-description: Use cv4pve-cli in shell scripts, scheduled jobs and CI — JSON output, exit codes, contexts without a terminal, and waiting for tasks.
+description: "Use cv4pve-cli in shell scripts, scheduled jobs and CI: JSON output, exit codes, contexts without a terminal, and waiting for tasks."
 ---
 
 cv4pve-cli is a plain command-line program: it never asks a question, prints its results on standard
@@ -8,8 +8,8 @@ output and runs the same from a terminal, a cron job or a CI pipeline.
 
 ## Set up the context
 
-A script uses the current context, like a terminal. On a machine of its own — a CI runner, a
-management VM — create the context at the start, with the token taken from the secrets of the job:
+A script uses the current context, like a terminal. On a machine of its own (a CI runner, a
+management VM), create the context at the start, with the token taken from the secrets of the job:
 
 ```bash
 cv4pve-cli config add ci --host=pve01.example.com,pve02.example.com --api-token="$PVE_TOKEN"
@@ -19,7 +19,7 @@ cv4pve-cli config use ci
 The current context is stored in a file and shared by every shell of that user. Two scripts that run at
 the same time as the same user against different clusters switch the context under each other's feet:
 run them as different users, or one after the other. The token is saved in clear text in the
-configuration file — see [Where the credentials are stored](/cv4pve-cli/contexts/#where-the-credentials-are-stored).
+configuration file: see [Where the credentials are stored](/cv4pve-cli/contexts/#where-the-credentials-are-stored).
 
 ## Read the output
 
@@ -31,13 +31,13 @@ cv4pve-cli api get /cluster/resources --type vm -o json \
   | jq -r '.[] | select(.status == "running") | .name'
 ```
 
-A list comes out as one object per item; an object as `key` / `value` pairs; a single value — a UPID,
-the next free VM ID — as it is, with no JSON around it. Values are those of the API: sizes in bytes,
+A list comes out as one object per item; an object as `key` / `value` pairs; a single value (a UPID,
+the next free VM ID) as it is, with no JSON around it. Values are those of the API: sizes in bytes,
 times in seconds or Unix time. `-v` prints the raw answer of Proxmox VE, `{"data": …}`. See
 [Output](/cv4pve-cli/api/#output).
 
 Once a day cv4pve-cli checks GitHub for a newer release and, if there is one, prints a notice at the end
-of the output — only when the output goes to a terminal, never into a pipe or a file.
+of the output, only when the output goes to a terminal, never into a pipe or a file.
 
 ## Exit codes
 
@@ -47,12 +47,12 @@ of the output — only when the output goes to a terminal, never into a pipe or 
 | `1` | Any other error |
 | `2` | Authentication or configuration: wrong token or password, no current context, a privilege missing (HTTP 401, 403) |
 | `3` | Not found: a path, a guest, a context or an alias that does not exist (HTTP 404, 501) |
-| `4` | Node unreachable or server error (HTTP 5xx) — also `config verify` for any failed connection, wrong credentials included |
+| `4` | Node unreachable or server error (HTTP 5xx); also `config verify` for any failed connection, wrong credentials included |
 | `5` | A task ended with an error, or `task wait` timed out |
 | `6` | Wrong input: a parameter Proxmox VE rejects (HTTP 400), an alias argument missing or in excess, an alias that needs `--yes`, `task stop` without `--yes` |
 
 Errors start with `Error:` and go to standard error, so standard output holds only results. When
-Proxmox VE refuses a call, the message also shows the call that was sent — see
+Proxmox VE refuses a call, the message also shows the call that was sent: see
 [Troubleshooting](/cv4pve-cli/troubleshooting/#api-calls).
 
 ```bash
@@ -63,11 +63,13 @@ fi
 
 ## Wait for tasks
 
-A call that starts a task returns at once with its UPID. `--wait` waits at most 30 seconds and does not
-look at the result; for a script, capture the UPID and use [`task wait`](/cv4pve-cli/tasks/#wait) or
-[`task log --follow`](/cv4pve-cli/tasks/#log), which exit with `5` when the task fails:
+A call that starts a task returns at once with its UPID. Add `--wait` to wait for the task: the exit
+code is `5` when it fails or `--wait-timeout` expires.
 
 ```bash
-upid=$(cv4pve-cli api create /nodes/pve01/qemu/100/snapshot --snapname "nightly-$(date +%F)")
-cv4pve-cli task wait "$upid" --timeout 900 || echo "snapshot failed" >&2
+cv4pve-cli api create /nodes/pve01/qemu/100/snapshot --snapname "nightly-$(date +%F)" --wait --wait-timeout 900 \
+  || echo "snapshot failed" >&2
 ```
+
+To start now and check later, capture the UPID and use [`task wait`](/cv4pve-cli/tasks/#wait) or
+[`task log --follow`](/cv4pve-cli/tasks/#log).

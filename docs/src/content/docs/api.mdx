@@ -8,7 +8,7 @@ import TerminalTable from '@corsinvest/cv4pve-docs-theme/components/TerminalTabl
 Everything the Proxmox VE web interface does goes through its REST API. `cv4pve-cli api` calls that
 API directly, on any path, with the account of the current [context](/cv4pve-cli/contexts/). The
 paths and parameters are those of the
-[Proxmox VE API viewer](https://pve.proxmox.com/pve-docs/api-viewer/) — and cv4pve-cli can show them
+[Proxmox VE API viewer](https://pve.proxmox.com/pve-docs/api-viewer/), and cv4pve-cli can show them
 itself, see [below](#find-your-way-in-the-api).
 
 ## Call a path
@@ -59,7 +59,7 @@ or use a context with a read-only token.
 ## Find your way in the API
 
 `api ls` lists what is under a path: `D` marks a path with children, `c` a path that accepts `create`.
-Paths that stand for objects — nodes, VMs, storages — are read from the cluster.
+Paths that stand for objects (nodes, VMs, storages) are read from the cluster.
 
 ```text
 $ cv4pve-cli api ls /nodes/pve01
@@ -100,10 +100,23 @@ parameter names and their allowed values.
 
 ## Output
 
-Answers are printed as a table. An object becomes a `key` / `value` table sorted by key; a list
-becomes one row per item, sorted by the first column; a single value is printed as it is. Values are
-printed as the API returns them — sizes in bytes, times in seconds or Unix time — and nested values as
-JSON.
+Answers are printed as a table. An object becomes a `key` / `value` table with every key, sorted by key; a
+list becomes one row per item, sorted by the first column; a single value is printed as it is.
+
+As in pvesh, a list shows the columns the API schema describes (numbered keys such as `net0` included).
+When the answer has more, their names are printed on standard error after the table; `--all-columns` (`-A`)
+shows them all, and `json`/`jsonpretty` always have every column.
+
+```text
+$ cv4pve-cli api get /nodes
+…
++ 4 more columns: disk, id, maxdisk, type (use --all-columns or -o json)
+```
+
+As in pvesh, values the API schema describes as sizes, percentages, durations or dates are printed as text
+(`251.51 GiB`, `4.44%`, `3d 2h 5m 1s`, `2026-09-30 14:22:23` in local time) and aligned right; nested values
+are printed as JSON. `--human-readable false` (or `0`) prints them as the API returns them (bytes, fractions,
+seconds, Unix time); `json` and `jsonpretty` always do.
 
 `--output` (`-o`) chooses the format:
 
@@ -114,14 +127,6 @@ JSON.
 | `jsonpretty` | The same, indented |
 | `markdown` | Markdown table, to paste in a ticket or a wiki |
 | `html` | HTML table |
-
-:::caution[Numbered keys are missing from the table]
-In `text`, `json` and the other formats, an object shows only the keys the API schema names exactly.
-Numbered keys — `net0`, `scsi0`, `ide2`, `usb0`, `unused0`… — and keys the schema does not list are
-**left out**: `api get /nodes/pve01/qemu/100/config`, and the `show vm` alias, show neither disks nor
-network cards. Add `-v` to an `api` command to see every key, as below; on an alias `-v` shows its
-parameters instead, so write the call with `api`.
-:::
 
 `json` and `jsonpretty` keep the shape of the table: an object comes out as `key` / `value` pairs.
 
@@ -145,13 +150,17 @@ $ cv4pve-cli api get /version -v
 
 ## Tasks
 
-Calls that start a long operation — start, shutdown, backup, migrate, clone, snapshot — do not wait
+Calls that start a long operation (start, shutdown, backup, migrate, clone, snapshot) do not wait
 for it: Proxmox VE starts a **task** and answers at once with its ID, the UPID. With `--wait`,
-cv4pve-cli then waits for the task to end, checking every second, for at most 30 seconds.
+cv4pve-cli waits for the task to end, checking every second, then prints its exit status:
 
 ```bash
 cv4pve-cli api create /nodes/pve01/qemu/100/status/start --wait
+cv4pve-cli api create /nodes/pve01/vzdump --vmid 100 --storage backup01 --wait --wait-timeout 3600
 ```
 
-`--wait` does not tell you whether the task succeeded, and gives up after 30 seconds. To follow a
-longer task, or to check its result, use the [`task`](/cv4pve-cli/tasks/) commands with the UPID.
+The exit code is `0` if the task succeeded and `5` if it failed. `--wait-timeout` sets a limit in seconds;
+when it expires the command exits with `5` and the task goes on. The exit code is `5` also when the status
+of the task cannot be read: a node down, or, with a user and password, a wait longer than the 2 hours a
+Proxmox VE login lasts: for long tasks use a context with an API token. To watch the log of a task while it runs,
+use [`task log --follow`](/cv4pve-cli/tasks/#log).

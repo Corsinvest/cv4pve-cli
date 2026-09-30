@@ -1,5 +1,5 @@
 type=cli
-description=Command-line interface for Proxmox VE — manage API calls, contexts and aliases
+description=Command-line interface for Proxmox VE: manage API calls, contexts and aliases
 long-description=Manage API calls, contexts and aliases from the command line.
 license=MIT
 winget-id=Corsinvest.cv4pve.cli

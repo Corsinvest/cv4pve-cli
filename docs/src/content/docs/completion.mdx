@@ -1,6 +1,6 @@
 ---
 title: Tab completion
-description: Tab completion for bash, zsh and PowerShell that reads the live cluster — API paths, node names, VM IDs, parameters and their values.
+description: "Tab completion for bash, zsh and PowerShell that reads the live cluster: API paths, node names, VM IDs, parameters and their values."
 ---
 
 The Proxmox VE API has hundreds of paths, and the useful ones contain node names and VM IDs you would
@@ -31,25 +31,25 @@ adds a line that loads it to your shell profile:
 
 | System | Script | Line added to |
 |---|---|---|
-| Linux, macOS | `completion.bash`, `completion.zsh` | `~/.bashrc` and `~/.zshrc` — both, whichever shell you use; a missing file is created |
+| Linux, macOS | `completion.bash`, `completion.zsh` | `~/.bashrc` and `~/.zshrc`: both, whichever shell you use; a missing file is created |
 | Windows | `completion.ps1` | The profile of PowerShell 7 (`pwsh`), as `$PROFILE` reports it |
 
 The line is added once, under a `# cv4pve-cli completion` comment. Open a new terminal, or reload the
-profile — `source ~/.bashrc`, `source ~/.zshrc` or `. $PROFILE` — to start using it.
+profile (`source ~/.bashrc`, `source ~/.zshrc` or `. $PROFILE`) to start using it.
 
 - The script calls `cv4pve-cli` by that name, so the binary must be in your `PATH` as `cv4pve-cli`.
 - zsh: the script uses `compdef`, so the zsh completion system must be loaded before it
   (`autoload -Uz compinit && compinit`, which frameworks such as Oh My Zsh already do).
 - Windows: completion works in PowerShell 7. Windows PowerShell 5.1 and `cmd` are not set up.
 
-`cv4pve-cli completion reset` writes the scripts again, and adds the profile line if it is missing — after
+`cv4pve-cli completion reset` writes the scripts again, and adds the profile line if it is missing, after
 an upgrade, or if you removed them. To turn completion off, delete the two lines from the profile but
 **keep** the `completion.*` files: when they are missing, cv4pve-cli writes them and the profile lines
 again at its next run.
 
 ## Where the names come from
 
-- **The structure of the API** — paths, parameters and allowed values — comes from a copy of the API
+- **The structure of the API** (paths, parameters and allowed values) comes from a copy of the API
   schema that cv4pve-cli downloads from the cluster the first time you run an `api` command or an alias,
   and saves in `~/.cv4pve/cli/cache/`, one file per Proxmox VE version. Until then, only commands and
   aliases complete. After a Proxmox VE upgrade, the next `api` command or alias downloads the schema of

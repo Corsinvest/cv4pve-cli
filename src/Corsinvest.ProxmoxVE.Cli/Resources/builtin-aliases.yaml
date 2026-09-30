@@ -937,7 +937,7 @@ aliases:
     confirm: true
 
   # =============================================================
-  # GUEST (VM & CT) — aliases using {vmtype}, support --guest
+  # GUEST (VM & CT): aliases using {vmtype}, support --guest
   # =============================================================
 
   - name: get guests

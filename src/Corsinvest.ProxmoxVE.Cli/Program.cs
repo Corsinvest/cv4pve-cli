@@ -4,6 +4,7 @@
  */
 
 using System.CommandLine;
+using Corsinvest.ProxmoxVE.Api;
 using Corsinvest.ProxmoxVE.Api.Console.Helpers;
 using Corsinvest.ProxmoxVE.Cli;
 using Microsoft.Extensions.Logging;
@@ -16,7 +17,12 @@ app.AddDryRunOption();
 
 var logLevel = app.GetLogLevelFromDebug();
 ExitCodeHelper.IsDebug = logLevel <= LogLevel.Debug;
-var loggerFactory = ConsoleHelper.CreateLoggerFactory<Program>(logLevel);
+// As ConsoleHelper.CreateLoggerFactory, but on stderr: stdout carries only the output (tables, -o json, completions).
+var loggerFactory = LoggerFactory.Create(builder => builder.AddFilter("Microsoft", LogLevel.Warning)
+                                                           .AddFilter("System", LogLevel.Warning)
+                                                           .AddFilter(typeof(PveClientBase).FullName, logLevel)
+                                                           .AddFilter(typeof(Program).FullName, logLevel)
+                                                           .AddConsole(options => options.LogToStandardErrorThreshold = LogLevel.Trace));
 
 ShellCommands.CreateCommands(app, loggerFactory);
 app.AddTaskCommands();

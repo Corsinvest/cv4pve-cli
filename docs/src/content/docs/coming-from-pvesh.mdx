@@ -15,11 +15,11 @@ parameters. What changes is where it runs.
 | **Clusters** | The one the node belongs to | Any number, switched with `config use` |
 
 So a command that works in pvesh works in cv4pve-cli **if the account of the context has the
-privileges** it needs — root has them all, a dedicated token only those you gave it.
+privileges** it needs: root has them all, a dedicated token only those you gave it.
 
 ## Commands
 
-The same call three ways: with pvesh on a node, with `cv4pve-cli api`, and — highlighted, marked `# alias` — with a
+The same call three ways: with pvesh on a node, with `cv4pve-cli api`, and (highlighted, marked `# alias`) with a
 cv4pve-cli alias, where one exists.
 
 **Read**
@@ -73,7 +73,7 @@ cv4pve-cli api usage /nodes/{node}/qemu --returns
 
 An [alias](/cv4pve-cli/aliases/) is a short name for an API call: its arguments fill the path in order,
 and further parameters follow as `--key value`. With `--guest` you give the guest name or ID instead of
-node and VM ID — `cv4pve-cli set vm config --guest web01 --memory 4096` — and cv4pve-cli finds where the
+node and VM ID (`cv4pve-cli set vm config --guest web01 --memory 4096`), and cv4pve-cli finds where the
 guest runs. The alias snapshot command also takes the description as an argument. `alias list --search`
 finds the alias for a call; the [alias reference](/cv4pve-cli/reference/aliases/) lists them all.
 
@@ -85,7 +85,7 @@ finds the alias for a call; the [alias reference](/cv4pve-cli/reference/aliases/
 | `--output-format json-pretty` | `-o jsonpretty` |
 | `--output-format text` | `-o text`, the default |
 | `--output-format yaml` | Not available; `-o html` and `-o markdown` instead |
-| `--human-readable` | Not available: values are printed as the API returns them — bytes, seconds, Unix time |
+| `--human-readable <0\|1>` | `--human-readable <false\|true\|0\|1>`, the same default: sizes, percentages, durations and dates as text |
 | `--noborder`, `--quiet` | Not available |
 | `--noproxy` | Not needed: the node that receives the call forwards it to the node in the path, as for the web interface |
 
@@ -105,7 +105,7 @@ Dr--c        qemu
 ## What cv4pve-cli adds
 
 - **Tab completion that reads the cluster**: node names, VM IDs, parameter names and their allowed
-  values — see [Tab completion](/cv4pve-cli/completion/).
+  values: see [Tab completion](/cv4pve-cli/completion/).
 - **Aliases and `--guest`**: short commands, and guests by name instead of node and VM ID.
 - **`--wait`** on any call that starts a task, and the [`task`](/cv4pve-cli/tasks/) commands to follow
   one.
