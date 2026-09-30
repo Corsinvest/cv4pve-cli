@@ -2,21 +2,32 @@
 
 ---
 
-## [Unreleased]
+## [2.4.0] - 2026-09-30
+
+### What's new
+- **Documentation site** at https://corsinvest.github.io/cv4pve-cli/: contexts, permissions, API calls, aliases, tasks, tab completion, scripting, AI coding assistants, coming from pvesh, and a reference of every command, alias and file.
+- **Output as pvesh shows it.** Lists show the columns the API schema describes and name the others on standard error; **`--all-columns`** (`-A`) shows them all. Sizes, percentages, durations and dates are printed as text (`251.51 GiB`, `4.44%`, `3d 2h 5m 1s`, `2026-09-30 14:22:23`) and aligned right; **`--human-readable false`** (or `0`) prints the values as the API returns them. `-o json` always has every column and the raw values.
+- **`--wait-timeout <seconds>`** limits how long `--wait` waits for a task.
+- **Skill for AI coding assistants**: [`skills/cv4pve-cli/SKILL.md`](skills/cv4pve-cli/SKILL.md) for Claude Code, Codex and other assistants: when to use cv4pve-cli, how to read with JSON, find guests, explore the API, run changes with `--dry-run` first and `--yes` only after the user agrees.
+- **New aliases**: performance history, node versions and services, VM migration check, firewall logs, IPSets and aliases, Corosync and QDevice, SDN apply, guest filesystem freeze. Listed under Aliases below.
 
 ### Fixes
-- **No key of the answer is lost**: `api get …/config`, `show vm` and `-o json` now list numbered keys such as `net0`, `scsi0`, `ide2`, `usb0`. Lists show the columns the API schema describes, as pvesh does, and name the others on standard error; the new `--all-columns` (`-A`) shows them all, and `-o json` always has every column.
-- **Sizes, percentages, durations and dates are readable again** (`251.51 GiB`, `4.44%`, `3d 2h 5m 1s`, `2026-09-30 14:22:23`), as in pvesh: the cached API schema had lost the information. `--human-readable false` (or `0`) prints the values as the API returns them; `-o json` always does. The cache in `~/.cv4pve/cli/cache` is rebuilt once.
+- **No key of the answer is lost**: `api get …/config`, `show vm` and `-o json` now list numbered keys such as `net0`, `scsi0`, `ide2`, `usb0`.
+- **Sizes, percentages, durations and dates are readable again**: the cached API schema had lost how to render them. The cache in `~/.cv4pve/cli/cache` is rebuilt once.
 - **Tab completion after `--guest`** proposes the parameters and their values at once: the value of `--guest` (or of `-o`, or of a `--key`) was read as the node, and the completion waited 30 seconds for the answer of a node that does not exist.
 - **Logs go to standard error**: with `--debug` or `--log-level`, and for a call that fails before an answer, the log no longer mixes with the output (`-o json`, completions).
 - **Tables are aligned and escaped**: numbers aligned right in text, Markdown and Html output; `|` in Markdown and `<`, `&` in Html no longer break the table; a value on more lines stays inside its cell.
-- **`--wait` waits until the task ends**, prints its exit status and exits with 5 when it fails; `--wait-timeout <seconds>` sets a limit. It used to stop after 30 seconds and ignore the result.
+- **`--wait` waits until the task ends**, prints its exit status and exits with 5 when it fails. It used to stop after 30 seconds and ignore the result.
 - **`--yes` is enforced.** Aliases that change the cluster the most (delete, stop, reboot, rollback, restore…) ran without `--yes`, and failed with it because `--yes` was sent to Proxmox VE as a parameter. They now stop with exit code 6 without `--yes`, and `--yes` is no longer sent.
 - **`--dry-run` works**: `api set/create/delete/get` and aliases print the method, the path and the parameters, and send nothing. Aliases that need `--yes` do not need it with `--dry-run`.
 - **API errors exit with a non-zero code** and print on stderr: 6 for a rejected parameter (HTTP 400), 2 for a missing privilege (401/403), 3 for a path or object that does not exist, 4 for other server errors. They used to exit with 0 on stdout.
 - **API errors say what went wrong**: the call that was sent, what the alias runs, whether the refused parameter is written in the alias itself (a bug to report) or by the user, and, for a rejected parameter, the `api usage` command that lists the accepted ones.
 - `api ls` and `api usage` on a path the API does not have print `no such resource` on stderr with exit code 3, instead of exit 0.
 - **Parameters are read in the order written.** A `--key` without a value in the middle no longer shifts the values of the keys after it, `--key=value` is accepted, a repeated parameter or a value without `--key` is an error (exit 6).
+- **Alias parameters are passed on as `--key=value`**: a value such as `-v` or `-o` is no longer read as an option of cv4pve-cli.
+- **A value that goes into the path of an alias** (`get vm status pve01 "100/../x"`) is refused with exit code 6 instead of calling another endpoint.
+- When the API schema cannot be read after a call that ran, the answer is printed as JSON and the call keeps its exit code, instead of failing.
+- `api ls` lists VM IDs in numeric order (99 before 100).
 - An alias argument equal to the value of a parameter (`get vm status pve01 100 --timeout 100`) is no longer lost.
 - `--debug`, `--log-level` and `--dry-run` before an alias no longer change how it runs (`--guest` was not resolved).
 - `--guest` with a guest that does not exist prints `Error: Guest '…' not found.` (exit 3) instead of crashing; connection errors are reported as they are instead of "no context configured".
@@ -41,23 +52,24 @@
   - `do apply cluster sdn` (needs `--yes`), `do vm agent fsfreeze` (needs `--yes`), `do vm agent fsthaw`, `do vm agent fsfreeze-status`.
 - Aliases whose API call needs a parameter they do not fill say so in their description (firewall rules: `--action` and `--type`; metrics server, hardware mappings, PBS scan).
 
-### AI coding assistants
-- New skill [`skills/cv4pve-cli/SKILL.md`](skills/cv4pve-cli/SKILL.md) for Claude Code, Codex and other assistants: when to use cv4pve-cli, how to read with JSON, find guests, explore the API, run changes with `--dry-run` first and `--yes` only after the user agrees.
-
 ### Tests
 - New test project `Corsinvest.ProxmoxVE.Cli.Tests`: parameter parsing, alias rewriting, host list, exit codes.
 - Every built-in alias is checked against the API of the latest Proxmox VE release (schema of the official API viewer, downloaded by the test): path, method and parameters.
 - `test-completion.ps1` reads nodes and guests from the cluster instead of holding their names.
 
 ### Documentation
-- No em or en dashes in the site, README, CHANGELOG and messages (`config verify` prints `Connected to …, PVE version …`); CHANGELOG headings as `## [x.y.z] - date`; docs theme 2.6.1
-- Documentation site at https://corsinvest.github.io/cv4pve-cli/, built from `docs/` and published by the shared cv4pve workflow: contexts, permissions, API calls, aliases, tasks, tab completion, scripting, AI coding assistants, and a reference of every command, alias and file. The alias reference is generated from the built-in catalog at build time.
-- `docs/aliases.md`, `docs/commands.md` and `docs/AI-AGENTS.md` moved to the site; README shortened to point to it
+- The site is built from `docs/` and published by the shared cv4pve workflow; the alias reference is generated from the built-in catalog at build time.
+- `docs/aliases.md`, `docs/commands.md` and `docs/AI-AGENTS.md` moved to the site; README shortened to point to it.
+- Contexts: the options of `config add` can go in a file (`cv4pve-cli config add prod @prod.rsp`).
+- Coming from pvesh: the same call as pvesh, `api` and alias, side by side.
+- No em or en dashes in the site, README, CHANGELOG and messages (`config verify` prints `Connected to …, PVE version …`); CHANGELOG headings as `## [x.y.z] - date`; docs theme 2.6.1.
 
 ### Changed
-- Uses Corsinvest.ProxmoxVE.Api.Console 9.2.4: API calls, parameters and aliases go through its new `Shell` classes (`ApiRequest`, `ApiCommandLine`, `ApiSchema`); `api usage`, `api ls` and tab completion no longer use `ApiExplorerHelper`. `api usage` lists the methods in the order get, set, create, delete
-- Product icon (Lucide `square-terminal`) and Windows executable icon
-- Project metadata, symbols (Source Link, `.snupkg`) and code style aligned with the other cv4pve tools
+- Uses Corsinvest.ProxmoxVE.Api.Console 9.2.4: API calls, parameters and aliases go through its new `Shell` classes (`ApiRequest`, `ApiCommandLine`, `ApiSchema`); `api usage`, `api ls` and tab completion no longer use `ApiExplorerHelper`. `api usage` lists the methods in the order get, set, create, delete.
+- The API schema cache file carries the format version of the SDK (`<pve-version>-flat-v2.json`); older cache files are removed.
+- Product icon (Lucide `square-terminal`) and Windows executable icon.
+- Project metadata, symbols (Source Link, `.snupkg`), shared `.editorconfig` and code style aligned with the other cv4pve tools.
+- CI: the shared cv4pve-tools workflow (build, test, CodeQL, lint); the publish workflow declares the permissions it needs.
 
 ## [2.3.0] - 2026-07-06
 
