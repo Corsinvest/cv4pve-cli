@@ -6,21 +6,21 @@ description: Install cv4pve-cli, save your Proxmox VE cluster as a context and r
 import { Steps } from '@astrojs/starlight/components';
 import CliInstall from '@corsinvest/cv4pve-docs-theme/components/CliInstall.astro';
 
-cv4pve-cli runs **outside the cluster** — on your workstation, a management VM or a CI runner — and
+cv4pve-cli runs **outside the cluster** (on your workstation, a management VM or a CI runner) and
 talks only to the Proxmox VE REST API on port 8006. Nothing is installed on the nodes.
 
 ## Installation
 
 <CliInstall repo="cv4pve-cli" />
 
-On its first run cv4pve-cli sets up tab completion for your shell — see [Tab completion](/cv4pve-cli/completion/).
+On its first run cv4pve-cli sets up tab completion for your shell: see [Tab completion](/cv4pve-cli/completion/).
 
 ## First commands
 
 <Steps>
 
 1. Create a user and an API token for cv4pve-cli in Proxmox VE, with the privileges you want it to
-   have — see [Permissions](/cv4pve-cli/permissions/).
+   have: see [Permissions](/cv4pve-cli/permissions/).
 
 2. Save the cluster as a **context**: a name for the connection, stored on your machine, so you never
    type the host and the token again.
@@ -33,12 +33,12 @@ On its first run cv4pve-cli sets up tab completion for your shell — see [Tab c
 
    ```text
    Context 'pve01' saved.
-   Connected to pve01.example.com — PVE version: 8.4.21
+   Connected to pve01.example.com, PVE version 8.4.21
    ```
 
    The first context you add becomes the current one. If the certificate of the nodes is the
-   self-signed one Proxmox VE installs, add `--validate-certificate false` — see
-   [Contexts](/cv4pve-cli/contexts/#certificate).
+   self-signed one Proxmox VE installs, add `--validate-certificate false` (see
+   [Contexts](/cv4pve-cli/contexts/#certificate)).
 
 3. Run a command. Every command uses the current context:
 
@@ -52,11 +52,11 @@ On its first run cv4pve-cli sets up tab completion for your shell — see [Tab c
 
 Quote the API token: `!` is special in bash. In PowerShell, also quote API paths that contain
 placeholders such as `'/nodes/{node}/qemu'`: braces start a script block there. In Git Bash on Windows,
-set `MSYS_NO_PATHCONV=1` first — see [Troubleshooting](/cv4pve-cli/troubleshooting/#git-bash-on-windows).
+set `MSYS_NO_PATHCONV=1` first: see [Troubleshooting](/cv4pve-cli/troubleshooting/#git-bash-on-windows).
 
 ## Where to go next
 
-- [Contexts](/cv4pve-cli/contexts/) — several clusters, token or password, where the credentials are stored.
-- [API calls](/cv4pve-cli/api/) — `get`, `set`, `create`, `delete` on any path, and how to discover what a path accepts.
-- [Aliases](/cv4pve-cli/aliases/) — the short commands, `--guest` and your own aliases.
-- [Scripting](/cv4pve-cli/scripting/) — output formats, exit codes, waiting for tasks.
+- [Contexts](/cv4pve-cli/contexts/): several clusters, token or password, where the credentials are stored.
+- [API calls](/cv4pve-cli/api/): `get`, `set`, `create`, `delete` on any path, and how to discover what a path accepts.
+- [Aliases](/cv4pve-cli/aliases/): the short commands, `--guest` and your own aliases.
+- [Scripting](/cv4pve-cli/scripting/): output formats, exit codes, waiting for tasks.

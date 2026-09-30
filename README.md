@@ -16,7 +16,7 @@ Command Line Interface for Proxmox VE (Made in Italy)
 [![WinGet](https://img.shields.io/winget/v/Corsinvest.cv4pve.cli?style=flat-square&logo=windows)](https://winstall.app/apps/Corsinvest.cv4pve.cli)
 [![AUR](https://img.shields.io/aur/version/cv4pve-cli?style=flat-square&logo=archlinux)](https://aur.archlinux.org/packages/cv4pve-cli)
 
-> **The whole Proxmox VE API from the command line** — what `kubectl` is to Kubernetes: saved contexts for several clusters, more than 300 built-in aliases and tab completion that reads the live cluster.
+> **The whole Proxmox VE API from the command line**, what `kubectl` is to Kubernetes: saved contexts for several clusters, more than 300 built-in aliases and tab completion that reads the live cluster.
 >
 > **[Documentation](https://corsinvest.github.io/cv4pve-cli/)**
 
@@ -58,14 +58,14 @@ Some of the rows. `--guest` found the node and the VM ID from the name; `-o json
 
 ## Features
 
-- **Every API call** — `api get/set/create/delete` on any path, `api ls` and `api usage` to find what a path accepts.
-- **Several clusters** — each one a saved context; switch with `config use`.
-- **Aliases** — more than 300 built-in short commands (`get nodes`, `do migrate vm`, `create guest snapshot`…) plus your own.
-- **Guests by name** — `--guest <name|id>` fills in node, type and VM ID.
-- **Tab completion** — bash, zsh and PowerShell complete API paths, node names, VM IDs, parameters and their allowed values from the live cluster.
-- **Tasks** — `task list/show/wait/log --follow/stop` to follow backups, migrations and other long operations.
-- **Made for scripts** — output as text, JSON, Markdown or HTML; errors on stderr with an exit code for each kind of failure; `--dry-run` to see a call before sending it.
-- **Self-contained binary** for Windows, Linux and macOS — no runtime to install.
+- **Every API call**: `api get/set/create/delete` on any path, `api ls` and `api usage` to find what a path accepts.
+- **Several clusters**: each one a saved context; switch with `config use`.
+- **Aliases**: more than 300 built-in short commands (`get nodes`, `do migrate vm`, `create guest snapshot`…) plus your own.
+- **Guests by name**: `--guest <name|id>` fills in node, type and VM ID.
+- **Tab completion**: bash, zsh and PowerShell complete API paths, node names, VM IDs, parameters and their allowed values from the live cluster.
+- **Tasks**: `task list/show/wait/log --follow/stop` to follow backups, migrations and other long operations.
+- **Made for scripts**: output as text, JSON, Markdown or HTML; errors on stderr with an exit code for each kind of failure; `--dry-run` to see a call before sending it.
+- **Self-contained binary** for Windows, Linux and macOS, with no runtime to install.
 
 ---
 
@@ -85,7 +85,7 @@ unzip cv4pve-cli-linux-x64.zip && chmod +x cv4pve-cli
 ./cv4pve-cli api get /cluster/resources --type vm -o json
 ```
 
-The token and the password are saved in clear text in `~/.cv4pve/cli/config`: use a dedicated API token with only the privileges you want cv4pve-cli to have — see [Permissions](https://corsinvest.github.io/cv4pve-cli/permissions/).
+The token and the password are saved in clear text in `~/.cv4pve/cli/config`: use a dedicated API token with only the privileges you want cv4pve-cli to have (see [Permissions](https://corsinvest.github.io/cv4pve-cli/permissions/)).
 
 ---
 

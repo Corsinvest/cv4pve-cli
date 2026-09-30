@@ -12,11 +12,11 @@ version, or the reason it could not.
 
 | Message | Meaning |
 |---|---|
-| `The SSL connection could not be established` | The certificate of the node is not trusted — usually the self-signed one of a new node. See [Certificate](/cv4pve-cli/contexts/#certificate). |
+| `The SSL connection could not be established` | The certificate of the node is not trusted, usually the self-signed one of a new node. See [Certificate](/cv4pve-cli/contexts/#certificate). |
 | `No reachable hosts found` | No node in `--host` answered on its port: wrong name, address or port, or a firewall. |
 | `Authentication failed` | Wrong token or password, or a realm missing from the username (`admin` is looked up in `pam`, not `pve`). |
 | `Missing Two Factor Authentication (TFA)` | The account has two-factor authentication: use an API token. |
-| `No context configured. Run 'config add' first.` | There is no current context: add one with `config add` — see [Contexts](/cv4pve-cli/contexts/). |
+| `No context configured. Run 'config add' first.` | There is no current context: add one with `config add`: see [Contexts](/cv4pve-cli/contexts/). |
 
 ## Git Bash on Windows
 
@@ -57,28 +57,28 @@ The first lines are those of Proxmox VE:
 
 | Message | Meaning |
 |---|---|
-| `Permission check failed (/vms/100, VM.PowerMgmt)` | The account lacks that privilege on that path — see [Permissions](/cv4pve-cli/permissions/). |
-| `Method 'GET /nodex' not implemented` | The path does not exist, or does not accept that method. `api ls` and `api usage` show what it does accept — see [API calls](/cv4pve-cli/api/#find-your-way-in-the-api). |
+| `Permission check failed (/vms/100, VM.PowerMgmt)` | The account lacks that privilege on that path: see [Permissions](/cv4pve-cli/permissions/). |
+| `Method 'GET /nodex' not implemented` | The path does not exist, or does not accept that method. `api ls` and `api usage` show what it does accept: see [API calls](/cv4pve-cli/api/#find-your-way-in-the-api). |
 | `hostname lookup 'pve99' failed` | The node name in the path is not a node of the cluster. |
-| `Configuration file 'nodes/pve01/qemu-server/100.conf' does not exist` | No VM with that ID on that node. `--guest` finds the node for you — see [Aliases](/cv4pve-cli/aliases/#guests-by-name---guest). |
+| `Configuration file 'nodes/pve01/qemu-server/100.conf' does not exist` | No VM with that ID on that node. `--guest` finds the node for you: see [Aliases](/cv4pve-cli/aliases/#guests-by-name---guest). |
 | `Parameter verification failed.` | A parameter is unknown, missing or has a wrong value; the next lines name it. `api usage … -v` lists what the call accepts. |
 | `Error: missing arguments: {node}, {vmid}` | An alias was called without all its arguments; the next line shows its usage. |
-| `Error: '…' changes the cluster: add --yes to confirm.` | The alias needs `--yes` — see [Aliases](/cv4pve-cli/aliases/#operations-that-change-the-cluster). |
+| `Error: '…' changes the cluster: add --yes to confirm.` | The alias needs `--yes`: see [Aliases](/cv4pve-cli/aliases/#operations-that-change-the-cluster). |
 
 :::caution[An empty answer is not always an error]
 Proxmox VE leaves out of a list what the account may not see, and answers normally. If `top` or
 `get vms` shows fewer guests than you expect, check the privileges of the token.
 :::
 
-Every error goes to standard error with an exit code other than `0` — see
+Every error goes to standard error with an exit code other than `0`: see
 [Scripting](/cv4pve-cli/scripting/#exit-codes).
 
 ## Debug output
 
 <CliTroubleshooting />
 
-cv4pve-cli prints errors as `Error: …`; with `--debug` an error that is not an answer of Proxmox VE —
-a node unreachable, wrong credentials — is followed by its stack trace. When a call fails before an
-answer — a node that drops the connection, an answer that is not JSON — the error is logged as `fail:`
+cv4pve-cli prints errors as `Error: …`; with `--debug` an error that is not an answer of Proxmox VE
+(a node unreachable, wrong credentials) is followed by its stack trace. When a call fails before an
+answer (a node that drops the connection, an answer that is not JSON), the error is logged as `fail:`
 with its stack trace, even without `--debug`. To see the full JSON answer of a call that succeeds, add
 `-v` to the `api` command.

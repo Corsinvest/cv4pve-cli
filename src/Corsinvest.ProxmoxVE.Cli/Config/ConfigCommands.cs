@@ -23,7 +23,7 @@ internal static class ConfigCommands
         try
         {
             var client = await PveConfigManager.CreateClientAsync(ctx);
-            Console.WriteLine($"Connected to {PveConfigManager.BuildHostList(ctx.Host, ctx.Port)} — PVE version: {(await client.Version.GetAsync()).Version}");
+            Console.WriteLine($"Connected to {PveConfigManager.BuildHostList(ctx.Host, ctx.Port)}, PVE version {(await client.Version.GetAsync()).Version}");
             return true;
         }
         catch (Exception ex)

@@ -23,9 +23,6 @@ internal static class AliasCommands
         CmdRemove(cmd);
     }
 
-    private static readonly string[] Columns = ["name", "description"];
-    private static readonly string[] ColumnsVerbose = ["name", "description", "command", "args"];
-
     private static IEnumerable<string> GetUserAliasNames()
     {
         try { return PveConfigManager.GetUserAliasNames(); }
@@ -56,12 +53,12 @@ internal static class AliasCommands
             var list = aliases.ToList();
             if (list.Count == 0) { Console.WriteLine("No aliases found."); return; }
 
-            var columns = verbose ? ColumnsVerbose : Columns;
-            var rows = list.Select(a => verbose
-                ? (IEnumerable<object>)[a.Name, a.Description, a.Command, GetTags(a.Command)]
-                : [a.Name, a.Description]);
-
-            Console.Write(TableGenerator.To(columns, rows, output));
+            Console.Write(TableGenerator.From(list)
+                                        .Column(a => a.Name).Title("name")
+                                        .Column(a => a.Description).Title("description")
+                                        .Column(a => a.Command).Title("command").When(verbose)
+                                        .Column(a => GetTags(a.Command)).Title("args").When(verbose)
+                                        .To(output));
         });
     }
 

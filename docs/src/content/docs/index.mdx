@@ -1,10 +1,10 @@
 ---
 title: cv4pve-cli
-description: The whole Proxmox VE API from the command line, like kubectl for Kubernetes — saved contexts for several clusters, more than 300 built-in aliases and tab completion that reads the live cluster.
+description: "The whole Proxmox VE API from the command line, like kubectl for Kubernetes: saved contexts for several clusters, more than 300 built-in aliases and tab completion that reads the live cluster."
 template: splash
 hero:
   title: The whole <span class="accent-mark">Proxmox VE</span> API, from your terminal
-  tagline: Runs outside the nodes, API only — what kubectl is to Kubernetes. Saved contexts for every cluster you manage, short aliases for everyday operations and tab completion that reads node names and VM IDs from the live cluster.
+  tagline: "Runs outside the nodes, API only: what kubectl is to Kubernetes. Saved contexts for every cluster you manage, short aliases for everyday operations and tab completion that reads node names and VM IDs from the live cluster."
   actions:
     - text: Get started
       link: /cv4pve-cli/getting-started/
@@ -27,7 +27,7 @@ import proxmoxLogo from '../../assets/proxmox-logo.svg';
 
 export const features = [
   { title: "Every API call", text: "get, set, create and delete on any path of the Proxmox VE REST API, with parameters as --key value. ls and usage show what a path contains and what it accepts.", href: 'api/' },
-  { title: "Several clusters", text: "Each cluster is a saved context — host, port, token or password. Switch with config use, as kubectl does with Kubernetes clusters.", href: 'contexts/' },
+  { title: "Several clusters", text: "Each cluster is a saved context: host, port, token or password. Switch with config use, as kubectl does with Kubernetes clusters.", href: 'contexts/' },
   { title: "Aliases for everyday work", text: "do start vm, create guest snapshot, get cluster ha resources: short commands for common operations, plus your own.", href: 'aliases/' },
   { title: "Guests by name", text: "--guest web01 finds the node, the type and the VM ID for you, so you never look up where a guest runs.", href: 'aliases/#guests-by-name---guest' },
   { title: "Tab completion from the cluster", text: "bash, zsh and PowerShell complete API paths, node names, VM IDs, parameters and their allowed values.", href: 'completion/' },
@@ -115,13 +115,13 @@ runs only on a node, as root, and knows only the cluster that node belongs to.
 cv4pve-cli puts the whole API in a command you run from your own workstation. You save each cluster
 once, switch between them by name, and type `do start vm --guest web01` instead of looking up which
 node the guest runs on. Every API call the web interface makes, you can make from a shell script, a
-scheduled job or an AI coding assistant — against as many clusters as you manage.
+scheduled job or an AI coding assistant, against as many clusters as you manage.
 
 ## Outside the nodes, API only
 
-cv4pve-cli runs outside the cluster — on Windows, Linux or macOS — and talks only to the Proxmox VE REST
+cv4pve-cli runs outside the cluster (on Windows, Linux or macOS) and talks only to the Proxmox VE REST
 API on port 8006. Nothing is installed on the nodes and no SSH is needed. It can do exactly what its
-account is allowed to do, so give it a dedicated API token with the privileges you want it to have —
+account is allowed to do, so give it a dedicated API token with the privileges you want it to have:
 see [Permissions](/cv4pve-cli/permissions/).
 
 | | **cv4pve-cli** | [pvesh](https://pve.proxmox.com/pve-docs/pvesh.1.html) |
@@ -130,20 +130,20 @@ see [Permissions](/cv4pve-cli/permissions/).
 | **Account** | Any user or API token, with its own privileges | root on the node |
 | **Clusters** | Any number, as saved contexts | The one the node belongs to |
 | **API calls** | `api get/set/create/delete/ls/usage` | `get/set/create/delete/ls/usage` |
-| **Shortcuts** | <AliasCount /> built-in aliases, plus your own | — |
+| **Shortcuts** | <AliasCount /> built-in aliases, plus your own | - |
 
 The [Coming from pvesh](/cv4pve-cli/coming-from-pvesh/) page maps each pvesh command to cv4pve-cli.
 
 ## Where it fits
 
 The cv4pve suite follows the Unix philosophy: each tool does one thing and does it well. cv4pve-cli is
-the general-purpose one — any API call, by hand or in a script. The others answer one question each and
+the general-purpose one: any API call, by hand or in a script. The others answer one question each and
 run on their own:
 
 | Tool | Use it for |
 |---|---|
 | **cv4pve-cli** | Any API call from a shell: read, change, automate |
-| [cv4pve-api-powershell](https://corsinvest.github.io/cv4pve-api-powershell/) | The same API as PowerShell cmdlets, with objects instead of text — the choice if your scripts are PowerShell |
+| [cv4pve-api-powershell](https://corsinvest.github.io/cv4pve-api-powershell/) | The same API as PowerShell cmdlets, with objects instead of text, the choice if your scripts are PowerShell |
 | [cv4pve-report](https://corsinvest.github.io/cv4pve-report/) | The full inventory of a cluster, in Excel, HTML or JSON |
 | [cv4pve-diag](https://corsinvest.github.io/cv4pve-diag/) | What is wrong in a cluster: a list of problems, each with a severity |
 | [cv4pve-admin](https://corsinvest.github.io/cv4pve-admin/) | A web platform for several clusters, when a command line is not what you want |

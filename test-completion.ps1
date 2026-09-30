@@ -2,7 +2,7 @@
 # SPDX-FileCopyrightText: Copyright Corsinvest Srl
 # SPDX-License-Identifier: MIT
 #
-# test-completion.ps1 — checks the tab completion of cv4pve-cli against a real cluster.
+# test-completion.ps1: checks the tab completion of cv4pve-cli against a real cluster.
 # Usage: .\test-completion.ps1 [-Cli <path>]
 #
 # Needs a current context. Nodes, VMs and containers are read from the cluster (cv4pve-cli top),
@@ -92,10 +92,16 @@ Test-NotContains "guest: no nodes"              "get guest status --guest "     
 Test-Contains    "vm: VM IDs and names"         "get vm status --guest "           ($allVmIds + $vmNames)
 Test-NotContains "vm: no nodes"                 "get vm status --guest "           $nodes
 Test-Contains    "do start guest"               "do start guest --guest "          ($allVmIds + $allCtIds)
+if ($allVmIds.Count -gt 0) {
+    # The --guest value is not an argument: parameters and their values follow at once (it used to wait 30 s).
+    Test-Exact "vm: parameter after --guest"  "set vm config --guest $($allVmIds[0]) --onb"      @("--onboot")
+    Test-Exact "vm: value after --guest"      "set vm config --guest $($allVmIds[0]) --onboot "  @("0", "1")
+}
 
 Write-Host ""
 Write-Host "=== get vm status - positional ===" -ForegroundColor Cyan
 Test-Contains    "slot 1: nodes"                "get vm status "                   $nodes
+Test-Contains    "slot 1 after -o json: nodes"  "get vm status -o json "           $nodes
 Test-Contains    "slot 2: VM IDs"               "get vm status $node "             $vmsOnNode
 Test-NotContains "slot 2: no CT IDs"            "get vm status $node "             $ctsOnNode
 

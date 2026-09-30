@@ -65,7 +65,7 @@ compdef _cv4pve_cli_complete cv4pve-cli
                 $lastSpace = $line.LastIndexOf(' ')
                 if ($lastSpace -ge 0) { $line = $line.Substring(0, $lastSpace + 1) + $wordToComplete }
             }
-            # TrimEnd only when last token is a path ending with '/' — prevents parser
+            # TrimEnd only when last token is a path ending with '/': prevents parser
             # treating trailing space as "new argument" which shifts completions to options
             if ($wordToComplete -match '/$') { $line = $line.TrimEnd() }
             $results = @(cv4pve-cli complete -- "$line" 2>$null)
@@ -236,12 +236,13 @@ compdef _cv4pve_cli_complete cv4pve-cli
                                                ShellCommands.ArgHelpLong, ShellCommands.ArgVersion],
                                                StringComparer.OrdinalIgnoreCase);
 
-            // CLI-level options (not API params) — suppress when user hasn't typed '--' yet,
+            // CLI-level options (not API params): suppress when user hasn't typed '--' yet,
             // so TAB after a resource path goes straight to API parameters/paths.
             var cliOptions = new HashSet<string>([ShellCommands.ArgOutputLong, ShellCommands.ArgWait,
                                                   ShellCommands.ArgVerboseLong, ShellCommands.ArgReturnsLong,
                                                   ShellCommands.ArgOutputShort, ShellCommands.ArgVerboseShort,
-                                                  ShellCommands.ArgReturnsShort],
+                                                  ShellCommands.ArgReturnsShort, ShellCommands.ArgAllColumns,
+                                                  ShellCommands.ArgAllColumnsShort, ShellCommands.ArgHumanReadable],
                                                   StringComparer.OrdinalIgnoreCase);
 
             var word = input.Length > 0 && !input.EndsWith(' ')

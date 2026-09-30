@@ -1,13 +1,13 @@
 ---
 title: Tasks
-description: Follow the Proxmox VE tasks started by cv4pve-cli — list, status, wait, log with --follow, and stop — by their UPID.
+description: Follow the Proxmox VE tasks started by cv4pve-cli (list, status, wait, log with --follow, and stop) by their UPID.
 ---
 
 import TerminalTable from '@corsinvest/cv4pve-docs-theme/components/TerminalTable.astro';
 
 Starting a VM, taking a backup, migrating, cloning: Proxmox VE runs these as **tasks** in the
 background, the same ones you see in the task list at the bottom of the web interface. The API call
-that starts a task answers at once with its ID, the **UPID** — `UPID:pve01:0011D941:…:qmsnapshot:100:root@pam:` —
+that starts a task answers at once with its ID, the **UPID** (`UPID:pve01:0011D941:…:qmsnapshot:100:root@pam:`)
 and the task goes on without you.
 
 `cv4pve-cli task` works on those tasks by UPID. The node is read from the UPID, so you do not give it.
@@ -37,7 +37,7 @@ cv4pve-cli task list --node pve01     # tasks of one node
   note="The first task is still running: its status is empty until it ends."
 />
 
-`-o` sets the [output format](/cv4pve-cli/api/#output) — `-o json` to pick a UPID from a script.
+`-o` sets the [output format](/cv4pve-cli/api/#output): `-o json` to pick a UPID from a script.
 
 ## Status and result
 
@@ -68,8 +68,8 @@ cv4pve-cli task wait 'UPID:pve01:…' --timeout 600
 Checks the task every 2 seconds until it ends, then prints its exit status. `--timeout` is in seconds,
 default `300`. Exit code `0` if the task succeeded, `5` if it failed or the timeout expired.
 
-Unlike `--wait` on [`api`](/cv4pve-cli/api/#tasks) and aliases, which gives up after 30 seconds and
-ignores the result, `task wait` is made for scripts: use it after a long backup or migration.
+`--wait` on [`api`](/cv4pve-cli/api/#tasks) and aliases does the same for the call it starts; `task wait` is
+for a task started earlier, whose UPID you saved.
 
 ## Log
 
@@ -90,7 +90,7 @@ TASK OK
 | `--limit` | Lines read at each check, default `500`. Without `--follow` only the first `--limit` lines are printed: raise it for a long log. |
 | `--interval` | Seconds between checks with `--follow`, default `2`, minimum `1`. |
 
-The exit code is `5` if the task ended with an error, `0` otherwise — so `task log --follow` both shows
+The exit code is `5` if the task ended with an error, `0` otherwise, so `task log --follow` both shows
 and checks a task.
 
 ## Stop

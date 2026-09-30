@@ -6,7 +6,7 @@
  * (src/Corsinvest.ProxmoxVE.Cli/Resources/builtin-aliases.yaml) at build time, so the
  * documentation lists exactly the aliases of the code it is built with.
  *
- * The file has a fixed shape — `- name:`, `description:`, `command:`, optional `confirm: true` —
+ * The file has a fixed shape (`- name:`, `description:`, `command:`, optional `confirm: true`)
  * so a line reader is enough and the site needs no YAML dependency.
  */
 import { readFileSync } from 'node:fs';

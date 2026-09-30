@@ -3,9 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-using System.CommandLine;
 using Corsinvest.ProxmoxVE.Api;
-using Corsinvest.ProxmoxVE.Api.Console.Helpers;
 using Corsinvest.ProxmoxVE.Api.Extension;
 using Corsinvest.ProxmoxVE.Api.Shared.Models.Cluster;
 using Corsinvest.ProxmoxVE.Api.Shared.Models.Vm;
@@ -84,50 +82,4 @@ internal static class GuestResolutionEngine
         catch { return []; }
     }
 
-    internal static async Task<(string Node, string VmId, string VmType)> ResolveAsync(
-        PveClient client, string idOrName, GuestResolution resolution)
-    {
-        var items = Filter(await client.Cluster.Resources.GetAsync(ClusterResourceType.Vm), resolution)
-                        .Where(a => !a.IsUnknown);
-
-        var item = long.TryParse(idOrName, out var vmId)
-                    ? items.FirstOrDefault(a => a.VmId == vmId)
-                    : items.FirstOrDefault(a => a.Name.Equals(idOrName, StringComparison.OrdinalIgnoreCase));
-
-        return item == null
-                ? throw new InvalidOperationException($"Guest '{idOrName}' not found.")
-                : (item.Node,
-                   item.VmId.ToString(),
-                   item.VmType switch
-                   {
-                       VmType.Qemu => TypeQemu,
-                       VmType.Lxc => TypeLxc,
-                       _ => TypeQemu,
-                   });
-    }
-
-    internal static Option<string>? AddGuestOption(Command cmd, GuestResolution resolution, Func<PveClient?> getClient)
-    {
-        if (resolution == GuestResolution.None) { return null; }
-        var desc = resolution switch
-        {
-            GuestResolution.Qemu => "VM ID or name",
-            GuestResolution.Lxc => "Container ID or name",
-            _ => "VM or container ID or name"
-        };
-        var opt = cmd.AddOption<string>($"{ArgGuestLong}|{ArgGuestShort}", desc);
-        opt.Required = false;
-        opt.HelpName = "id|name";
-        opt.CompletionSources.Add((_) => GetCompletions(resolution, getClient()));
-        return opt;
-    }
-
-    internal static async Task<string> ExpandAsync(
-        string command, PveClient client, string idOrName, GuestResolution resolution)
-    {
-        var (node, vmId, vmType) = await ResolveAsync(client, idOrName, resolution);
-        return command.Replace(TagNode, node)
-                      .Replace(TagVmId, vmId)
-                      .Replace(TagVmType, vmType);
-    }
 }

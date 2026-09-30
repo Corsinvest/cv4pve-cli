@@ -1,12 +1,12 @@
 ---
 title: Aliases
-description: Short commands for everyday Proxmox VE operations — the built-in aliases, guests by name with --guest, and your own aliases.
+description: "Short commands for everyday Proxmox VE operations: the built-in aliases, guests by name with --guest, and your own aliases."
 ---
 
 import AliasCount from '../../components/AliasCount.astro';
 
 An API path such as `/nodes/pve01/qemu/100/status/start` is precise but long, and you have to know on
-which node the VM runs. An **alias** gives an API call a short name — `do start vm` — and turns the
+which node the VM runs. An **alias** gives an API call a short name (`do start vm`) and turns the
 variable parts of the path into arguments:
 
 ```bash
@@ -95,9 +95,9 @@ cv4pve-cli create guest snapshot --guest web01 before-update "Before the update"
 ```
 
 - A number is taken as a VM ID, anything else as a name; names are compared without regard to case.
-  If two guests have the same name, the first one found is used — use the VM ID.
+  If two guests have the same name, the first one found is used: use the VM ID.
 - `vm` aliases look only among VMs, `ct` aliases only among containers, `guest` aliases among both.
-- The arguments that `--guest` does not fill — the snapshot name above — still follow in order.
+- The arguments that `--guest` does not fill (the snapshot name above) still follow in order.
 - Aliases whose API path targets one guest say so in their `--help`
   (`Tip: use --guest <id|name>`), and tab completion after `--guest` offers the IDs and names of the
   cluster. The [alias reference](/cv4pve-cli/reference/aliases/) marks them.
@@ -106,9 +106,9 @@ cv4pve-cli create guest snapshot --guest web01 before-update "Before the update"
 
 `do`, `create`, `set` and `delete` aliases change the cluster.
 
-Those that cannot be undone or interrupt a service — deleting guests,
+Those that cannot be undone or interrupt a service (deleting guests,
 snapshots, disks, users, storages; stopping, rebooting and shutting down guests and nodes; rolling back,
-restoring, converting to a template, freezing guest filesystems, applying SDN changes — run only with **`--yes`** (`-y`); without it they stop with
+restoring, converting to a template, freezing guest filesystems, applying SDN changes) run only with **`--yes`** (`-y`); without it they stop with
 exit code `6` and send nothing:
 
 ```text
@@ -124,7 +124,7 @@ Dry run, nothing sent to Proxmox VE:
 DELETE /nodes/pve01/qemu/100/snapshot/before-update
 ```
 
-The other aliases that change the cluster — start, migrate, snapshot, set — run as soon as you press
+The other aliases that change the cluster (start, migrate, snapshot, set) run as soon as you press
 Enter. Use a [read-only token](/cv4pve-cli/permissions/) when you only want to look.
 
 ## Options
@@ -132,10 +132,10 @@ Enter. Use a [read-only token](/cv4pve-cli/permissions/) when you only want to l
 | Option | What it does |
 |---|---|
 | `--output`, `-o` | Output format, as for [`api`](/cv4pve-cli/api/#output). |
-| `--wait` | Waits for the task the call starts, as for [`api`](/cv4pve-cli/api/#tasks): at most 30 seconds. |
-| `--verbose`, `-v` | Does not run the alias: shows the API call behind it, with every parameter it accepts — like `api usage -v`. |
+| `--wait`, `--wait-timeout` | Wait for the task the call starts, as for [`api`](/cv4pve-cli/api/#tasks). |
+| `--verbose`, `-v` | Does not run the alias: shows the API call behind it, with every parameter it accepts, like `api usage -v`. |
 | `--guest`, `-g` | See [above](#guests-by-name---guest). |
-| `--yes`, `-y` | Confirms the aliases that ask for it — see [above](#operations-that-change-the-cluster). |
+| `--yes`, `-y` | Confirms the aliases that ask for it: see [above](#operations-that-change-the-cluster). |
 | `--dry-run` | Shows the API call without sending it. |
 
 ## Your own aliases

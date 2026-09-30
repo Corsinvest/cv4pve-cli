@@ -6,7 +6,7 @@
         <AssemblyName>cv4pve-cli</AssemblyName>
         <Product>Corsinvest for Proxmox VE Cli</Product>
         <AssemblyTitle>Corsinvest for Proxmox VE Cli</AssemblyTitle>
-        <Description>Command-line interface for Proxmox VE — manage API calls, contexts and aliases</Description>
+        <Description>Command-line interface for Proxmox VE: manage API calls, contexts and aliases</Description>
         <ApplicationIcon>..\..\icon.ico</ApplicationIcon>
         <IsPackable>false</IsPackable>
         <InvariantGlobalization>true</InvariantGlobalization>

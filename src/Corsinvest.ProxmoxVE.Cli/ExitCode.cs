@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: MIT
  */
 
+using Corsinvest.ProxmoxVE.Api.Extension.Shell;
+
 namespace Corsinvest.ProxmoxVE.Cli;
 
 /// <summary>
@@ -90,6 +92,10 @@ internal static class ExitCodeHelper
                     ? code
                     : ExitCode.Server,
         };
+
+    /// <summary>Exit code of an alias that could not be expanded.</summary>
+    public static ExitCode FromCommandError(ApiCommandError error)
+        => error == ApiCommandError.GuestNotFound ? ExitCode.NotFound : ExitCode.Validation;
 
     /// <summary>
     /// True when --debug or --log-level Debug/Trace is on the command line: exceptions are printed in full.
