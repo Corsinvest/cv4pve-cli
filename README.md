@@ -102,7 +102,7 @@ The token and the password are saved in clear text in `~/.cv4pve/cli/config`: us
 | [Tasks](https://corsinvest.github.io/cv4pve-cli/tasks/) | Following tasks by UPID |
 | [Tab completion](https://corsinvest.github.io/cv4pve-cli/completion/) | bash, zsh, PowerShell |
 | [Scripting](https://corsinvest.github.io/cv4pve-cli/scripting/) | JSON output, exit codes, CI |
-| [AI coding assistants](https://corsinvest.github.io/cv4pve-cli/ai-agents/) | Claude Code, Codex, a `SKILL.md` template |
+| [AI assistants](https://corsinvest.github.io/cv4pve-cli/ai-agents/) | Claude Code, Codex, the `cv4pve-cli` skill |
 | [Reference](https://corsinvest.github.io/cv4pve-cli/reference/commands/) | Every command, every alias, every file |
 
 ---
