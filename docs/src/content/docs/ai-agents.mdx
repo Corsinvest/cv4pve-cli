@@ -1,99 +1,35 @@
 ---
-title: AI coding assistants
-description: "Give an AI coding assistant such as Claude Code or Codex access to a Proxmox VE cluster through cv4pve-cli: a read-only token, sandbox settings and a short SKILL.md."
+title: AI assistants
+description: Let an AI assistant such as Claude Code or Codex read and operate a Proxmox VE cluster with cv4pve-cli, with the cv4pve-cli skill and a token of its own.
 ---
 
-An AI coding assistant that can run shell commands can use cv4pve-cli to read and operate a Proxmox VE
+import AiSkill from '@corsinvest/cv4pve-docs-theme/components/AiSkill.astro';
+
+An AI assistant that can run shell commands can use cv4pve-cli to read and operate a Proxmox VE
 cluster: it discovers the API with `api ls` and `api usage`, reads JSON with `-o json`, and needs no
-SSH access to the nodes. What it can do is exactly what the token of its context allows, so the token
-is where you decide how far the assistant can go.
-
-## Give it a token of its own
-
-Create a context for the assistant with a dedicated API token:
-
-- **`PVEAuditor`** for looking only: the assistant reads configuration and status, and Proxmox VE refuses
-  anything else, whatever command it runs. See [Permissions](/cv4pve-cli/permissions/).
-- A wider role only for the operations you want it to run, on the pool or the guests concerned.
-
-Do not rely on the assistant to stop a destructive command. cv4pve-cli asks `--yes` only for the
-aliases that cannot be undone; `api` calls and the other aliases run at once (see
-[Operations that change the cluster](/cv4pve-cli/aliases/#operations-that-change-the-cluster)). A
-read-only token is the only real limit.
-
-## Sandboxes
-
-The assistant runs cv4pve-cli with its own permissions, often inside a sandbox. cv4pve-cli needs:
-
-- to connect to the node on port 8006;
-- to write in `~/.cv4pve/`: contexts, the API schema cache and the daily update check. Without the
-  API schema cache `api` commands and aliases fail.
-
-On Windows, Claude Code and other assistants often run commands in Git Bash, which rewrites API paths
-such as `/version` into Windows paths: set `MSYS_NO_PATHCONV=1` in their environment (see
-[Git Bash on Windows](/cv4pve-cli/troubleshooting/#git-bash-on-windows)).
-
-On its first run cv4pve-cli also adds a line to `~/.bashrc` and `~/.zshrc`, or to the PowerShell profile,
-to set up [tab completion](/cv4pve-cli/completion/). An assistant has no use for it; if the sandbox
-blocks the write, cv4pve-cli goes on without it.
-
-The settings below were reported by a user in
-[issue #10](https://github.com/Corsinvest/cv4pve-cli/issues/10), thanks to
-[@cheriot](https://github.com/cheriot). Check them against the documentation of your assistant.
-
-### Claude Code on macOS
-
-With a self-signed certificate, turning certificate validation off on the context
-(`--validate-certificate false`) was not enough in the Claude Code sandbox on macOS: every HTTPS
-connection still asks the macOS trust service, and the sandbox blocked that lookup. The fix reported in
-the issue, in `.claude/settings.json`:
-
-```json
-{
-  "permissions": {
-    "allow": ["WebFetch(domain:$PROXMOX_IP)"]
-  },
-  "sandbox": {
-    "network": {
-      "allowMachLookup": ["com.apple.trustd*"]
-    },
-    "filesystem": {
-      "allowWrite": ["~/.cv4pve/"]
-    }
-  }
-}
-```
-
-### Codex
-
-Codex needed only a rule that allows the command, in `~/.codex/rules/default.rules`. In the issue, with
-a token of the auditor role:
-
-```text
-prefix_rule(pattern=["cv4pve-cli"], decision="allow")
-```
+SSH access to the nodes.
 
 ## The cv4pve-cli skill
 
-The repository ships a skill for AI coding assistants,
-[`skills/cv4pve-cli/SKILL.md`](https://github.com/Corsinvest/cv4pve-cli/blob/master/skills/cv4pve-cli/SKILL.md),
-in the Agent Skills format: a `name` and a `description` that tell the assistant when to use it, then the
-rules and commands. It tells the assistant to:
+<AiSkill tool="cv4pve-cli">
 
 - leave the contexts alone and read with `-o json`;
-- find guests with `--guest`, and use the `guest` aliases when it does not know whether an ID is a VM or a
-  container;
 - explore the API with `alias list --search`, `api ls` and `api usage -v`;
-- run every change first with `--dry-run`, and for real only after you agree, adding `--yes` where needed;
-- use `--wait` for tasks and read the exit code.
+- run every change first with `--dry-run`, and for real only after you agree, adding `--yes` where needed.
 
-Copy the `cv4pve-cli` folder into the skills folder of your assistant: for Claude Code, `.claude/skills/`
-in the project or `~/.claude/skills/` for every project:
+</AiSkill>
 
-```bash
-mkdir -p .claude/skills/cv4pve-cli
-curl -L -o .claude/skills/cv4pve-cli/SKILL.md https://raw.githubusercontent.com/Corsinvest/cv4pve-cli/master/skills/cv4pve-cli/SKILL.md
-```
+## Give it a token of its own
 
-Add to it what the assistant must know about your cluster: the name of the context, what the token is
-allowed to do, guests it must not touch.
+The skill tells the assistant what to do; the token decides what it can do. cv4pve-cli asks `--yes` only
+for the aliases that cannot be undone; `api` calls and the other aliases run at once (see
+[Operations that change the cluster](/cv4pve-cli/aliases/#operations-that-change-the-cluster)), and the
+skill cannot prevent that. Create a context for the assistant with a token of its own: `PVEAuditor` if
+it only reads, otherwise a role with only the operations you want it to run, on the pool or the guests
+concerned. See [Permissions](/cv4pve-cli/permissions/#which-role).
+
+cv4pve-cli must be able to write in `~/.cv4pve/`, where it keeps the contexts and the API schema cache:
+an assistant that runs in a sandbox needs that folder allowed. In Git Bash on Windows it also needs
+`MSYS_NO_PATHCONV=1` (see [Git Bash on Windows](/cv4pve-cli/troubleshooting/#git-bash-on-windows)). The
+settings a user needed for Claude Code on macOS and for Codex are in
+[issue #10](https://github.com/Corsinvest/cv4pve-cli/issues/10).

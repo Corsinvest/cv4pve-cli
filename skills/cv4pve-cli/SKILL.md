@@ -1,6 +1,6 @@
 ---
 name: cv4pve-cli
-description: Read and operate a Proxmox VE cluster through its API with cv4pve-cli: list nodes, VMs, containers and storage, read configurations, and run changes such as start, stop, snapshot or migrate. Use it for any question or task about the Proxmox VE cluster instead of SSH to a node.
+description: "Read and operate a Proxmox VE cluster through its API with cv4pve-cli: list nodes, VMs, containers and storage, read configurations, and run changes such as start, stop, snapshot or migrate. Use it for any question or task about the Proxmox VE cluster instead of SSH to a node."
 ---
 
 # cv4pve-cli
