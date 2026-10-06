@@ -65,7 +65,7 @@ Some of the rows. `--guest` found the node and the VM ID from the name; `-o json
 - **Tab completion**: bash, zsh and PowerShell complete API paths, node names, VM IDs, parameters and their allowed values from the live cluster.
 - **Tasks**: `task list/show/wait/log --follow/stop` to follow backups, migrations and other long operations.
 - **Made for scripts**: output as text, JSON, Markdown or HTML; errors on stderr with an exit code for each kind of failure; `--dry-run` to see a call before sending it.
-- **Self-contained binary** for Windows, Linux and macOS, with no runtime to install.
+- **Windows, Linux and macOS**, with no runtime to install.
 
 ---
 
@@ -80,7 +80,7 @@ wget https://github.com/Corsinvest/cv4pve-cli/releases/latest/download/cv4pve-cl
 unzip cv4pve-cli-linux-x64.zip && chmod +x cv4pve-cli
 
 # Save the cluster once, with an API token, then run commands against it
-./cv4pve-cli config add pve01 --host=pve01.local --api-token='cli@pve!cli=UUID'
+./cv4pve-cli config add pve01 --host=pve01.example.com --api-token='cli@pve!cli=UUID'
 ./cv4pve-cli get nodes
 ./cv4pve-cli api get /cluster/resources --type vm -o json
 ```
@@ -119,6 +119,10 @@ Professional support and consulting available through [Corsinvest](https://www.c
 
 ---
 
-Part of [cv4pve](https://www.corsinvest.it/cv4pve) suite | Made with ❤️ in Italy by [Corsinvest](https://www.corsinvest.it)
+**By sysadmins, for sysadmins.**
+
+Part of [cv4pve](https://www.corsinvest.it/en/cv4pve/) suite | Made with ❤️ in Italy by [Corsinvest](https://www.corsinvest.it)
+
+Proxmox® is a registered trademark of Proxmox Server Solutions GmbH. cv4pve is developed by Corsinvest and is not a Proxmox product.
 
 Copyright © Corsinvest Srl
