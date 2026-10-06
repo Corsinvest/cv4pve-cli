@@ -31,17 +31,23 @@ import { Tabs, TabItem } from '@astrojs/starlight/components';
 import FeatureGrid from '@corsinvest/cv4pve-docs-theme/components/FeatureGrid.astro';
 import TerminalTable from '@corsinvest/cv4pve-docs-theme/components/TerminalTable.astro';
 import CtaBand from '@corsinvest/cv4pve-docs-theme/components/CtaBand.astro';
+import Motto from '@corsinvest/cv4pve-docs-theme/components/Motto.astro';
+import CliInstall from '@corsinvest/cv4pve-docs-theme/components/CliInstall.astro';
 import AliasCount from '../../components/AliasCount.astro';
 import proxmoxLogo from '../../assets/proxmox-logo.svg';
 
 export const features = [
-  { title: "Every API call", text: "get, set, create and delete on any path of the Proxmox VE REST API, with parameters as --key value. ls and usage show what a path contains and what it accepts.", href: 'api/' },
-  { title: "Several clusters", text: "Each cluster is a saved context: host, port, token or password. Switch with config use, as kubectl does with Kubernetes clusters.", href: 'contexts/' },
-  { title: "Aliases for everyday work", text: "do start vm, create guest snapshot, get cluster ha resources: short commands for common operations, plus your own.", href: 'aliases/' },
-  { title: "Guests by name", text: "--guest web01 finds the node, the type and the VM ID for you, so you never look up where a guest runs.", href: 'aliases/#guests-by-name---guest' },
-  { title: "Tab completion from the cluster", text: "bash, zsh and PowerShell complete API paths, node names, VM IDs, parameters and their allowed values.", href: 'completion/' },
-  { title: "Made for scripts", text: "Output as text, JSON, HTML or Markdown; --wait for asynchronous tasks; task log --follow to watch one run.", href: 'scripting/' },
+  { icon: 'mdi:api', title: "Every API call", text: "get, set, create and delete on any path of the Proxmox VE REST API, with parameters as --key value. ls and usage show what a path contains and what it accepts.", href: 'api/' },
+  { icon: 'mdi:server-network', title: "Several clusters", text: "Each cluster is a saved context: host, port, token or password. Switch with config use, as kubectl does with Kubernetes clusters.", href: 'contexts/' },
+  { icon: 'mdi:lightning-bolt-outline', title: "Aliases for everyday work", text: "do start vm, create guest snapshot, get cluster ha resources: short commands for common operations, plus your own.", href: 'aliases/' },
+  { icon: 'mdi:card-search-outline', title: "Guests by name", text: "--guest web01 finds the node, the type and the VM ID for you, so you never look up where a guest runs.", href: 'aliases/#guests-by-name---guest' },
+  { icon: 'mdi:keyboard-tab', title: "Tab completion from the cluster", text: "bash, zsh and PowerShell complete API paths, node names, VM IDs, parameters and their allowed values.", href: 'completion/' },
+  { icon: 'mdi:script-text-outline', title: "Made for scripts", text: "Output as text, JSON, HTML or Markdown; --wait for asynchronous tasks; task log --follow to watch one run.", href: 'scripting/' },
 ];
+
+<Motto />
+
+<CliInstall repo="cv4pve-cli" />
 
 ```bash
 cv4pve-cli config add pve01 --host=pve01.example.com --api-token='cli@pve!cli=…'

@@ -10,7 +10,7 @@ export default defineConfig({
     starlight({
       title: 'cv4pve-cli',
       description: 'The whole Proxmox VE API from the command line, like kubectl for Kubernetes: saved contexts for several clusters, 327 built-in aliases and tab completion that reads the live cluster.',
-      // Brand, logo, GitHub and "Edit page" links, the Corsinvest sidebar group and
+      // Brand, product icon, GitHub link, the Corsinvest sidebar group and
       // external links in a new tab come from the shared cv4pve theme.
       plugins: [
         corsinvestTheme({
@@ -19,14 +19,18 @@ export default defineConfig({
           icon: { light: '/icon.svg', dark: '/icon-dark.svg' },
           // Visits, without cookies.
           matomo: { url: 'https://matomo.corsinvest.it/', siteId: 10 },
-          // Install-and-run panel in the home hero.
-          install: {
-            targets: ['linux', 'macos', 'windows'],
-            run: ['api get /nodes'],
+          // Steps panel in the home hero: the same steps, in the same order and words, as Getting started.
+          // The commands are in the pages (CliInstall).
+          steps: {
+            items: [
+              'Install cv4pve-cli',
+              { text: 'Create an API token', href: 'permissions/#user-and-token' },
+              'Save the cluster as a context',
+              'Run a command',
+            ],
           },
         }),
       ],
-      lastUpdated: true,
       sidebar: [
         {
           label: 'Start here',
